@@ -1,0 +1,20 @@
+{
+  "name": "Word2Card",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.mjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron ."
+  },
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "nodemon": "^3.1.7"
+  },
+  "dependencies": {
+    "electron-store": "^10.0.0",
+    "microsoft-cognitiveservices-speech-sdk": "^1.41.0"
+  }
+}
