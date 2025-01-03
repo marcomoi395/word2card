@@ -7,19 +7,15 @@
         <link rel="stylesheet" href="style.css" />
     </head>
     <body>
-        <h2>File Processor</h2>
-        <label for="filePath">Đường dẫn file TXT:</label>
-        <input
-            type="text"
-            id="filePath"
-            placeholder="Nhập đường dẫn file TXT"
-        />
+        <h1>File Processor</h1>
+        <label for="filePath">File path (.txt)</label>
+        <input type="text" id="filePath" placeholder="Enter path to file" />
 
-        <label for="deckName">Tên Deck:</label>
-        <input type="text" id="deckName" placeholder="Nhập tên deck" />
+        <label for="deckName">Deck name</label>
+        <input type="text" id="deckName" placeholder="Enter deck name" />
 
-        <label for="subscriptionKey">Subscription Key:</label>
-        <input type="text" id="subscriptionKey" placeholder="Nhập token" />
+        <label for="subscriptionKey">Subscription Key</label>
+        <input type="text" id="subscriptionKey" placeholder="Enter token" />
 
         <button id="submitBtn">Submit</button>
 
@@ -27,7 +23,6 @@
         <label> <input type="checkbox" id="option1" /> Multiple Choice </label>
         <label> <input type="checkbox" id="option2" /> Eng-Vie </label>
         <label> <input type="checkbox" id="option3" /> Vie-Eng </label>
-
         <script>
             const { ipcRenderer } = require('electron'); // Thêm dòng này nếu bạn sử dụng nodeIntegration
 

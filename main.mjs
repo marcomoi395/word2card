@@ -7,7 +7,7 @@ function createWindow() {
     const win = new BrowserWindow({
         width: 800,
         height: 600,
-        frame: false,
+        frame: true,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
@@ -15,7 +15,7 @@ function createWindow() {
     });
 
     win.loadFile('index.html');
-    win.webContents.openDevTools();
+    // win.webContents.openDevTools();
 }
 
 // Lắng nghe sự kiện từ renderer process

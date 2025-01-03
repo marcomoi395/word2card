@@ -7,7 +7,7 @@ body {
 
 h1 {
     text-align: center;
-    color: #4CAF50;
+    color: #4caf50;
 }
 
 label {
@@ -15,22 +15,23 @@ label {
     margin-top: 10px;
 }
 
-input[type="text"] {
+input[type='text'] {
     width: calc(100% - 22px);
     padding: 10px;
     margin: 10px 0;
+    margin-bottom: 20px;
     border: 1px solid #ccc;
     border-radius: 4px;
     transition: border-color 0.3s;
 }
 
-input[type="text"]:focus {
-    border-color: #4CAF50;
+input[type='text']:focus {
+    border-color: #4caf50;
     outline: none;
 }
 
 button {
-    background-color: #4CAF50;
+    background-color: #4caf50;
     color: white;
     padding: 10px 15px;
     border: none;
@@ -46,7 +47,7 @@ button:hover {
 
 h3 {
     margin-top: 20px;
-    color: #4CAF50;
+    color: #4caf50;
 }
 
 .checkbox-group {
