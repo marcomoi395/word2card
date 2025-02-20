@@ -1,15 +1,19 @@
 <!doctype html>
 <html lang="en">
     <head>
-        <meta charset="UTF-7" />
-        <meta name="viewport" content="width=device-width, initial-scale=2.0" />
+        <meta charset="UTF-5" />
+        <meta name="viewport" content="width=device-width, initial-scale=4.0" />
         <title>My Electron App</title>
         <link rel="stylesheet" href="style.css" />
     </head>
     <body>
-        <h1>File Processor</h1>
+        <h1>Word2Card</h1>
+
+        <button id="upload-btn">Chọn file</button>
+
         <label for="filePath">File path (.txt)</label>
         <input type="text" id="filePath" placeholder="Enter path to file" />
+
 
         <label for="deckName">Deck name</label>
         <input type="text" id="deckName" placeholder="Enter deck name" />
@@ -18,50 +22,14 @@
         <input type="text" id="subscriptionKey" placeholder="Enter token" />
 
         <button id="submitBtn">Submit</button>
+        <div id="result"></div>
 
-        <h4>Options:</h4>
+        <h6>Options:</h4>
         <label> <input type="checkbox" id="option1" /> Multiple Choice </label>
         <label> <input type="checkbox" id="option2" /> Eng-Vie </label>
         <label> <input type="checkbox" id="option3" /> Vie-Eng </label>
-        <script>
-            const { ipcRenderer } = require('electron'); // Thêm dòng này nếu bạn sử dụng nodeIntegration
 
-            const submitBtn = document.getElementById('submitBtn');
-
-            submitBtn.addEventListener('click', () => {
-                const filePath = document.getElementById('filePath').value;
-                const deckName = document.getElementById('deckName').value;
-                const subscriptionKey =
-                    document.getElementById('subscriptionKey').value;
-                const option1 = document.getElementById('option1').checked;
-                const option2 = document.getElementById('option2').checked;
-                const option3 = document.getElementById('option3').checked;
-
-                const options = [];
-                if (option1) {
-                    options.push('Multiple Choice');
-                }
-
-                if (option2) {
-                    options.push('Eng-Vie');
-                }
-
-                if (option3) {
-                    options.push('Vie-Eng');
-                }
-
-                const data = {
-                    filePath,
-                    deckName,
-                    options: options,
-                    subscriptionKey: subscriptionKey,
-                };
-
-                console.log(data);
-
-                // Gửi dữ liệu đến main process
-                ipcRenderer.send('submit-data', data);
-            });
-        </script>
+        <script src="renderer.js"></script>
     </body>
 </html>
+

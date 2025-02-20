@@ -1,4 +1,4 @@
-export const multipleChoice = (item, date, path, deckName) => {
+module.exports.multipleChoice = (item, date, path, deckName) => {
     return {
         // "deckName": `Vocabulary::${date}`,
         deckName: `Vocabulary::${deckName}::Multiple Choice`,
@@ -27,7 +27,7 @@ export const multipleChoice = (item, date, path, deckName) => {
     };
 };
 
-export const EnglishToVietnamese = (item, date, path, deckName) => {
+module.exports.EnglishToVietnamese = (item, date, path, deckName) => {
     return {
         deckName: `Vocabulary::${deckName}::Eng-Vie`,
         modelName: 'Eng-Vie Translations',
@@ -49,7 +49,7 @@ export const EnglishToVietnamese = (item, date, path, deckName) => {
     };
 };
 
-export const VietnameseToEnglish = (item, date, path, deckName) => {
+module.exports.VietnameseToEnglish = (item, date, path, deckName) => {
     return {
         deckName: `Vocabulary::${deckName}::Vie-Eng`,
         modelName: 'Eng-Vie Translations',
@@ -70,4 +70,3 @@ export const VietnameseToEnglish = (item, date, path, deckName) => {
         },
     };
 };
-

@@ -1,4 +1,4 @@
-import sdk from 'microsoft-cognitiveservices-speech-sdk';
+const sdk = require('microsoft-cognitiveservices-speech-sdk');
 
 const textToSpeech = (text, path, subcriptionKey) => {
     return new Promise((resolve, reject) => {
@@ -47,4 +47,4 @@ const textToSpeech = (text, path, subcriptionKey) => {
     });
 };
 
-export default textToSpeech;
+module.exports = textToSpeech;

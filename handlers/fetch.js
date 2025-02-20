@@ -5,13 +5,13 @@
 }
 */
 
-import fs from 'fs';
-import textToSpeech from './textToSpeech.mjs';
-import {
+const fs = require('fs');
+const textToSpeech = require('./textToSpeech.js');
+const {
     EnglishToVietnamese,
     multipleChoice,
     VietnameseToEnglish,
-} from './options.mjs';
+} = require('./options.js');
 
 const createQuestion = (content) => {
     const contentObject = content
@@ -240,4 +240,4 @@ const fetchAPI = async (data, path) => {
     }
 };
 
-export default fetchAPI;
+module.exports = fetchAPI;
