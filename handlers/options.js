@@ -1,6 +1,5 @@
-module.exports.multipleChoice = (item, date, path, deckName) => {
-    return {
-        // "deckName": `Vocabulary::${date}`,
+const multipleChoice = ({ item, date, path, deckName, type = '' }) => {
+    const result = {
         deckName: `Vocabulary::${deckName}::Multiple Choice`,
         modelName: 'Multiple Choice',
         fields: {
@@ -12,61 +11,102 @@ module.exports.multipleChoice = (item, date, path, deckName) => {
             Q_3: item.options[2],
             Q_4: item.options[3],
             Answers: '1 0 0 0',
+            Audio:
+                type === 'json'
+                    ? `<audio controls autoplay> <source src='${item.audio}' type="audio/mpeg"> </audio>`
+                    : '',
+            Example: item.example,
+            Definition: item.definition,
+            Pronunciation: item.pronunciation,
+            Image: item.image || '',
         },
         tags: [date, 'Vocabulary', 'Multiplechoice'],
-        audio: [
+        options: {
+            allowDuplicate: true,
+        },
+    };
+
+    if (type !== 'json') {
+        result.audio = [
             {
                 path: `${path}/audio/${item.question.split(' ').join('-')}.wav`,
                 filename: `${item.question.split(' ').join('-')}.wav`,
                 fields: ['Audio'],
             },
-        ],
-        options: {
-            allowDuplicate: true,
-        },
-    };
+        ];
+    }
+
+    return result;
 };
 
-module.exports.EnglishToVietnamese = (item, date, path, deckName) => {
-    return {
+const EnglishToVietnamese = ({ item, date, path, deckName, type = '' }) => {
+    const result = {
         deckName: `Vocabulary::${deckName}::Eng-Vie`,
         modelName: 'Eng-Vie Translations',
         fields: {
             Front: item.question,
             Back: item.options[0],
+            Audio:
+                type === 'json'
+                    ? `<audio controls autoplay> <source src='${item.audio}' type="audio/mpeg"> </audio>`
+                    : '',
+            Example: item.example,
+            Definition: item.definition,
+            Pronunciation: item.pronunciation,
+            Image: item.image ? item.image : '',
         },
         tags: [date, 'Vocabulary', 'Eng - Vie'],
-        audio: [
+        options: {
+            allowDuplicate: true,
+        },
+    };
+
+    if (type !== 'json') {
+        result.audio = [
             {
                 path: `${path}/audio/${item.question.split(' ').join('-')}.wav`,
                 filename: `${item.question.split(' ').join('-')}.wav`,
                 fields: ['Audio'],
             },
-        ],
-        options: {
-            allowDuplicate: true,
-        },
-    };
+        ];
+    }
+
+    return result;
 };
 
-module.exports.VietnameseToEnglish = (item, date, path, deckName) => {
-    return {
+const VietnameseToEnglish = ({ item, date, path, deckName, type = '' }) => {
+    const result = {
         deckName: `Vocabulary::${deckName}::Vie-Eng`,
         modelName: 'Eng-Vie Translations',
         fields: {
             Front: item.options[0],
             Back: item.question,
+            Audio:
+                type === 'json'
+                    ? `<audio controls autoplay> <source src='${item.audio}' type="audio/mpeg"> </audio>`
+                    : '',
+            Example: item.example,
+            Definition: item.definition,
+            Pronunciation: item.pronunciation,
+            Image: item.image ? item.image : '',
         },
         tags: [date, 'Vocabulary', 'Vie - Eng'],
-        audio: [
+        options: {
+            allowDuplicate: true,
+        },
+    };
+
+    if (type !== 'json') {
+        result.audio = [
             {
                 path: `${path}/audio/${item.question.split(' ').join('-')}.wav`,
                 filename: `${item.question.split(' ').join('-')}.wav`,
                 fields: ['Audio'],
             },
-        ],
-        options: {
-            allowDuplicate: true,
-        },
-    };
+        ];
+    }
+
+    return result;
 };
+
+module.exports = { multipleChoice, EnglishToVietnamese, VietnameseToEnglish };

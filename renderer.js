@@ -35,12 +35,4 @@ submitBtn.addEventListener('click', async () => {
     };
 
     window.electron.ipcRenderer.send('submit-data', data);
-    //
-    // console.log(result);
-    //
-    // if (result.content === 'success') {
-    //     alert('Submit data success');
-    // } else {
-    //     alert(result.content);
-    // }
 });

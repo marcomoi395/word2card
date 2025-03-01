@@ -13,30 +13,29 @@ const {
     VietnameseToEnglish,
 } = require('./options.js');
 
-const createQuestion = (content) => {
-    const contentObject = content
-        .filter((item) => item.includes(':'))
-        .map((item) => {
-            return {
-                word: item.split(':')[0]?.trim(),
-                meaning: item.split(':')[1]?.trim(),
-            };
-        });
+const createQuestion = (content, type = '') => {
+    let uniqueContent = content;
+    if (type !== 'json') {
+        const contentObject = content
+            .filter((item) => item.includes(':'))
+            .map((item) => {
+                return {
+                    word: item.split(':')[0]?.trim(),
+                    meaning: item.split(':')[1]?.trim(),
+                };
+            });
 
-    const uniqueContent = Array.from(
-        new Map(contentObject.map((item) => [item.word, item])).values()
-    );
+        uniqueContent = Array.from(
+            new Map(contentObject.map((item) => [item.word, item])).values()
+        );
+    }
 
     const result = [];
     uniqueContent.forEach((item) => {
         let firstQuestion = {
             question: item.word,
             options: [item.meaning],
-        };
-
-        let secondQuestion = {
-            question: item.meaning,
-            options: [item.word],
+            ...item,
         };
 
         while (firstQuestion.options.length < 4) {
@@ -48,15 +47,16 @@ const createQuestion = (content) => {
             }
         }
 
-        while (secondQuestion.options.length < 4) {
-            const randomMeaning =
-                uniqueContent[Math.floor(Math.random() * uniqueContent.length)]
-                    .word;
-            if (!secondQuestion.options.includes(randomMeaning)) {
-                secondQuestion.options.push(randomMeaning);
-            }
-        }
         result.push(firstQuestion);
+
+        // while (secondQuestion.options.length < 4) {
+        //     const randomMeaning =
+        //         uniqueContent[Math.floor(Math.random() * uniqueContent.length)]
+        //             .word;
+        //     if (!secondQuestion.options.includes(randomMeaning)) {
+        //         secondQuestion.options.push(randomMeaning);
+        //     }
+        // }
         // result.push(secondQuestion);
     });
 
@@ -74,14 +74,31 @@ const readFileContent = async (path) => {
     }
 };
 
-const creatCard = async (data, path, subscriptionKey) => {
-    const content = await readFileContent(data.filePath);
-    const questions = createQuestion(content);
+const readFileJson = async (path) => {
+    try {
+        const data = await fs.promises.readFile(path, 'utf8');
+        const jsonData = JSON.parse(data);
+        return jsonData;
+    } catch (e) {
+        console.error('Lỗi khi đọc file hoặc parse JSON:', e.message);
+        return null;
+    }
+};
 
-    let result = [];
-    let audioPromises = [];
+const creatCard = async (data, path, type = '') => {
+    let content = '';
+    if (type !== 'json') {
+        content = await readFileContent(data.filePath);
+    } else {
+        content = await readFileJson(data.filePath);
+    }
+
+    const questions = createQuestion(content, type);
 
     try {
+        let result = [];
+        let audioPromises = [];
+
         for (const item of questions) {
             // Check if card exists
             // const isExist = await checkCardExists(item.question);
@@ -92,15 +109,18 @@ const creatCard = async (data, path, subscriptionKey) => {
 
             // Create audio
             let audio;
-            if (data.subscriptionKey) {
-                audio = (async () => {
-                    // Create audio
-                    await textToSpeech(
-                        item.question,
-                        path,
-                        data.subscriptionKey
-                    );
-                })();
+            if (type !== 'json') {
+                if (data.subscriptionKey) {
+                    audio = (async () => {
+                        // Create audio
+                        await textToSpeech(
+                            item.question,
+                            path,
+                            data.subscriptionKey
+                        );
+                    })();
+                }
+                audioPromises.push(audio);
             }
 
             const deckName = data.deckName;
@@ -109,22 +129,29 @@ const creatCard = async (data, path, subscriptionKey) => {
             date = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
 
             if (data.options.includes('Multiple Choice')) {
-                result.push(multipleChoice(item, date, path, deckName));
+                result.push(
+                    multipleChoice({ item, date, path, deckName, type })
+                );
             }
 
             if (data.options.includes('Eng-Vie')) {
-                result.push(EnglishToVietnamese(item, date, path, deckName));
+                result.push(
+                    EnglishToVietnamese({ item, date, path, deckName, type })
+                );
             }
 
             if (data.options.includes('Vie-Eng')) {
-                result.push(VietnameseToEnglish(item, date, path, deckName));
+                result.push(
+                    VietnameseToEnglish({ item, date, path, deckName, type })
+                );
             }
-
-            audioPromises.push(audio);
         }
-        // Chờ tất cả các file âm thanh được render
-        await Promise.all(audioPromises);
-        console.log('Tất cả file âm thanh đã được render xong');
+
+        if (type !== 'json') {
+            // Chờ tất cả các file âm thanh được render
+            await Promise.all(audioPromises);
+            console.log('Tất cả file âm thanh đã được render xong');
+        }
 
         return result;
     } catch (error) {
@@ -178,30 +205,17 @@ const getDeckNames = async () => {
     }
 };
 
-const fetchAPI = async (data, path) => {
-    console.log('data::', data);
-
+const fetchAPI = async (data, path, type) => {
     // data:: {
     //     filePath: '/home/youngmarco/Downloads/test.txt',
     //     deckName: '123',
     //     options: [ 'Multiple Choice' ]
     // }
 
-    // Validate
-    if (!data.filePath) {
-        return 'File path is required';
-    }
+    const cards = await creatCard(data, path, type);
+    console.log('card::', cards);
 
-    if (!data.options) {
-        return 'Options are required';
-    }
-
-    const cards = await creatCard(data, path);
     const deckName = data.deckName;
-
-    // Check exist deck
-    // const decks = ['Vocabulary', 'Multiple Choice', 'Eng-Vie', 'Vie-Eng'];
-
     const getDecks = await getDeckNames();
     if (!getDecks.includes('Vocabulary')) {
         await createDeck('Vocabulary');

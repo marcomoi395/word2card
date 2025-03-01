@@ -7,6 +7,7 @@ function createWindow() {
     const win = new BrowserWindow({
         width: 800,
         height: 600,
+        // autoHideMenuBar: true,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: false,
@@ -14,13 +15,14 @@ function createWindow() {
         },
     });
     win.loadFile('index.html');
-    win.webContents.openDevTools();
+    // win.webContents.openDevTools();
 }
 
 ipcMain.handle('open-file-dialog', async () => {
     const { filePaths } = await dialog.showOpenDialog({
         properties: ['openFile'],
-        filters: [{ name: 'Text Files', extensions: ['txt'] }],
+        filters: [{ name: 'Text Files', extensions: ['txt', 'json'] }],
+        showHiddenFiles: true,
     });
 
     if (filePaths.length > 0) {
@@ -47,7 +49,14 @@ ipcMain.on('submit-data', async (event, data) => {
     }
 
     try {
-        const result = await fetchAPI(data, pathFile);
+        console.log(data);
+
+        let type = '';
+        if (data.filePath.includes('.json')) {
+            type = 'json';
+        }
+
+        const result = await fetchAPI(data, pathFile, type);
 
         console.log(result);
         return { content: 'success' };
