@@ -9,6 +9,7 @@ const submitBtn = document.getElementById('submitBtn');
 submitBtn.addEventListener('click', async () => {
     const filePath = document.getElementById('filePath').value;
     const deckName = document.getElementById('deckName').value;
+    const limit = document.getElementById('limit').value;
     const subscriptionKey = document.getElementById('subscriptionKey').value;
     const option1 = document.getElementById('option1').checked;
     const option2 = document.getElementById('option2').checked;
@@ -30,6 +31,7 @@ submitBtn.addEventListener('click', async () => {
     const data = {
         filePath,
         deckName,
+        limit,
         options: options,
         subscriptionKey: subscriptionKey,
     };

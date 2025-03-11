@@ -48,16 +48,6 @@ const createQuestion = (content, type = '') => {
         }
 
         result.push(firstQuestion);
-
-        // while (secondQuestion.options.length < 4) {
-        //     const randomMeaning =
-        //         uniqueContent[Math.floor(Math.random() * uniqueContent.length)]
-        //             .word;
-        //     if (!secondQuestion.options.includes(randomMeaning)) {
-        //         secondQuestion.options.push(randomMeaning);
-        //     }
-        // }
-        // result.push(secondQuestion);
     });
 
     return result;
@@ -94,27 +84,21 @@ const creatCard = async (data, path, type = '') => {
     }
 
     const questions = createQuestion(content, type);
+    const numberOfQuestions = questions.length;
+    const limit = data.limit;
 
     try {
         let result = [];
         let audioPromises = [];
 
-        for (const item of questions) {
-            // Check if card exists
-            // const isExist = await checkCardExists(item.question);
-            // const isExist2 = await checkCardExists(item.options[0]);
-            // if (isExist || isExist2) {
-            //     continue;
-            // }
-
-            // Create audio
+        for (let i = 0; i < numberOfQuestions; i++) {
             let audio;
             if (type !== 'json') {
                 if (data.subscriptionKey) {
                     audio = (async () => {
                         // Create audio
                         await textToSpeech(
-                            item.question,
+                            questions[i].question,
                             path,
                             data.subscriptionKey
                         );
@@ -123,26 +107,48 @@ const creatCard = async (data, path, type = '') => {
                 audioPromises.push(audio);
             }
 
-            const deckName = data.deckName;
+            let deckName = data.deckName;
+            if (limit != 0 && type === 'json') {
+                let numberPart = Math.floor(i / limit) + 1;
+                deckName = `${deckName}::Part ${numberPart}`;
+            }
 
             let date = new Date();
             date = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
 
             if (data.options.includes('Multiple Choice')) {
                 result.push(
-                    multipleChoice({ item, date, path, deckName, type })
+                    multipleChoice({
+                        item: questions[i],
+                        date,
+                        path,
+                        deckName,
+                        type,
+                    })
                 );
             }
 
             if (data.options.includes('Eng-Vie')) {
                 result.push(
-                    EnglishToVietnamese({ item, date, path, deckName, type })
+                    EnglishToVietnamese({
+                        item: questions[i],
+                        date,
+                        path,
+                        deckName,
+                        type,
+                    })
                 );
             }
 
             if (data.options.includes('Vie-Eng')) {
                 result.push(
-                    VietnameseToEnglish({ item, date, path, deckName, type })
+                    VietnameseToEnglish({
+                        item: questions[i],
+                        date,
+                        path,
+                        deckName,
+                        type,
+                    })
                 );
             }
         }
@@ -213,21 +219,17 @@ const fetchAPI = async (data, path, type) => {
     // }
 
     const cards = await creatCard(data, path, type);
-    console.log('card::', cards);
 
-    const deckName = data.deckName;
     const getDecks = await getDeckNames();
     if (!getDecks.includes('Vocabulary')) {
         await createDeck('Vocabulary');
     }
 
-    console.log('waitting for create deck.......');
-
-    for (const deck of data.options) {
-        if (!getDecks.includes(`Vocabulary::${deckName}::${deck}`)) {
-            await createDeck(`Vocabulary::${deckName}::${deck}`);
-
-            console.log(`Vocabulary::${deckName}::${deck}`);
+    const processed = new Set();
+    for (const deck of cards) {
+        if (!processed.has(deck.deckName)) {
+            await createDeck(deck.deckName);
+            processed.add(deck.deckName);
         }
     }
 

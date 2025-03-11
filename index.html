@@ -136,6 +136,11 @@
                 transition: all 0.2s ease;
             }
 
+            .row {
+                display: flex;
+                gap: 12px;
+            }
+
             input[type='checkbox'] {
                 display: none;
             }
@@ -199,13 +204,23 @@
                     </button>
                     <input type="file" id="realFileInput" />
                 </div>
+                <div class="row">
+                    <input
+                        type="text"
+                        id="deckName"
+                        class="text-input"
+                        placeholder="Deck name"
+                    />
 
-                <input
-                    type="text"
-                    id="deckName"
-                    class="text-input"
-                    placeholder="Deck name"
-                />
+                    <input
+                        type="number"
+                        id="limit"
+                        class="text-input"
+                        placeholder="Limit"
+                        min="0"
+                    />
+                </div>
+
                 <input
                     type="text"
                     id="subscriptionKey"
