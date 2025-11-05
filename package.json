@@ -8,17 +8,30 @@
         "start": "electron ."
     },
     "build": {
-        "appId": "youngmarco.me",
+        "appId": "word2card.ym",
         "productName": "Word2Card",
         "win": {
             "target": "nsis",
             "icon": "./icon.png"
+        },
+        "linux": {
+            "target": [
+                "AppImage"
+            ],
+            "category": "Utility",
+            "icon": "./icon.png",
+            "synopsis": "Convert Word to cards with TTS",
+            "desktop": {
+                "Name": "Word2Card",
+                "GenericName": "Word2Card",
+                "Comment": "Convert Word to flashcards with speech",
+                "Categories": "Utility;"
+            }
         }
     },
     "private": true,
     "devDependencies": {
         "electron": "^33.2.0",
-        "electron-builder": "^25.1.8",
         "nodemon": "^3.1.7"
     },
     "dependencies": {

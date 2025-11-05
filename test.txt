@@ -1,4 +1,0 @@
-good: tot
-bad: xau
-run: chay
-walk: di bo

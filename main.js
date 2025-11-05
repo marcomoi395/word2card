@@ -49,16 +49,12 @@ ipcMain.on('submit-data', async (event, data) => {
     }
 
     try {
-        console.log(data);
-
         let type = '';
         if (data.filePath.includes('.json')) {
             type = 'json';
         }
 
         const result = await fetchAPI(data, pathFile, type);
-
-        console.log(result);
         return { content: 'success' };
     } catch (err) {
         return { content: err.message };

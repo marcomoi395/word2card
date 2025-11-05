@@ -1,10 +1,3 @@
-/*
-{
-    filePath: '123',
-    options: [ option1: true, option2: true, option3: true ]
-}
-*/
-
 const fs = require('fs');
 const textToSpeech = require('./textToSpeech.js');
 const {
@@ -212,12 +205,6 @@ const getDeckNames = async () => {
 };
 
 const fetchAPI = async (data, path, type) => {
-    // data:: {
-    //     filePath: '/home/youngmarco/Downloads/test.txt',
-    //     deckName: '123',
-    //     options: [ 'Multiple Choice' ]
-    // }
-
     const cards = await creatCard(data, path, type);
 
     const getDecks = await getDeckNames();

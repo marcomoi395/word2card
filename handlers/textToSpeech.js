@@ -8,7 +8,6 @@ const textToSpeech = (text, path, subcriptionKey) => {
             subscriptionKey,
             serviceRegion
         );
-        // /home/youngmarco/.config/Word2Card
         const audioConfig = sdk.AudioConfig.fromAudioFileOutput(
             `${path}/audio/${text.split(' ').join('-')}.wav`
         );
@@ -25,9 +24,6 @@ const textToSpeech = (text, path, subcriptionKey) => {
                     result.reason ===
                     sdk.ResultReason.SynthesizingAudioCompleted
                 ) {
-                    console.log(
-                        `Audio synthesized to ${text.split(' ').join('-')}.wav`
-                    );
                     resolve(`./audio/${text.split(' ').join('-')}.wav`);
                 } else {
                     console.error(
