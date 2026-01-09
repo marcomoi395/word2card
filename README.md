@@ -93,9 +93,10 @@ Click the **Submit** button to start processing.
 ### Text File (. txt)
 
 ```text
-hello - xin chào
-world - thế giới
-computer - máy tính
+hello: xin chào: Hello, how are you?
+world: thế giới: Welcome to the world   
+computer: máy tính: This is a computer.
+good: tốt: This is a good book.
 ```
 
 ### JSON File (.json)

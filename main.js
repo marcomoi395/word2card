@@ -54,7 +54,7 @@ ipcMain.on('submit-data', async (event, data) => {
             type = 'json';
         }
 
-        const result = await fetchAPI(data, pathFile, type);
+        await fetchAPI(data, pathFile, type);
         return { content: 'success' };
     } catch (err) {
         return { content: err.message };

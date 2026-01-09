@@ -15,6 +15,7 @@ const createQuestion = (content, type = '') => {
                 return {
                     word: item.split(':')[0]?.trim(),
                     meaning: item.split(':')[1]?.trim(),
+                    example: item.split(':')[2]?.trim() || '',
                 };
             });
 
@@ -28,6 +29,7 @@ const createQuestion = (content, type = '') => {
         let firstQuestion = {
             question: item.word,
             options: [item.meaning],
+            example: item.example || '',
             ...item,
         };
 
