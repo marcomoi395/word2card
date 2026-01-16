@@ -1,3 +1,5 @@
+import { FileImport, NotionSync } from '../../preload/index.d'
+
 function init(): void {
     window.addEventListener('DOMContentLoaded', () => {
         dropFileGetPath()
@@ -41,11 +43,13 @@ function formImport() {
             event.preventDefault()
 
             const sourceFileInput = document.getElementById('source-file') as HTMLInputElement
+            const deckInput = document.getElementById('deck') as HTMLInputElement
             const azureKeyInput = document.getElementById('azure-key-import') as HTMLInputElement
             const chkQuiz = document.getElementById('chk-quiz-import') as HTMLInputElement
             const chkFlashcard = document.getElementById('chk-flashcard-import') as HTMLInputElement
 
             const sourceFile = sourceFileInput.value.trim()
+            const deck = deckInput.value.trim()
             const azureKey = azureKeyInput.value.trim()
             const isQuiz = chkQuiz.checked
             const isFlashcard = chkFlashcard.checked
@@ -61,10 +65,11 @@ function formImport() {
                 return
             }
 
-            const importData = {
+            const importData: FileImport = {
                 type: 'FILE_IMPORT',
                 payload: {
                     filePath: sourceFile,
+                    deck,
                     azureKey: azureKey,
                     options: {
                         quiz: isQuiz,
@@ -90,11 +95,13 @@ function formNotion() {
             event.preventDefault()
 
             const notionTokenInput = document.getElementById('notion-token') as HTMLInputElement
+            const deckInput = document.getElementById('deck') as HTMLInputElement
             const azureKeyInput = document.getElementById('azure-key-notion') as HTMLInputElement
             const chkQuiz = document.getElementById('chk-quiz-notion') as HTMLInputElement
             const chkFlashcard = document.getElementById('chk-flashcard-notion') as HTMLInputElement
 
             const notionToken = notionTokenInput.value.trim()
+            const deck = deckInput.value.trim()
             const azureKey = azureKeyInput.value.trim()
             const isQuiz = chkQuiz.checked
             const isFlashcard = chkFlashcard.checked
@@ -110,10 +117,11 @@ function formNotion() {
                 return
             }
 
-            const notionData = {
+            const notionData: NotionSync = {
                 type: 'NOTION_SYNC',
                 payload: {
                     token: notionToken,
+                    deck,
                     azureKey: azureKey,
                     options: {
                         quiz: isQuiz,

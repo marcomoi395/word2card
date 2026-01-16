@@ -1,8 +1,10 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
 
-export interface DataImport {
-    type: string
+export interface FileImport {
+    type: 'FILE_IMPORT'
     payload: {
+        filePath: string
+        deck: string
         azureKey?: string
         options: {
             quiz: boolean
@@ -11,15 +13,16 @@ export interface DataImport {
     }
 }
 
-export interface FileImport extends DataImport {
-    payload: {
-        filePath: string
-    }
-}
-
-export interface NotionSync extends DataImport {
+export interface NotionSync {
+    type: 'NOTION_SYNC'
     payload: {
         token: string
+        deck: string
+        azureKey?: string
+        options: {
+            quiz: boolean
+            flashcard: boolean
+        }
     }
 }
 
