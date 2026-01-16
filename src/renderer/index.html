@@ -1,42 +1,130 @@
 <!doctype html>
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <title>Electron</title>
-    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
-    />
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Word2Card</title>
+    </head>
+    <body>
+        <header
+            style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 1px solid #ccc;
+                padding: 5px;
+            "
+        >
+            <div class="app-title">Word2Card</div>
+            <div class="window-controls">
+                <button id="minimize-btn" title="Minimize">_</button>
+                <button id="close-btn" title="Close">X</button>
+            </div>
+        </header>
 
-    <link href="./assets/main.css" type="text/css" rel="stylesheet" />
-  </head>
+        <nav style="padding: 10px">
+            <button id="tab-import-btn" onclick="switchTab('import')">File Import</button>
+            <button id="tab-notion-btn" onclick="switchTab('notion')">Notion Sync</button>
+        </nav>
 
-  <body>
-    <div id="app">
-      <img alt="logo" class="logo" src="./assets/electron.svg" />
-      <div class="creator">Powered by electron-vite</div>
-      <div class="text">
-        Build an Electron app with
-        <span class="ts">TypeScript</span>
-      </div>
-      <p class="tip">Please try pressing <code>F12</code> to open the devTool</p>
-      <div class="actions">
-        <div class="action">
-          <a href="https://electron-vite.org/" target="_blank" rel="noreferrer">Documentation</a>
-        </div>
-        <div class="action">
-          <a id="ipcHandler" target="_blank" rel="noreferrer">Send IPC</a>
-        </div>
-      </div>
+        <main style="padding: 20px">
+            <section id="section-import">
+                <h2>File Import</h2>
 
-      <ul class="versions">
-        <li class="electron-version"></li>
-        <li class="chrome-version"></li>
-        <li class="node-version"></li>
-      </ul>
-    </div>
+                <form id="form-import">
+                    <div class="form-group">
+                        <label for="source-file">Source File</label><br />
+                        <input
+                            type="text"
+                            id="source-file"
+                            name="sourceFile"
+                            placeholder="Path to file..."
+                        />
+                    </div>
+                    <br />
 
-    <script type="module" src="./src/renderer.ts"></script>
-  </body>
+                    <div class="form-group">
+                        <label for="azure-key-import">Azure API Key</label><br />
+                        <input type="string" id="azure-key-import" name="azureKey" />
+                    </div>
+                    <br />
+
+                    <div class="options-group">
+                        <input type="checkbox" id="chk-quiz-import" name="isQuiz" />
+                        <label for="chk-quiz-import">Quiz</label>
+
+                        <input
+                            type="checkbox"
+                            id="chk-flashcard-import"
+                            name="isFlashcard"
+                            style="margin-left: 10px"
+                        />
+                        <label for="chk-flashcard-import">Flashcard</label>
+                    </div>
+                    <br />
+
+                    <button type="submit" id="btn-action-import">Import</button>
+                </form>
+            </section>
+
+            <section id="section-notion" style="display: none">
+                <h2>Notion Sync</h2>
+
+                <form id="form-notion">
+                    <div class="form-group">
+                        <label for="notion-token">Integration Token</label><br />
+                        <input
+                            id="notion-token"
+                            name="notionToken"
+                            placeholder="secret_xxxxxxxxx"
+                        />
+                    </div>
+                    <br />
+
+                    <div class="form-group">
+                        <label for="azure-key-notion">Azure API Key</label><br />
+                        <input type="string" id="azure-key-notion" name="azureKey" />
+                    </div>
+                    <br />
+
+                    <div
+                        class="options-group"
+                        style="display: flex; align-items: center; gap: 15px"
+                    >
+                        <div>
+                            <input type="checkbox" id="chk-quiz-notion" name="isQuiz" />
+                            <label for="chk-quiz-notion">Quiz</label>
+                        </div>
+
+                        <div>
+                            <input type="checkbox" id="chk-flashcard-notion" name="isFlashcard" />
+                            <label for="chk-flashcard-notion">Flashcard</label>
+                        </div>
+
+                        <div style="margin-left: auto">
+                            <a href="#" id="link-template" target="_blank">Notion template</a>
+                        </div>
+                    </div>
+                    <br />
+
+                    <button type="submit" id="btn-action-sync">Sync</button>
+                </form>
+            </section>
+        </main>
+        <script type="module" src="./src/renderer.ts"></script>
+        <script>
+            function switchTab(tabName) {
+                const importSection = document.getElementById('section-import')
+                const notionSection = document.getElementById('section-notion')
+
+                if (tabName === 'import') {
+                    importSection.style.display = 'block'
+                    notionSection.style.display = 'none'
+                } else {
+                    importSection.style.display = 'none'
+                    notionSection.style.display = 'block'
+                }
+            }
+        </script>
+    </body>
 </html>
