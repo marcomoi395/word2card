@@ -4,10 +4,12 @@ import fs from 'fs'
 import path, { join } from 'path'
 import icon from '../../resources/icon.png?asset'
 import type { FileImport, NotionSync } from '../preload/index.d'
-import { readFileContent } from './helper/readFile'
-import { modelFlashcardParams } from './helper/modelFlashcard'
 import { checkAnkiConnect, sendRequest } from './anki-connect'
 import { createFlashcards, QuizNote } from './handle'
+import { modelFlashcardParams } from './helper/modelFlashcard'
+import { readFileContent } from './helper/readFile'
+import { SpeechService } from './speech'
+import 'dotenv/config'
 
 function createWindow(): void {
     const mainWindow = new BrowserWindow({
@@ -141,6 +143,13 @@ app.whenReady().then(() => {
         let isAudio: boolean = false
         if (importData.payload.azureKey) {
             isAudio = true
+            const result = await SpeechService.createSpeechFiles(words, audioDir)
+            if (result.length !== words.length) {
+                return {
+                    status: 'error',
+                    message: "Some audio files couldn't be created, please try again."
+                }
+            }
         }
 
         // Check existing deck and create if not exist

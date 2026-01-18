@@ -82,6 +82,8 @@ function formImport() {
 
             if (result?.status === 'success') {
                 alert('Import successful!')
+            } else {
+                alert('Import failed: ' + result?.message)
             }
         })
     }
@@ -134,6 +136,8 @@ function formNotion() {
 
             if (result?.status === 'success') {
                 alert('Import successful!')
+            } else {
+                alert('Import failed: ' + result?.message)
             }
         })
     }
