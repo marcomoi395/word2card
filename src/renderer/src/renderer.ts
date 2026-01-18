@@ -45,13 +45,11 @@ function formImport() {
 
             const sourceFileInput = document.getElementById('source-file') as HTMLInputElement
             const deckInput = document.getElementById('deck') as HTMLInputElement
-            const azureKeyInput = document.getElementById('azure-key-import') as HTMLInputElement
             const chkQuiz = document.getElementById('chk-quiz-import') as HTMLInputElement
             const chkFlashcard = document.getElementById('chk-flashcard-import') as HTMLInputElement
 
             const sourceFile = sourceFileInput.value.trim()
             const deck = deckInput.value.trim()
-            const azureKey = azureKeyInput.value.trim()
             const isQuiz = chkQuiz.checked
             const isFlashcard = chkFlashcard.checked
 
@@ -71,7 +69,6 @@ function formImport() {
                 payload: {
                     filePath: sourceFile,
                     deck,
-                    azureKey: azureKey,
                     options: {
                         quiz: isQuiz,
                         flashcard: isFlashcard
@@ -99,13 +96,11 @@ function formNotion() {
 
             const notionTokenInput = document.getElementById('notion-token') as HTMLInputElement
             const deckInput = document.getElementById('deck') as HTMLInputElement
-            const azureKeyInput = document.getElementById('azure-key-notion') as HTMLInputElement
             const chkQuiz = document.getElementById('chk-quiz-notion') as HTMLInputElement
             const chkFlashcard = document.getElementById('chk-flashcard-notion') as HTMLInputElement
 
             const notionToken = notionTokenInput.value.trim()
             const deck = deckInput.value.trim()
-            const azureKey = azureKeyInput.value.trim()
             const isQuiz = chkQuiz.checked
             const isFlashcard = chkFlashcard.checked
 
@@ -125,7 +120,6 @@ function formNotion() {
                 payload: {
                     token: notionToken,
                     deck,
-                    azureKey: azureKey,
                     options: {
                         quiz: isQuiz,
                         flashcard: isFlashcard
@@ -176,12 +170,12 @@ function formSettings() {
             const azureInput = document.getElementById('azure-key-global') as HTMLInputElement
             const statusSpan = document.getElementById('save-status') as HTMLSpanElement
 
-            const openaiKey = openaiInput.value.trim()
-            const azureKey = azureInput.value.trim()
+            const openaiApiKey = openaiInput.value.trim()
+            const azureApiKey = azureInput.value.trim()
 
             const settingsData = {
-                openaiKey,
-                azureKey
+                openaiApiKey,
+                azureApiKey
             }
 
             try {
