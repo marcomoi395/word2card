@@ -115,10 +115,14 @@ app.whenReady().then(() => {
 
             if (payload.openaiKey) {
                 s1 = SecretManager.saveSecret('openaiApiKey', payload.openaiKey.trim())
+            } else {
+                SecretManager.deleteSecret('openaiApiKey')
             }
 
             if (payload.openaiKey) {
                 s2 = SecretManager.saveSecret('azureApiKey', payload.azureKey.trim())
+            } else {
+                SecretManager.deleteSecret('azureApiKey')
             }
 
             if (!s1 || !s2) {

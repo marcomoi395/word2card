@@ -179,11 +179,6 @@ function formSettings() {
             const openaiKey = openaiInput.value.trim()
             const azureKey = azureInput.value.trim()
 
-            if (!openaiKey && !azureKey) {
-                alert('Please provide at least one API key to save.')
-                return
-            }
-
             const settingsData = {
                 openaiKey,
                 azureKey
