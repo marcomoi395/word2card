@@ -23,13 +23,18 @@
     },
     "dependencies": {
         "@electron-toolkit/preload": "^3.0.2",
-        "@electron-toolkit/utils": "^4.0.0"
+        "@electron-toolkit/utils": "^4.0.0",
+        "dotenv": "^17.2.3",
+        "microsoft-cognitiveservices-speech-sdk": "^1.47.0",
+        "openai": "^6.16.0",
+        "uuid": "^13.0.0"
     },
     "devDependencies": {
         "@electron-toolkit/eslint-config-prettier": "^3.0.0",
         "@electron-toolkit/eslint-config-ts": "^3.1.0",
         "@electron-toolkit/tsconfig": "^2.0.0",
-        "@types/node": "^22.19.1",
+        "@types/node": "^22.19.7",
+        "@types/uuid": "^10.0.0",
         "electron": "^39.2.6",
         "electron-builder": "^26.0.12",
         "electron-vite": "^5.0.0",
