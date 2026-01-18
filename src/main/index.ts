@@ -10,6 +10,7 @@ import { modelFlashcardParams } from './helper/modelFlashcard'
 import { readFileContent } from './helper/readFile'
 import { SpeechService } from './speech'
 import 'dotenv/config'
+import SecretManager from './store'
 
 function createWindow(): void {
     const mainWindow = new BrowserWindow({
@@ -105,6 +106,46 @@ app.whenReady().then(() => {
     electronApp.setAppUserModelId('com.youngmarco.word2card')
     app.on('browser-window-created', (_, window) => {
         optimizer.watchWindowShortcuts(window)
+    })
+
+    ipcMain.handle('save-settings', async (_, payload: { openaiKey: string; azureKey: string }) => {
+        try {
+            let s1: boolean = true
+            let s2: boolean = true
+
+            if (payload.openaiKey) {
+                s1 = SecretManager.saveSecret('openaiApiKey', payload.openaiKey.trim())
+            }
+
+            if (payload.openaiKey) {
+                s2 = SecretManager.saveSecret('azureApiKey', payload.azureKey.trim())
+            }
+
+            if (!s1 || !s2) {
+                throw new Error('Save failed')
+            }
+
+            return { status: 'success' }
+        } catch (error) {
+            return {
+                status: 'error',
+                message: error instanceof Error ? error.message : 'Unknown error occurred'
+            }
+        }
+    })
+
+    ipcMain.handle('get-secret', async () => {
+        const openaiApiKey = SecretManager.getSecret('openaiApiKey') || ''
+        const azureApiKey = SecretManager.getSecret('azureApiKey') || ''
+
+        return {
+            status: 'success',
+            message: 'Secrets retrieved successfully',
+            data: {
+                openaiApiKey,
+                azureApiKey
+            }
+        }
     })
 
     ipcMain.handle('send-import', async (_, importData: FileImport | NotionSync) => {

@@ -5,6 +5,7 @@ function init(): void {
         dropFileGetPath()
         formImport()
         formNotion()
+        formSettings()
     })
 }
 
@@ -138,6 +139,72 @@ function formNotion() {
                 alert('Import successful!')
             } else {
                 alert('Import failed: ' + result?.message)
+            }
+        })
+    }
+}
+
+function formSettings() {
+    const openaiInput = document.getElementById('openai-key-global') as HTMLInputElement
+    const azureInput = document.getElementById('azure-key-global') as HTMLInputElement
+    const btnSave = document.getElementById('btn-save-settings') as HTMLButtonElement
+
+    const loadSavedSettings = async () => {
+        try {
+            const savedData = await window.api.getSecret()
+
+            if (savedData?.data) {
+                if (savedData.data.openaiApiKey && openaiInput) {
+                    openaiInput.value = savedData.data.openaiApiKey
+                }
+                if (savedData.data.azureApiKey && azureInput) {
+                    azureInput.value = savedData.data.azureApiKey
+                }
+            }
+        } catch (error) {
+            console.error('Error loading settings:', error)
+        }
+    }
+
+    loadSavedSettings()
+
+    if (btnSave) {
+        btnSave.addEventListener('click', async (event) => {
+            event.preventDefault()
+
+            const openaiInput = document.getElementById('openai-key-global') as HTMLInputElement
+            const azureInput = document.getElementById('azure-key-global') as HTMLInputElement
+            const statusSpan = document.getElementById('save-status') as HTMLSpanElement
+
+            const openaiKey = openaiInput.value.trim()
+            const azureKey = azureInput.value.trim()
+
+            if (!openaiKey && !azureKey) {
+                alert('Please provide at least one API key to save.')
+                return
+            }
+
+            const settingsData = {
+                openaiKey,
+                azureKey
+            }
+
+            try {
+                const result = await window.api.saveSettings(settingsData)
+
+                if (result.status === 'success') {
+                    if (statusSpan) {
+                        statusSpan.style.display = 'inline'
+                        setTimeout(() => {
+                            statusSpan.style.display = 'none'
+                        }, 2000)
+                    }
+                } else {
+                    alert('Save failed' + (result.message ? ': ' + result.message : '.'))
+                }
+            } catch (error) {
+                console.error(error)
+                alert('An error occurred while saving settings.')
             }
         })
     }

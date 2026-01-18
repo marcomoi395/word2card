@@ -17,6 +17,9 @@
         >
             <div class="app-title">Word2Card</div>
             <div class="window-controls">
+                <button id="settings-btn" title="Settings" onclick="switchTab('settings')">
+                    ⚙️
+                </button>
                 <button id="minimize-btn" title="Minimize">_</button>
                 <button id="close-btn" title="Close">X</button>
             </div>
@@ -51,12 +54,6 @@
                             name="deck"
                             placeholder="Vocabulary::Reading"
                         />
-                    </div>
-                    <br />
-
-                    <div class="form-group">
-                        <label for="azure-key-import">Azure API Key</label><br />
-                        <input type="string" id="azure-key-import" name="azureKey" />
                     </div>
                     <br />
 
@@ -103,12 +100,6 @@
                     </div>
                     <br />
 
-                    <div class="form-group">
-                        <label for="azure-key-notion">Azure API Key</label><br />
-                        <input type="string" id="azure-key-notion" name="azureKey" />
-                    </div>
-                    <br />
-
                     <div
                         class="options-group"
                         style="display: flex; align-items: center; gap: 15px"
@@ -132,19 +123,58 @@
                     <button type="submit" id="btn-action-sync">Sync</button>
                 </form>
             </section>
+
+            <section id="section-settings" style="display: none">
+                <h2>Settings</h2>
+                <form id="form-settings">
+                    <div class="form-group">
+                        <label for="openai-key-global">OpenAI API Key</label><br />
+                        <input
+                            type="text"
+                            id="openai-key-global"
+                            name="openaiKeyGlobal"
+                            placeholder="sk-..."
+                            style="width: 100%"
+                        />
+                    </div>
+                    <br />
+
+                    <div class="form-group">
+                        <label for="azure-key-global">Azure API Key</label><br />
+                        <input
+                            type="text"
+                            id="azure-key-global"
+                            name="azureKeyGlobal"
+                            placeholder="Azure Speech Key..."
+                            style="width: 100%"
+                        />
+                    </div>
+                    <br />
+
+                    <button type="button" id="btn-save-settings">Save Keys</button>
+                    <span id="save-status" style="margin-left: 10px; color: green; display: none"
+                        >Saved!</span
+                    >
+                </form>
+            </section>
         </main>
         <script type="module" src="./src/renderer.ts"></script>
         <script>
             function switchTab(tabName) {
                 const importSection = document.getElementById('section-import')
                 const notionSection = document.getElementById('section-notion')
+                const settingsSection = document.getElementById('section-settings')
+
+                importSection.style.display = 'none'
+                notionSection.style.display = 'none'
+                settingsSection.style.display = 'none'
 
                 if (tabName === 'import') {
                     importSection.style.display = 'block'
-                    notionSection.style.display = 'none'
-                } else {
-                    importSection.style.display = 'none'
+                } else if (tabName === 'notion') {
                     notionSection.style.display = 'block'
+                } else if (tabName === 'settings') {
+                    settingsSection.style.display = 'block'
                 }
             }
         </script>

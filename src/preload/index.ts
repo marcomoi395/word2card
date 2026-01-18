@@ -7,6 +7,12 @@ const api = {
     },
     sendImport: (importData) => {
         return ipcRenderer.invoke('send-import', importData)
+    },
+    saveSettings: (payload) => {
+        return ipcRenderer.invoke('save-settings', payload)
+    },
+    getSecret: () => {
+        return ipcRenderer.invoke('get-secret')
     }
 }
 

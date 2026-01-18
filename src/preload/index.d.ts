@@ -29,7 +29,10 @@ export interface NotionSync {
 export interface DataResponse {
     status: string
     message?: string
-    data?: string | object
+    data?: {
+        openaiApiKey: string
+        azureApiKey: string
+    }
 }
 
 declare global {
@@ -40,6 +43,8 @@ declare global {
         api: {
             getFilePath: (file: File) => string
             sendImport: (importData: FileImport | NotionSync) => Promise<DataResponse>
+            saveSettings: (payload: object) => Promise<DataResponse>
+            getSecret: () => Promise<DataResponse>
         }
     }
 }
