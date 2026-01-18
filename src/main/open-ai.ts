@@ -1,4 +1,5 @@
 import OpenAI from 'openai'
+import State from './state'
 
 interface FlashcardResponse {
     word: string
@@ -9,21 +10,27 @@ interface FlashcardResponse {
 
 export class OpenAIService {
     private static instance: OpenAI | null = null
+    private static currentKey: string | null = null
 
     private constructor() {
         // Prevent direct instantiation
     }
 
     public static getInstance(): OpenAI {
-        if (!OpenAIService.instance) {
-            if (!process.env.OPENAI_API_KEY) {
-                throw new Error('Missing OPENAI_API_KEY in environment variables')
-            }
+        const newKey = State.getToken('openaiApiKey')
 
-            OpenAIService.instance = new OpenAI({
-                apiKey: process.env.OPENAI_API_KEY
-            })
+        if (!newKey) {
+            throw new Error('Missing OpenAI API key in state')
         }
+
+        if (!OpenAIService.instance || OpenAIService.currentKey !== newKey) {
+            OpenAIService.instance = new OpenAI({
+                apiKey: newKey
+            })
+
+            OpenAIService.currentKey = newKey
+        }
+
         return OpenAIService.instance
     }
 

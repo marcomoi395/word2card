@@ -5,7 +5,6 @@ export interface FileImport {
     payload: {
         filePath: string
         deck: string
-        azureKey?: string
         options: {
             quiz: boolean
             flashcard: boolean
@@ -18,7 +17,6 @@ export interface NotionSync {
     payload: {
         token: string
         deck: string
-        azureKey?: string
         options: {
             quiz: boolean
             flashcard: boolean
@@ -30,8 +28,8 @@ export interface DataResponse {
     status: string
     message?: string
     data?: {
-        openaiApiKey: string
-        azureApiKey: string
+        openaiApiKey?: string
+        azureApiKey?: string
     }
 }
 

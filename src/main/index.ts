@@ -11,6 +11,7 @@ import { readFileContent } from './helper/readFile'
 import { SpeechService } from './speech'
 import 'dotenv/config'
 import SecretManager from './store'
+import State, { TokenMap } from './state'
 
 function createWindow(): void {
     const mainWindow = new BrowserWindow({
@@ -102,41 +103,58 @@ const createDeckIfNotExist = async (deckName: string) => {
     })
 }
 
+const loadTokensToState = () => {
+    const tokens: TokenMap = {
+        openaiApiKey: SecretManager.getSecret('openaiApiKey') as string,
+        azureApiKey: SecretManager.getSecret('azureApiKey') as string
+    }
+
+    State.setAllTokens(tokens)
+}
+
 app.whenReady().then(() => {
     electronApp.setAppUserModelId('com.youngmarco.word2card')
     app.on('browser-window-created', (_, window) => {
         optimizer.watchWindowShortcuts(window)
     })
+    loadTokensToState()
 
-    ipcMain.handle('save-settings', async (_, payload: { openaiKey: string; azureKey: string }) => {
-        try {
-            let s1: boolean = true
-            let s2: boolean = true
+    ipcMain.handle(
+        'save-settings',
+        async (_, payload: { openaiApiKey: string; azureApiKey: string }) => {
+            try {
+                let s1: boolean = true
+                let s2: boolean = true
 
-            if (payload.openaiKey) {
-                s1 = SecretManager.saveSecret('openaiApiKey', payload.openaiKey.trim())
-            } else {
-                SecretManager.deleteSecret('openaiApiKey')
-            }
+                if (payload.openaiApiKey) {
+                    s1 = SecretManager.saveSecret('openaiApiKey', payload.openaiApiKey.trim())
+                    State.setToken('openaiApiKey', payload.openaiApiKey.trim())
+                } else {
+                    SecretManager.deleteSecret('openaiApiKey')
+                    State.removeToken('openaiApiKey')
+                }
 
-            if (payload.openaiKey) {
-                s2 = SecretManager.saveSecret('azureApiKey', payload.azureKey.trim())
-            } else {
-                SecretManager.deleteSecret('azureApiKey')
-            }
+                if (payload.azureApiKey) {
+                    s2 = SecretManager.saveSecret('azureApiKey', payload.azureApiKey.trim())
+                    State.setToken('azureApiKey', payload.azureApiKey.trim())
+                } else {
+                    SecretManager.deleteSecret('azureApiKey')
+                    State.removeToken('azureApiKey')
+                }
 
-            if (!s1 || !s2) {
-                throw new Error('Save failed')
-            }
+                if (!s1 || !s2) {
+                    throw new Error('Save failed')
+                }
 
-            return { status: 'success' }
-        } catch (error) {
-            return {
-                status: 'error',
-                message: error instanceof Error ? error.message : 'Unknown error occurred'
+                return { status: 'success' }
+            } catch (error) {
+                return {
+                    status: 'error',
+                    message: error instanceof Error ? error.message : 'Unknown error occurred'
+                }
             }
         }
-    })
+    )
 
     ipcMain.handle('get-secret', async () => {
         const openaiApiKey = SecretManager.getSecret('openaiApiKey') || ''
@@ -153,6 +171,16 @@ app.whenReady().then(() => {
     })
 
     ipcMain.handle('send-import', async (_, importData: FileImport | NotionSync) => {
+        // Check openaiApiKey
+        State.getMissingTokens(['openaiApiKey'])
+
+        if (State.getMissingTokens(['openaiApiKey']).includes('openaiApiKey')) {
+            return {
+                status: 'error',
+                message: 'OpenAI API key is missing. Please set it in the settings.'
+            }
+        }
+
         if ((await checkAnkiConnect()) === false) {
             return {
                 status: 'error',
@@ -186,7 +214,8 @@ app.whenReady().then(() => {
         }
 
         let isAudio: boolean = false
-        if (importData.payload.azureKey) {
+        const isAzureKey = SecretManager.getSecret('azureApiKey')
+        if (isAzureKey) {
             isAudio = true
             const result = await SpeechService.createSpeechFiles(words, audioDir)
             if (result.length !== words.length) {
