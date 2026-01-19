@@ -119,7 +119,8 @@ const createDeckIfNotExist = async (deckName: string) => {
 const loadTokensToState = () => {
     const tokens: TokenMap = {
         openaiApiKey: SecretManager.getSecret('openaiApiKey') as string,
-        azureApiKey: SecretManager.getSecret('azureApiKey') as string
+        azureApiKey: SecretManager.getSecret('azureApiKey') as string,
+        unsplashAccessKey: SecretManager.getSecret('unsplashAccessKey') as string
     }
 
     State.setAllTokens(tokens)
@@ -147,10 +148,14 @@ app.whenReady().then(() => {
 
     ipcMain.handle(
         'save-settings',
-        async (_, payload: { openaiApiKey: string; azureApiKey: string }) => {
+        async (
+            _,
+            payload: { openaiApiKey: string; azureApiKey: string; unsplashAccessKey: string }
+        ) => {
             try {
                 let s1: boolean = true
                 let s2: boolean = true
+                let s3: boolean = true
 
                 if (payload.openaiApiKey) {
                     s1 = SecretManager.saveSecret('openaiApiKey', payload.openaiApiKey.trim())
@@ -168,7 +173,18 @@ app.whenReady().then(() => {
                     State.removeToken('azureApiKey')
                 }
 
-                if (!s1 || !s2) {
+                if (payload.unsplashAccessKey) {
+                    s3 = SecretManager.saveSecret(
+                        'unsplashAccessKey',
+                        payload.unsplashAccessKey.trim()
+                    )
+                    State.setToken('unsplashAccessKey', payload.unsplashAccessKey.trim())
+                } else {
+                    SecretManager.deleteSecret('unsplashAccessKey')
+                    State.removeToken('unsplashAccessKey')
+                }
+
+                if (!s1 || !s2 || !s3) {
                     throw new Error('Save failed')
                 }
 
@@ -185,13 +201,15 @@ app.whenReady().then(() => {
     ipcMain.handle('get-secret', async () => {
         const openaiApiKey = SecretManager.getSecret('openaiApiKey') || ''
         const azureApiKey = SecretManager.getSecret('azureApiKey') || ''
+        const unsplashAccessKey = SecretManager.getSecret('unsplashAccessKey') || ''
 
         return {
             status: 'success',
             message: 'Secrets retrieved successfully',
             data: {
                 openaiApiKey,
-                azureApiKey
+                azureApiKey,
+                unsplashAccessKey
             }
         }
     })
@@ -261,7 +279,7 @@ app.whenReady().then(() => {
         const notes: QuizNote[] = []
 
         if (importData.payload.options.flashcard) {
-            const newNotes: QuizNote[] = await createFlashcards(
+            const newNotes = await createFlashcards(
                 words,
                 audioDir,
                 importData.payload.deck,

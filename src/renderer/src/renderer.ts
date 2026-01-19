@@ -155,6 +155,7 @@ function formNotion() {
 function formSettings() {
     const openaiInput = document.getElementById('openai-key-global') as HTMLInputElement
     const azureInput = document.getElementById('azure-key-global') as HTMLInputElement
+    const unsplashInput = document.getElementById('unsplash-access-key-global') as HTMLInputElement
     const btnSave = document.getElementById('btn-save-settings') as HTMLButtonElement
 
     const loadSavedSettings = async () => {
@@ -168,6 +169,9 @@ function formSettings() {
                 if (savedData.data.azureApiKey && azureInput) {
                     azureInput.value = savedData.data.azureApiKey
                 }
+                if (savedData.data.unsplashAccessKey && unsplashInput) {
+                    unsplashInput.value = savedData.data.unsplashAccessKey
+                }
             }
         } catch (error) {
             console.error('Error loading settings:', error)
@@ -180,16 +184,16 @@ function formSettings() {
         btnSave.addEventListener('click', async (event) => {
             event.preventDefault()
 
-            const openaiInput = document.getElementById('openai-key-global') as HTMLInputElement
-            const azureInput = document.getElementById('azure-key-global') as HTMLInputElement
             const statusSpan = document.getElementById('save-status') as HTMLSpanElement
 
             const openaiApiKey = openaiInput.value.trim()
             const azureApiKey = azureInput.value.trim()
+            const unsplashAccessKey = unsplashInput.value.trim()
 
             const settingsData = {
                 openaiApiKey,
-                azureApiKey
+                azureApiKey,
+                unsplashAccessKey
             }
 
             try {

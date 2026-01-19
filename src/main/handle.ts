@@ -1,5 +1,7 @@
 import { OpenAIService } from './open-ai'
 import { v4 as uuidv4 } from 'uuid'
+import State from './state'
+import { searchImageUnsplash } from './unsplash'
 
 interface Flashcard {
     id: string
@@ -31,32 +33,40 @@ export const createFlashcards = async (
     audioDir: string,
     deckName: string,
     isAudio: boolean
-) => {
+): Promise<QuizNote[]> => {
     const dataFromOpenAI = await OpenAIService.generateFlashcardData(words)
+    const unsplashAccessKey = State.getToken('unsplashAccessKey')
 
-    const notes: QuizNote[] = dataFromOpenAI.map((item) => {
-        return {
-            deckName,
-            modelName: 'AnkiVNModel_Flashcard',
-            fields: {
-                ...item,
-                id: uuidv4(),
-                image: ''
-            },
-            options: {
-                allowDuplicate: false
-            },
-            audio: isAudio
-                ? [
-                      {
-                          path: `${audioDir}/${item.word}.mp3`,
-                          filename: `${item.word}.mp3`,
-                          fields: ['audio_word']
-                      }
-                  ]
-                : []
-        }
-    })
+    const notes = await Promise.all(
+        dataFromOpenAI.map(async (item) => {
+            let image: string | undefined
+            if (unsplashAccessKey) {
+                image = (await searchImageUnsplash(unsplashAccessKey, item.word)) || ''
+            }
+
+            return {
+                deckName,
+                modelName: 'AnkiVNModel_Flashcard',
+                fields: {
+                    ...item,
+                    id: uuidv4(),
+                    image
+                },
+                options: {
+                    allowDuplicate: false
+                },
+                audio: isAudio
+                    ? [
+                          {
+                              path: `${audioDir}/${item.word}.mp3`,
+                              filename: `${item.word}.mp3`,
+                              fields: ['audio_word']
+                          }
+                      ]
+                    : []
+            }
+        })
+    )
 
     return notes
 }
