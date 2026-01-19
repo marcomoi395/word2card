@@ -5,6 +5,9 @@ const api = {
     getFilePath: (file) => {
         return webUtils.getPathForFile(file)
     },
+    openFileDialog: () => {
+        return ipcRenderer.invoke('open-file-dialog')
+    },
     sendImport: (importData) => {
         return ipcRenderer.invoke('send-import', importData)
     },

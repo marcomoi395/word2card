@@ -3,6 +3,7 @@ import { FileImport, NotionSync } from '../../preload/index.d'
 function init(): void {
     window.addEventListener('DOMContentLoaded', () => {
         dropFileGetPath()
+        openFileDialog()
         formImport()
         formNotion()
         formSettings()
@@ -34,6 +35,19 @@ function dropFileGetPath(): void {
             }
         }
     })
+}
+
+function openFileDialog() {
+    const sourceFileInput = document.getElementById('source-file') as HTMLInputElement
+    if (sourceFileInput) {
+        sourceFileInput.addEventListener('click', async () => {
+            const result = await window.api.openFileDialog()
+
+            if (result.filePath) {
+                sourceFileInput.value = result.filePath
+            }
+        })
+    }
 }
 
 function formImport() {

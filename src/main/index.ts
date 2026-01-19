@@ -1,5 +1,5 @@
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import fs from 'fs'
 import path, { join } from 'path'
 import icon from '../../resources/icon.png?asset'
@@ -118,6 +118,19 @@ app.whenReady().then(() => {
         optimizer.watchWindowShortcuts(window)
     })
     loadTokensToState()
+
+    ipcMain.handle('open-file-dialog', async () => {
+        const { filePaths } = await dialog.showOpenDialog({
+            properties: ['openFile'],
+            filters: [{ name: 'Text Files', extensions: ['txt'] }]
+        })
+
+        if (filePaths.length > 0) {
+            const content = fs.readFileSync(filePaths[0], 'utf8')
+            return { content, filePath: filePaths[0] }
+        }
+        return { content: null, filePath: null }
+    })
 
     ipcMain.handle(
         'save-settings',

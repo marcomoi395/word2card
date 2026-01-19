@@ -33,6 +33,11 @@ export interface DataResponse {
     }
 }
 
+interface OpenFileResponse {
+    content: string | null
+    filePath: string | null
+}
+
 declare global {
     interface Window {
         electron: ElectronAPI & {
@@ -40,6 +45,7 @@ declare global {
         }
         api: {
             getFilePath: (file: File) => string
+            openFileDialog: () => Promise<OpenFileResponse>
             sendImport: (importData: FileImport | NotionSync) => Promise<DataResponse>
             saveSettings: (payload: object) => Promise<DataResponse>
             getSecret: () => Promise<DataResponse>
