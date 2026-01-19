@@ -46,6 +46,7 @@ declare global {
         api: {
             getFilePath: (file: File) => string
             openFileDialog: () => Promise<OpenFileResponse>
+            platform: string
             sendImport: (importData: FileImport | NotionSync) => Promise<DataResponse>
             saveSettings: (payload: object) => Promise<DataResponse>
             getSecret: () => Promise<DataResponse>

@@ -17,6 +17,7 @@ function createWindow(): void {
     const mainWindow = new BrowserWindow({
         width: 900,
         height: 670,
+        frame: false,
         show: false,
         autoHideMenuBar: true,
         ...(process.platform === 'linux' ? { icon } : {}),
@@ -35,6 +36,15 @@ function createWindow(): void {
         shell.openExternal(details.url)
         return { action: 'deny' }
     })
+    mainWindow.loadFile('index.html')
+
+    ipcMain.on('window-minimize', () => {
+        mainWindow.minimize()
+    })
+
+    ipcMain.on('window-close', () => {
+        mainWindow.close()
+    })
 
     if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
         mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
@@ -43,7 +53,7 @@ function createWindow(): void {
     }
 }
 
-const init = async (audioDir: string) => {
+const init = async (audioDir: string): Promise<void | { status: string; message: string }> => {
     // Check audio folder
     if (!fs.existsSync(audioDir)) {
         try {

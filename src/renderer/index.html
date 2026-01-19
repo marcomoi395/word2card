@@ -160,6 +160,27 @@
         </main>
         <script type="module" src="./src/renderer.ts"></script>
         <script>
+            const platform = window.api.platform
+            const minimizeBtn = document.getElementById('minimize-btn')
+            if (minimizeBtn) {
+                minimizeBtn.addEventListener('click', () => {
+                    window.api.minimize()
+                })
+            }
+
+            if (platform === 'linux') {
+                if (minimizeBtn) {
+                    minimizeBtn.style.display = 'none'
+                }
+            }
+
+            const closeBtn = document.getElementById('close-btn')
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    window.api.close()
+                })
+            }
+
             function switchTab(tabName) {
                 const importSection = document.getElementById('section-import')
                 const notionSection = document.getElementById('section-notion')

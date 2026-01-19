@@ -2,6 +2,9 @@ import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
 const api = {
+    minimize: () => ipcRenderer.send('window-minimize'),
+    close: () => ipcRenderer.send('window-close'),
+    platform: process.platform,
     getFilePath: (file) => {
         return webUtils.getPathForFile(file)
     },
