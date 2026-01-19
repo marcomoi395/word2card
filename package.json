@@ -1,5 +1,5 @@
 {
-    "name": "v2_temp",
+    "name": "word2card",
     "version": "1.0.0",
     "productName": "Word2Card",
     "description": "A minimal Electron application with TypeScript",
