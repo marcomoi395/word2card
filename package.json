@@ -28,7 +28,8 @@
         "electron-store": "^6.0.1",
         "microsoft-cognitiveservices-speech-sdk": "^1.47.0",
         "openai": "^6.16.0",
-        "uuid": "^13.0.0"
+        "uuid": "^13.0.0",
+        "vite-plugin-static-copy": "^3.1.4"
     },
     "devDependencies": {
         "@electron-toolkit/eslint-config-prettier": "^3.0.0",

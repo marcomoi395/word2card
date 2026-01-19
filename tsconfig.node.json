@@ -1,8 +1,10 @@
 {
   "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
   "include": ["electron.vite.config.*", "src/main/**/*", "src/preload/**/*"],
+  "exclude": ["src/preload/index.d.ts"],
   "compilerOptions": {
     "composite": true,
+    "resolveJsonModule": true,
     "types": ["electron-vite/node"]
   }
 }
