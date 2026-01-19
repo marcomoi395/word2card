@@ -6,12 +6,12 @@ import icon from '../../resources/icon.png?asset'
 import type { FileImport, NotionSync } from '../preload/index.d'
 import { checkAnkiConnect, sendRequest } from './anki-connect'
 import { createFlashcards, QuizNote } from './handle'
-import { modelFlashcardParams } from './helper/modelFlashcard'
 import { readFileContent } from './helper/readFile'
 import { SpeechService } from './speech'
 import 'dotenv/config'
 import SecretManager from './store'
 import State, { TokenMap } from './state'
+import { ModelFlashcard } from './helper/model-flashcard.interface'
 
 function createWindow(): void {
     const mainWindow = new BrowserWindow({
@@ -77,6 +77,9 @@ const init = async (audioDir: string): Promise<void | { status: string; message:
     if (modelsResponse.result !== null) {
         models = modelsResponse.result.map((i) => i.name)
     }
+
+    const rawData = fs.readFileSync(path.join(__dirname, './helper/model-flashcard.json'), 'utf-8')
+    const modelFlashcardParams = JSON.parse(rawData) as ModelFlashcard
 
     if (models.indexOf('AnkiVNModel_Flashcard') === -1) {
         try {
