@@ -1,4 +1,5 @@
 import * as sdk from 'microsoft-cognitiveservices-speech-sdk'
+import * as fs from 'fs'
 import path from 'path'
 import State from './state'
 
@@ -109,6 +110,12 @@ export class SpeechService {
 
         for (const item of words) {
             const filename = `${item}.mp3`
+            const fullPath = path.join(outputDir, filename)
+
+            if (fs.existsSync(fullPath)) {
+                results.push(Promise.resolve(fullPath))
+                continue
+            }
             const p = speechService.synthesizeWithRetry(item, filename, outputDir)
             results.push(p)
 
