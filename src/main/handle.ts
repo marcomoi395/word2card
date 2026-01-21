@@ -28,6 +28,17 @@ export interface QuizNote {
     }[]
 }
 
+const clozeWord = (word: string): string => {
+    if (word.length <= 2) {
+        return '_'.repeat(word.length)
+    }
+
+    const firstChar = word.charAt(0)
+    const lastChar = word.charAt(word.length - 1)
+    const middle = '_'.repeat(word.length - 2)
+    return firstChar + middle + lastChar
+}
+
 export const createFlashcards = async (
     words: string[],
     audioDir: string,
@@ -44,13 +55,16 @@ export const createFlashcards = async (
                 image = (await searchImageUnsplash(unsplashAccessKey, item.word)) || ''
             }
 
+            const cloze = clozeWord(item.word)
+
             return {
                 deckName,
                 modelName: 'AnkiVNModel_Flashcard',
                 fields: {
                     ...item,
                     id: uuidv4(),
-                    image
+                    image,
+                    cloze
                 },
                 options: {
                     allowDuplicate: false
