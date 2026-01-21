@@ -6,12 +6,12 @@ import icon from '../../resources/icon.png?asset'
 import type { FileImport, NotionSync } from '../preload/index.d'
 import { checkAnkiConnect, sendRequest } from './anki-connect'
 import { createFlashcards, QuizNote } from './handle'
+import { filterExistingWords } from './helper/filter-existing-words'
+import { ModelFlashcard } from './helper/model-flashcard.interface'
 import { readFileContent } from './helper/readFile'
 import { SpeechService } from './speech'
-import 'dotenv/config'
-import SecretManager from './store'
 import State, { TokenMap } from './state'
-import { ModelFlashcard } from './helper/model-flashcard.interface'
+import SecretManager from './store'
 
 function createWindow(): void {
     const mainWindow = new BrowserWindow({
@@ -241,9 +241,15 @@ app.whenReady().then(() => {
 
         let words: string[] | null = []
         switch (importData.type) {
-            case 'FILE_IMPORT':
-                words = await readFileContent(importData.payload.filePath)
+            case 'FILE_IMPORT': {
+                const rawData: string[] | null = await readFileContent(importData.payload.filePath)
+                if (rawData === null) {
+                    break
+                }
+
+                words = await filterExistingWords(rawData)
                 break
+            }
 
             case 'NOTION_SYNC':
                 break
