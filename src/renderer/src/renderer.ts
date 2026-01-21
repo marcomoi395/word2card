@@ -198,9 +198,9 @@ function formSettings() {
                 const result = await window.api.saveSettings(settingsData)
 
                 if (result.status === 'success') {
-                    // Settings saved successfully
+                    alert('Saved!!')
                 } else {
-                    // Handle error in saving settings
+                    alert('Failed to save settings: ' + result.message)
                 }
             } catch (error) {
                 console.error(error)
