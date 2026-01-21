@@ -15,10 +15,11 @@ import { ModelFlashcard } from './helper/model-flashcard.interface'
 
 function createWindow(): void {
     const mainWindow = new BrowserWindow({
-        width: 900,
-        height: 670,
+        width: 400,
+        height: 600,
         frame: false,
         show: false,
+        resizable: false,
         autoHideMenuBar: true,
         ...(process.platform === 'linux' ? { icon } : {}),
         webPreferences: {
@@ -27,7 +28,7 @@ function createWindow(): void {
         }
     })
 
-    mainWindow.webContents.openDevTools()
+    // mainWindow.webContents.openDevTools()
     mainWindow.on('ready-to-show', () => {
         mainWindow.show()
     })

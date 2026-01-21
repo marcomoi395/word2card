@@ -184,8 +184,6 @@ function formSettings() {
         btnSave.addEventListener('click', async (event) => {
             event.preventDefault()
 
-            const statusSpan = document.getElementById('save-status') as HTMLSpanElement
-
             const openaiApiKey = openaiInput.value.trim()
             const azureApiKey = azureInput.value.trim()
             const unsplashAccessKey = unsplashInput.value.trim()
@@ -200,14 +198,9 @@ function formSettings() {
                 const result = await window.api.saveSettings(settingsData)
 
                 if (result.status === 'success') {
-                    if (statusSpan) {
-                        statusSpan.style.display = 'inline'
-                        setTimeout(() => {
-                            statusSpan.style.display = 'none'
-                        }, 2000)
-                    }
+                    // Settings saved successfully
                 } else {
-                    alert('Save failed' + (result.message ? ': ' + result.message : '.'))
+                    // Handle error in saving settings
                 }
             } catch (error) {
                 console.error(error)

@@ -1,0 +1,430 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Nunito', sans-serif;
+    background-color: #fffbb1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    border-radius: 24px;
+}
+
+header {
+    height: 64px;
+}
+
+.window-controls {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    gap: 12px;
+    position: absolute;
+    top: 12px;
+    right: 12px;
+}
+
+.btn {
+    height: 40px;
+    width: 40px;
+    border-radius: 12px;
+    border: none;
+    background-color: #d8e983;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow:
+        0px 0px 5px rgba(0, 0, 0, 0.2),
+        inset 0px 0px 16px rgba(0, 0, 0, 0.25);
+}
+
+.btn i {
+    color: #384230;
+    font-size: 20px;
+}
+
+.minus-icon {
+    position: relative;
+    top: 5px;
+}
+
+@keyframes bounce-cute {
+    0%,
+    100% {
+        transform: scale(1);
+    }
+    40% {
+        transform: scale(1.25);
+    }
+    70% {
+        transform: scale(0.9);
+    }
+}
+
+.btn:hover i {
+    animation: bounce-cute 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    color: #000;
+}
+
+.btn:hover {
+    animation: bounce-cute 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    color: #000;
+}
+
+.btn:hover {
+    background-color: #d8e983;
+    box-shadow:
+        0px 0px 5px rgba(0, 0, 0, 0.7),
+        inset 0px 0px 16px rgba(0, 0, 0, 0.25);
+}
+
+.btn:active i {
+    animation: bounce-cute 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.app-title {
+    font-size: 48px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 900;
+    color: #384230;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 60px;
+    transition: all 0.3s ease;
+    cursor: default;
+}
+
+.app-title:hover {
+    animation: bounce-text-cute 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    color: rgb(56, 66, 48, 0.8);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes bounce-text-cute {
+    0%,
+    100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    75% {
+        transform: scale(0.95);
+    }
+}
+
+main {
+    padding: 0 40px;
+}
+
+nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 10px;
+}
+
+nav button {
+    font-size: 20px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 900;
+    color: #384230;
+    width: 140px;
+    height: 40px;
+    border-radius: 12px;
+    border: none;
+    background-color: #a5c89e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow:
+        0px 0px 5px rgba(0, 0, 0, 0.2),
+        inset 0px 0px 16px rgba(0, 0, 0, 0.25);
+}
+
+nav button:hover {
+    transform: translateY(-3px) rotate(-2deg); /* Nhảy lên và nghiêng nhẹ */
+    background-color: #bce0b5;
+    box-shadow:
+        0px 5px 10px rgba(0, 0, 0, 0.15),
+        inset 0px 0px 10px rgba(255, 255, 255, 0.3);
+}
+
+nav button:active {
+    transform: scale(0.95);
+}
+
+#form-import,
+#form-notion,
+#form-settings {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 30px 10px;
+}
+
+.form-group input {
+    font-size: 13px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 600;
+    color: #384230;
+    padding: 0 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    border: none;
+    height: 36px;
+    width: 100%;
+    border-radius: 14px;
+    background-color: #d8e983;
+    box-shadow:
+        0px 0px 5px rgba(0, 0, 0, 0.2),
+        inset 0px 0px 16px rgba(0, 0, 0, 0.25);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.form-group input::placeholder {
+    font-size: 13px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 600;
+    color: #384230;
+}
+
+.form-group input:hover {
+    background-color: #eaf5a8;
+}
+
+.form-group input:focus {
+    outline: none;
+    background-color: #fff;
+    transform: scale(1.02) translateY(-2px);
+    box-shadow:
+        0px 8px 16px rgba(56, 66, 48, 0.15),
+        inset 0px 0px 0px transparent; /* Xóa shadow lõm khi focus */
+    border: 2px solid #a5c89e;
+}
+
+.options-group {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: left;
+    gap: 24px;
+}
+
+.flashcard-option,
+.quiz-option {
+    display: flex;
+    align-items: center;
+    justify-content: left;
+    gap: 8px;
+}
+
+.options-group input[type='checkbox'] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    background-color: #aeb877;
+    border-radius: 50%;
+    cursor: pointer;
+    position: relative;
+    box-shadow:
+        0px 0px 5px rgba(0, 0, 0, 0.2),
+        inset 0px 0px 16px rgba(0, 0, 0, 0.25);
+    transition: all 0.2s ease;
+}
+
+@keyframes jelly {
+    0% {
+        transform: scale(1);
+    }
+    30% {
+        transform: scale(1.25, 0.75);
+    }
+    40% {
+        transform: scale(0.75, 1.25);
+    }
+    50% {
+        transform: scale(1.15, 0.85);
+    }
+    65% {
+        transform: scale(0.95, 1.05);
+    }
+    75% {
+        transform: scale(1.05, 0.95);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.options-group input[type='checkbox']:checked {
+    animation: jelly 0.6s ease;
+    background-color: #aeb877;
+}
+
+.options-group input[type='checkbox']:checked::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    background-color: #384230;
+    border-radius: 50%;
+    width: 10px;
+    height: 10px;
+    box-shadow: 0 0 4px rgba(216, 233, 131, 0.8);
+}
+
+.options-group label {
+    font-size: 13px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 600;
+    color: #384230;
+}
+
+.submit-btn {
+    margin-top: 20px;
+    font-size: 20px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 900;
+    color: #384230;
+    width: 100%;
+    height: 40px;
+    border-radius: 12px;
+    border: none;
+    background-color: #a5c89e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow:
+        0px 0px 5px rgba(0, 0, 0, 0.2),
+        inset 0px 0px 16px rgba(0, 0, 0, 0.25);
+}
+
+.submit-btn:hover {
+    animation: bounce-cute 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    background-color: #92b98a;
+    box-shadow:
+        0px 8px 20px rgba(56, 66, 48, 0.25),
+        inset 0px 0px 20px rgba(255, 255, 255, 0.2);
+}
+
+.submit-btn:active {
+    transform: scale(0.9) !important; /* Thu nhỏ mạnh khi ấn */
+    animation: none;
+}
+
+@keyframes pop-in-cute {
+    0% {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+    60% {
+        opacity: 1;
+        transform: scale(1.02);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+#section-import,
+#section-notion,
+#section-settings {
+    display: none;
+}
+
+.active-btn {
+    background-color: #d8e983;
+    transform: translateY(2px);
+    border: 2px solid #384230;
+}
+
+.active-section {
+    display: block !important;
+    animation: pop-in-cute 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+#save-status {
+    display: none;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    vertical-align: middle;
+}
+
+.status-success {
+    color: #384230;
+}
+
+.status-error {
+    color: #8a3c18;
+}
+
+.status-visible {
+    display: inline-block !important;
+    animation: pop-in-status 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+@keyframes pop-in-status {
+    0% {
+        opacity: 0;
+        transform: scale(0.5) translateX(-10px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateX(0);
+    }
+}
+
+#bg-mascot {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    transition: background-image 0.2s ease-in-out;
+}
+
+header,
+main,
+nav {
+    position: relative;
+    z-index: 1;
+}
+
+.bg-import {
+    top: 20px;
+    left: 0;
+    background-image: url('./assets/background-image/image 1.png');
+}
+
+.bg-notion {
+    top: 20px;
+    left: 0;
+    background-image: url('./assets/background-image/image 1-1.png');
+}
+
+.bg-settings {
+    background-image: url('./assets/background-image/image 1-2.png');
+}
