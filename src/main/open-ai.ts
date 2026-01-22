@@ -6,6 +6,7 @@ interface FlashcardResponse {
     pos: string
     vietnamese: string
     ipa: string
+    example: string
 }
 
 export class OpenAIService {
@@ -49,6 +50,7 @@ export class OpenAIService {
             "pos": "Part of speech (e.g., noun, verb, adj)",
             "vietnamese": "The most common Vietnamese meaning (short, concise)",
             "ipa": "IPA pronunciation (American English)"
+            "example": "An example sentence using the word"
             }
 
             ### Example Interaction
@@ -57,16 +59,18 @@ export class OpenAIService {
                 {
                 "data": [
                     {
-                    "word": "apple",
-                    "pos": "noun",
-                    "vietnamese": "quả táo",
-                    "ipa": "ˈæp.əl"
+                        "word": "apple",
+                        "pos": "noun",
+                        "vietnamese": "quả táo",
+                        "ipa": "ˈæp.əl"
+                        "example": "I ate an apple for breakfast."
                     },
                     {
-                    "word": "run",
-                    "pos": "verb",
-                    "vietnamese": "chạy",
-                    "ipa": "rʌn"
+                        "word": "run",
+                        "pos": "verb",
+                        "vietnamese": "chạy",
+                        "ipa": "rʌn"
+                        "example": "I run every morning to stay fit."
                     }
                 ]
                 }
