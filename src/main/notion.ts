@@ -49,8 +49,16 @@ export class NotionService {
             throw new Error('No data source found for the given database ID')
         }
 
-        return await notion.dataSources.query({
-            data_source_id: dataSourceId
+        const result = await notion.dataSources.query({
+            data_source_id: dataSourceId,
+            filter: {
+                property: 'isSync',
+                checkbox: {
+                    equals: false
+                }
+            }
         })
+
+        return result.results
     }
 }

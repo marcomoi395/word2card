@@ -12,6 +12,9 @@ import { readFileContent } from './helper/readFile'
 import { SpeechService } from './speech'
 import State, { TokenMap } from './state'
 import SecretManager from './store'
+import { NotionService } from './notion'
+import { getWordsFromResponse } from './helper/get-words-from-notion-response'
+import { PageObjectResponse } from '@notionhq/client'
 
 function createWindow(): void {
     const mainWindow = new BrowserWindow({
@@ -263,8 +266,13 @@ app.whenReady().then(() => {
                 break
             }
 
-            case 'NOTION_SYNC':
+            case 'NOTION_SYNC': {
+                const pages = (await NotionService.getPages(
+                    importData.payload.databseId
+                )) as PageObjectResponse[]
+                words = getWordsFromResponse(pages)
                 break
+            }
             default:
                 console.error('Unknown import data type')
         }
