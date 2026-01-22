@@ -1,7 +1,7 @@
 import OpenAI from 'openai'
 import State from './state'
 
-interface FlashcardResponse {
+export interface FlashcardResponse {
     word: string
     pos: string
     vietnamese: string

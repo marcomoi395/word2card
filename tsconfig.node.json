@@ -5,6 +5,8 @@
   "compilerOptions": {
     "composite": true,
     "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "types": ["electron-vite/node"]
   }
 }

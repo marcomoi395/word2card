@@ -9,12 +9,12 @@ import { createFlashcards, QuizNote } from './handle'
 import { filterExistingWords } from './helper/filter-existing-words'
 import { ModelFlashcard } from './helper/model-flashcard.interface'
 import { readFileContent } from './helper/readFile'
-import { SpeechService } from './speech'
 import State, { TokenMap } from './state'
 import SecretManager from './store'
 import { NotionService } from './notion'
 import { getWordsFromResponse } from './helper/get-words-from-notion-response'
 import { PageObjectResponse } from '@notionhq/client'
+import { SpeechService } from './speech'
 
 function createWindow(): void {
     const mainWindow = new BrowserWindow({
@@ -269,6 +269,8 @@ app.whenReady().then(() => {
             case 'NOTION_SYNC': {
                 try {
                     State.setToken('notionToken', importData.payload.token)
+                    State.setToken('notionDatabaseId', importData.payload.databseId)
+
                     const pages = (await NotionService.getPages(
                         importData.payload.databseId
                     )) as PageObjectResponse[]
@@ -279,7 +281,8 @@ app.whenReady().then(() => {
                             message: 'No pages found in the Notion database.'
                         }
                     }
-                    words = getWordsFromResponse(pages)
+
+                    words = await filterExistingWords(getWordsFromResponse(pages))
                     break
                 } catch (error) {
                     const message =
@@ -308,7 +311,7 @@ app.whenReady().then(() => {
         }
 
         let isAudio: boolean = false
-        const isAzureKey = SecretManager.getSecret('azureApiKey')
+        const isAzureKey = State.getToken('azureApiKey')
         if (isAzureKey) {
             isAudio = true
             const result = await SpeechService.createSpeechFiles(words, audioDir)
@@ -333,7 +336,8 @@ app.whenReady().then(() => {
                 words,
                 audioDir,
                 importData.payload.deck,
-                isAudio
+                isAudio,
+                importData.type
             )
             notes.push(...newNotes)
         }

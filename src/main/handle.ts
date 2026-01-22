@@ -1,7 +1,8 @@
-import { OpenAIService } from './open-ai'
 import { v4 as uuidv4 } from 'uuid'
 import State from './state'
 import { searchImageUnsplash } from './unsplash'
+import { NotionService } from './notion'
+import { OpenAIService } from './open-ai'
 
 interface Flashcard {
     id: string
@@ -43,9 +44,15 @@ export const createFlashcards = async (
     words: string[],
     audioDir: string,
     deckName: string,
-    isAudio: boolean
+    isAudio: boolean,
+    type: string
 ): Promise<QuizNote[]> => {
     const dataFromOpenAI = await OpenAIService.generateFlashcardData(words)
+    // Save data to Notion if needed
+    if (type === 'NOTION_SYNC') {
+        const notionDatabaseId = State.getToken('notionDatabaseId') || ''
+        await NotionService.updatePages(notionDatabaseId, dataFromOpenAI)
+    }
     const unsplashAccessKey = State.getToken('unsplashAccessKey')
 
     const notes = await Promise.all(
