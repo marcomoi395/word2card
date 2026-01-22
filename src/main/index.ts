@@ -267,9 +267,11 @@ app.whenReady().then(() => {
             }
 
             case 'NOTION_SYNC': {
-                const pages = (await NotionService.getPages(
-                    importData.payload.databseId
-                )) as PageObjectResponse[]
+                try {
+                    State.setToken('notionToken', importData.payload.token)
+                    const pages = (await NotionService.getPages(
+                        importData.payload.databseId
+                    )) as PageObjectResponse[]
 
                 if (pages.length === 0) {
                     return {
