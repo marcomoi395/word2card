@@ -12,7 +12,7 @@ files:
 asarUnpack:
     - resources/**
 win:
-    executableName: v2_temp
+    executableName: word2card
 nsis:
     artifactName: ${name}-${version}-setup.${ext}
     shortcutName: ${productName}
