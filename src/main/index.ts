@@ -270,6 +270,13 @@ app.whenReady().then(() => {
                 const pages = (await NotionService.getPages(
                     importData.payload.databseId
                 )) as PageObjectResponse[]
+
+                if (pages.length === 0) {
+                    return {
+                        status: 'error',
+                        message: 'No pages found in the Notion database.'
+                    }
+                }
                 words = getWordsFromResponse(pages)
                 break
             }
