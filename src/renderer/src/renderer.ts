@@ -10,6 +10,24 @@ function init(): void {
     })
 }
 
+function setButtonLoading(
+    btn: HTMLButtonElement | null,
+    isLoading: boolean,
+    loadingText = 'Processing...'
+) {
+    if (!btn) {
+        return
+    }
+    if (isLoading) {
+        btn.dataset.originalText = btn.innerText // Lưu text cũ
+        btn.innerText = loadingText
+        btn.disabled = true
+    } else {
+        btn.innerText = btn.dataset.originalText || 'Submit' // Trả lại text cũ
+        btn.disabled = false
+    }
+}
+
 function dropFileGetPath(): void {
     const dropZone = document.body
 
@@ -57,6 +75,12 @@ function formImport() {
         formImport.addEventListener('submit', async (event) => {
             event.preventDefault()
 
+            const btnSubmit = formImport.querySelector('button[type="submit"]') as HTMLButtonElement
+
+            if (btnSubmit && btnSubmit.disabled) {
+                return
+            }
+
             const sourceFileInput = document.getElementById('source-file') as HTMLInputElement
             const deckInput = document.getElementById('deck') as HTMLInputElement
             const chkQuiz = document.getElementById('chk-quiz-import') as HTMLInputElement
@@ -78,24 +102,33 @@ function formImport() {
                 return
             }
 
-            const importData: FileImport = {
-                type: 'FILE_IMPORT',
-                payload: {
-                    filePath: sourceFile,
-                    deck,
-                    options: {
-                        quiz: isQuiz,
-                        flashcard: isFlashcard
+            setButtonLoading(btnSubmit, true, 'Importing...')
+
+            try {
+                const importData: FileImport = {
+                    type: 'FILE_IMPORT',
+                    payload: {
+                        filePath: sourceFile,
+                        deck,
+                        options: {
+                            quiz: isQuiz,
+                            flashcard: isFlashcard
+                        }
                     }
                 }
-            }
 
-            const result = await window.api.sendImport(importData)
+                const result = await window.api.sendImport(importData)
 
-            if (result?.status === 'success') {
-                alert('Import successful!')
-            } else {
-                alert('Import failed: ' + result?.message)
+                if (result?.status === 'success') {
+                    alert('Import successful!')
+                } else {
+                    alert('Import failed: ' + result?.message)
+                }
+            } catch (error) {
+                console.error(error)
+                alert('An error occurred during import.')
+            } finally {
+                setButtonLoading(btnSubmit, false)
             }
         })
     }
@@ -107,6 +140,11 @@ function formNotion() {
     if (formNotion) {
         formNotion.addEventListener('submit', async (event) => {
             event.preventDefault()
+
+            const btnSubmit = formNotion.querySelector('button[type="submit"]') as HTMLButtonElement
+            if (btnSubmit && btnSubmit.disabled) {
+                return
+            }
 
             const notionTokenInput = document.getElementById('notion-token') as HTMLInputElement
             const notionDatabaseIdInput = document.getElementById(
@@ -133,25 +171,34 @@ function formNotion() {
                 return
             }
 
-            const notionData: NotionSync = {
-                type: 'NOTION_SYNC',
-                payload: {
-                    token: notionToken,
-                    databseId: notionDataBaseId,
-                    deck,
-                    options: {
-                        quiz: isQuiz,
-                        flashcard: isFlashcard
+            setButtonLoading(btnSubmit, true, 'Syncing...')
+
+            try {
+                const notionData: NotionSync = {
+                    type: 'NOTION_SYNC',
+                    payload: {
+                        token: notionToken,
+                        databseId: notionDataBaseId,
+                        deck,
+                        options: {
+                            quiz: isQuiz,
+                            flashcard: isFlashcard
+                        }
                     }
                 }
-            }
 
-            const result = await window.api.sendImport(notionData)
+                const result = await window.api.sendImport(notionData)
 
-            if (result?.status === 'success') {
-                alert('Import successful!')
-            } else {
-                alert('Import failed: ' + result?.message)
+                if (result?.status === 'success') {
+                    alert('Import successful!')
+                } else {
+                    alert('Import failed: ' + result?.message)
+                }
+            } catch (error) {
+                console.error(error)
+                alert('An error occurred during sync.')
+            } finally {
+                setButtonLoading(btnSubmit, false)
             }
         })
     }
@@ -196,6 +243,9 @@ function formSettings() {
     if (btnSave) {
         btnSave.addEventListener('click', async (event) => {
             event.preventDefault()
+            if (btnSave.disabled) {
+                return
+            }
 
             const openaiApiKey = openaiInput.value.trim()
             const azureApiKey = azureInput.value.trim()
@@ -206,6 +256,8 @@ function formSettings() {
                 azureApiKey,
                 unsplashAccessKey
             }
+
+            setButtonLoading(btnSave, true, 'Saving...')
 
             try {
                 const result = await window.api.saveSettings(settingsData)
@@ -218,6 +270,8 @@ function formSettings() {
             } catch (error) {
                 console.error(error)
                 alert('An error occurred while saving settings.')
+            } finally {
+                setButtonLoading(btnSave, false)
             }
         })
     }
