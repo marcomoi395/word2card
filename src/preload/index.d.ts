@@ -16,6 +16,7 @@ export interface NotionSync {
     type: 'NOTION_SYNC'
     payload: {
         token: string
+        databseId: notionDataBaseId
         deck: string
         options: {
             quiz: boolean
@@ -31,6 +32,8 @@ export interface DataResponse {
         openaiApiKey?: string
         azureApiKey?: string
         unsplashAccessKey?: string
+        notionToken?: string
+        notionDatabaseId?: string
     }
 }
 

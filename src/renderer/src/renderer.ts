@@ -109,11 +109,15 @@ function formNotion() {
             event.preventDefault()
 
             const notionTokenInput = document.getElementById('notion-token') as HTMLInputElement
+            const notionDatabaseIdInput = document.getElementById(
+                'notion-database-id'
+            ) as HTMLInputElement
             const deckInput = document.getElementById('deck') as HTMLInputElement
             const chkQuiz = document.getElementById('chk-quiz-notion') as HTMLInputElement
             const chkFlashcard = document.getElementById('chk-flashcard-notion') as HTMLInputElement
 
             const notionToken = notionTokenInput.value.trim()
+            const notionDataBaseId = notionDatabaseIdInput.value.trim()
             const deck = deckInput.value.trim()
             const isQuiz = chkQuiz.checked
             const isFlashcard = chkFlashcard.checked
@@ -133,6 +137,7 @@ function formNotion() {
                 type: 'NOTION_SYNC',
                 payload: {
                     token: notionToken,
+                    databseId: notionDataBaseId,
                     deck,
                     options: {
                         quiz: isQuiz,
@@ -156,6 +161,8 @@ function formSettings() {
     const openaiInput = document.getElementById('openai-key-global') as HTMLInputElement
     const azureInput = document.getElementById('azure-key-global') as HTMLInputElement
     const unsplashInput = document.getElementById('unsplash-access-key-global') as HTMLInputElement
+    const notionTokenInput = document.getElementById('notion-token') as HTMLInputElement
+    const notionDatabaseIdInput = document.getElementById('notion-database-id') as HTMLInputElement
     const btnSave = document.getElementById('btn-save-settings') as HTMLButtonElement
 
     const loadSavedSettings = async () => {
@@ -171,6 +178,12 @@ function formSettings() {
                 }
                 if (savedData.data.unsplashAccessKey && unsplashInput) {
                     unsplashInput.value = savedData.data.unsplashAccessKey
+                }
+                if (savedData.data.notionToken && notionTokenInput) {
+                    notionTokenInput.value = savedData.data.notionToken
+                }
+                if (savedData.data.notionDatabaseId && notionDatabaseIdInput) {
+                    notionDatabaseIdInput.value = savedData.data.notionDatabaseId
                 }
             }
         } catch (error) {

@@ -121,7 +121,9 @@ const loadTokensToState = () => {
     const tokens: TokenMap = {
         openaiApiKey: SecretManager.getSecret('openaiApiKey') as string,
         azureApiKey: SecretManager.getSecret('azureApiKey') as string,
-        unsplashAccessKey: SecretManager.getSecret('unsplashAccessKey') as string
+        unsplashAccessKey: SecretManager.getSecret('unsplashAccessKey') as string,
+        notionToken: SecretManager.getSecret('notionToken') as string,
+        notionDatabaseId: SecretManager.getSecret('notionDatabaseId') as string
     }
 
     State.setAllTokens(tokens)
@@ -200,9 +202,11 @@ app.whenReady().then(() => {
     )
 
     ipcMain.handle('get-secret', async () => {
-        const openaiApiKey = SecretManager.getSecret('openaiApiKey') || ''
-        const azureApiKey = SecretManager.getSecret('azureApiKey') || ''
-        const unsplashAccessKey = SecretManager.getSecret('unsplashAccessKey') || ''
+        const openaiApiKey = State.getToken('openaiApiKey') || ''
+        const azureApiKey = State.getToken('azureApiKey') || ''
+        const unsplashAccessKey = State.getToken('unsplashAccessKey') || ''
+        const notionToken = State.getToken('notionToken') || ''
+        const notionDatabaseId = State.getToken('notionDatabaseId') || ''
 
         return {
             status: 'success',
@@ -210,7 +214,9 @@ app.whenReady().then(() => {
             data: {
                 openaiApiKey,
                 azureApiKey,
-                unsplashAccessKey
+                unsplashAccessKey,
+                notionToken,
+                notionDatabaseId
             }
         }
     })
@@ -232,6 +238,12 @@ app.whenReady().then(() => {
                 message:
                     'AnkiConnect is not running. Please start Anki and ensure AnkiConnect is installed.'
             }
+        }
+
+        //Save token and databaseId if type is NOTION_SYNC
+        if (importData.type === 'NOTION_SYNC') {
+            SecretManager.saveSecret('notionToken', importData.payload.token)
+            SecretManager.saveSecret('notionDatabaseId', importData.payload.databseId)
         }
 
         // Initialize folders and models
