@@ -273,23 +273,37 @@ app.whenReady().then(() => {
                         importData.payload.databseId
                     )) as PageObjectResponse[]
 
-                if (pages.length === 0) {
+                    if (pages.length === 0) {
+                        return {
+                            status: 'error',
+                            message: 'No pages found in the Notion database.'
+                        }
+                    }
+                    words = getWordsFromResponse(pages)
+                    break
+                } catch (error) {
+                    const message =
+                        error instanceof Error
+                            ? error.message
+                            : 'Error retrieving data from Notion, please check your token and database ID.'
+
                     return {
                         status: 'error',
-                        message: 'No pages found in the Notion database.'
+                        message
                     }
                 }
-                words = getWordsFromResponse(pages)
-                break
             }
             default:
-                console.error('Unknown import data type')
+                return {
+                    status: 'error',
+                    message: 'Unknown import data type.'
+                }
         }
 
         if (words === null) {
             return {
                 status: 'error',
-                message: 'Failed to read words from the file.'
+                message: 'Failed to read words from the source.'
             }
         }
 

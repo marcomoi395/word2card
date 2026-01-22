@@ -79,27 +79,22 @@ export class OpenAIService {
         const userPrompt = `List of words to process: ${JSON.stringify(words)}`
         const openai = OpenAIService.getInstance()
 
-        try {
-            const completion = await openai.chat.completions.create({
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: userPrompt }
-                ],
-                model: MODEL_NAME,
-                response_format: { type: 'json_object' }
-            })
+        const completion = await openai.chat.completions.create({
+            messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: userPrompt }
+            ],
+            model: MODEL_NAME,
+            response_format: { type: 'json_object' }
+        })
 
-            const content = completion.choices[0].message.content
+        const content = completion.choices[0].message.content
 
-            if (!content) {
-                throw new Error('No content returned from GPT')
-            }
-
-            const result = JSON.parse(content) as { data: FlashcardResponse[] }
-            return result.data
-        } catch (error) {
-            console.error('Error generating flashcard data:', error)
-            throw error
+        if (!content) {
+            throw new Error('No content returned from GPT')
         }
+
+        const result = JSON.parse(content) as { data: FlashcardResponse[] }
+        return result.data
     }
 }
