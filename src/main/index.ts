@@ -258,12 +258,7 @@ app.whenReady().then(() => {
         let words: string[] | null = []
         switch (importData.type) {
             case 'FILE_IMPORT': {
-                const rawData: string[] | null = await readFileContent(importData.payload.filePath)
-                if (rawData === null) {
-                    break
-                }
-
-                words = await filterExistingWords(rawData)
+                words = await readFileContent(importData.payload.filePath)
                 break
             }
 
