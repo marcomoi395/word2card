@@ -23,7 +23,8 @@ function createWindow(): void {
         frame: false,
         show: false,
         resizable: false,
-        autoHideMenuBar: true,
+        movable: true,
+        // autoHideMenuBar: true,
         icon,
         // ...(process.platform === 'linux' ? { icon } : {}),
         webPreferences: {
@@ -298,6 +299,8 @@ app.whenReady().then(() => {
                     message: 'Unknown import data type.'
                 }
         }
+
+        console.log(words)
 
         if (words === null) {
             return {
