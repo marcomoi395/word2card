@@ -9,21 +9,27 @@ export async function filterExistingWords(
             return []
         }
 
-        const checkPromises = words.map(async (word) => {
-            const getNotes = (await sendRequest({
-                action: 'findNotes',
-                version: 6,
-                params: {
-                    query: `${fieldName}:${word}`
-                }
-            })) as { result: string[]; error: string | null }
+        const actions = words.map((word) => ({
+            action: 'findNotes',
+            params: {
+                query: `${fieldName}:${word}`
+            }
+        }))
 
-            return getNotes.result && getNotes.result.length === 0 ? word : null
+        const response = (await sendRequest({
+            action: 'multi',
+            version: 6,
+            params: { actions }
+        })) as { result: number[][]; error: string | null }
+
+        if (response.error) {
+            throw new Error(response.error)
+        }
+
+        return words.filter((_, index) => {
+            const resultForWord = response.result[index]
+            return resultForWord && resultForWord.length === 0
         })
-
-        const results = await Promise.all(checkPromises)
-        const finalWords = results.filter((word): word is string => word !== null)
-        return finalWords
     } catch (error) {
         console.error('Error filtering existing words:', error)
         return words
