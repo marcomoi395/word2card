@@ -85,6 +85,7 @@ export class OpenAIService {
                 { role: 'user', content: userPrompt }
             ],
             model: MODEL_NAME,
+            reasoning_effort: 'minimal',
             response_format: { type: 'json_object' }
         })
 
