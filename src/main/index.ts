@@ -259,7 +259,12 @@ app.whenReady().then(() => {
         let words: string[] | null = []
         switch (importData.type) {
             case 'FILE_IMPORT': {
-                words = await readFileContent(importData.payload.filePath)
+                const rawData: string[] | null = await readFileContent(importData.payload.filePath)
+                if (rawData === null) {
+                    break
+                }
+
+                words = await filterExistingWords(rawData)
                 break
             }
 
@@ -299,8 +304,6 @@ app.whenReady().then(() => {
                     message: 'Unknown import data type.'
                 }
         }
-
-        console.log(words)
 
         if (words === null) {
             return {
