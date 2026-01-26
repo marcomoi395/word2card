@@ -1,4 +1,5 @@
 import { defineConfig } from 'electron-vite'
+import path from 'path'
 import { viteStaticCopy } from 'vite-plugin-static-copy'
 
 export default defineConfig({
@@ -7,7 +8,7 @@ export default defineConfig({
             viteStaticCopy({
                 targets: [
                     {
-                        src: 'src/main/helper/model-flashcard.json',
+                        src: path.resolve(__dirname, 'src/main/helper/model-flashcard.json'),
                         dest: 'helper'
                     }
                 ]
