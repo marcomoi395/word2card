@@ -30,6 +30,7 @@
         "microsoft-cognitiveservices-speech-sdk": "^1.47.0",
         "openai": "^6.16.0",
         "p-limit": "^3.1.0",
+        "pexels": "^1.4.0",
         "uuid": "^13.0.0",
         "vite-plugin-static-copy": "^3.1.4"
     },

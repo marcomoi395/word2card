@@ -1,4 +1,5 @@
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
+import { PageObjectResponse } from '@notionhq/client'
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import fs from 'fs'
 import path, { join } from 'path'
@@ -7,14 +8,13 @@ import type { FileImport, NotionSync } from '../preload/index.d'
 import { checkAnkiConnect, sendRequest } from './anki-connect'
 import { createFlashcards, QuizNote } from './handle'
 import { filterExistingWords } from './helper/filter-existing-words'
-import { ModelFlashcard } from './helper/model-flashcard.interface'
+import { getWordsFromResponse } from './helper/get-words-from-notion-response'
+import modelFlashcardParams from './helper/model-flashcard.json'
 import { readFileContent } from './helper/readFile'
+import { NotionService } from './notion'
+import { SpeechService } from './speech'
 import State, { TokenMap } from './state'
 import SecretManager from './store'
-import { NotionService } from './notion'
-import { getWordsFromResponse } from './helper/get-words-from-notion-response'
-import { PageObjectResponse } from '@notionhq/client'
-import { SpeechService } from './speech'
 
 function createWindow(): void {
     const mainWindow = new BrowserWindow({
@@ -84,9 +84,6 @@ const init = async (audioDir: string): Promise<void | { status: string; message:
         models = modelsResponse.result.map((i) => i.name)
     }
 
-    const rawData = fs.readFileSync(path.join(__dirname, './helper/model-flashcard.json'), 'utf-8')
-    const modelFlashcardParams = JSON.parse(rawData) as ModelFlashcard
-
     if (models.indexOf('AnkiVNModel_Flashcard') === -1) {
         try {
             await sendRequest({
@@ -126,7 +123,7 @@ const loadTokensToState = () => {
     const tokens: TokenMap = {
         openaiApiKey: SecretManager.getSecret('openaiApiKey') as string,
         azureApiKey: SecretManager.getSecret('azureApiKey') as string,
-        unsplashAccessKey: SecretManager.getSecret('unsplashAccessKey') as string,
+        pexelsToken: SecretManager.getSecret('pexelsToken') as string,
         notionToken: SecretManager.getSecret('notionToken') as string,
         notionDatabaseId: SecretManager.getSecret('notionDatabaseId') as string
     }
@@ -156,10 +153,7 @@ app.whenReady().then(() => {
 
     ipcMain.handle(
         'save-settings',
-        async (
-            _,
-            payload: { openaiApiKey: string; azureApiKey: string; unsplashAccessKey: string }
-        ) => {
+        async (_, payload: { openaiApiKey: string; azureApiKey: string; pexelsToken: string }) => {
             try {
                 let s1: boolean = true
                 let s2: boolean = true
@@ -181,15 +175,12 @@ app.whenReady().then(() => {
                     State.removeToken('azureApiKey')
                 }
 
-                if (payload.unsplashAccessKey) {
-                    s3 = SecretManager.saveSecret(
-                        'unsplashAccessKey',
-                        payload.unsplashAccessKey.trim()
-                    )
-                    State.setToken('unsplashAccessKey', payload.unsplashAccessKey.trim())
+                if (payload.pexelsToken) {
+                    s3 = SecretManager.saveSecret('pexelsToken', payload.pexelsToken.trim())
+                    State.setToken('pexelsToken', payload.pexelsToken.trim())
                 } else {
-                    SecretManager.deleteSecret('unsplashAccessKey')
-                    State.removeToken('unsplashAccessKey')
+                    SecretManager.deleteSecret('pexelsToken')
+                    State.removeToken('pexelsToken')
                 }
 
                 if (!s1 || !s2 || !s3) {
@@ -209,7 +200,7 @@ app.whenReady().then(() => {
     ipcMain.handle('get-secret', async () => {
         const openaiApiKey = State.getToken('openaiApiKey') || ''
         const azureApiKey = State.getToken('azureApiKey') || ''
-        const unsplashAccessKey = State.getToken('unsplashAccessKey') || ''
+        const pexelsToken = State.getToken('pexelsToken') || ''
         const notionToken = State.getToken('notionToken') || ''
         const notionDatabaseId = State.getToken('notionDatabaseId') || ''
 
@@ -219,7 +210,7 @@ app.whenReady().then(() => {
             data: {
                 openaiApiKey,
                 azureApiKey,
-                unsplashAccessKey,
+                pexelsToken,
                 notionToken,
                 notionDatabaseId
             }

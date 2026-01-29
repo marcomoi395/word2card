@@ -31,7 +31,7 @@ export interface DataResponse {
     data?: {
         openaiApiKey?: string
         azureApiKey?: string
-        unsplashAccessKey?: string
+        pexelsToken?: string
         notionToken?: string
         notionDatabaseId?: string
     }

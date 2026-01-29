@@ -207,7 +207,7 @@ function formNotion() {
 function formSettings() {
     const openaiInput = document.getElementById('openai-key-global') as HTMLInputElement
     const azureInput = document.getElementById('azure-key-global') as HTMLInputElement
-    const unsplashInput = document.getElementById('unsplash-access-key-global') as HTMLInputElement
+    const pexelsInput = document.getElementById('pexels-token-global') as HTMLInputElement
     const notionTokenInput = document.getElementById('notion-token') as HTMLInputElement
     const notionDatabaseIdInput = document.getElementById('notion-database-id') as HTMLInputElement
     const btnSave = document.getElementById('btn-save-settings') as HTMLButtonElement
@@ -223,8 +223,8 @@ function formSettings() {
                 if (savedData.data.azureApiKey && azureInput) {
                     azureInput.value = savedData.data.azureApiKey
                 }
-                if (savedData.data.unsplashAccessKey && unsplashInput) {
-                    unsplashInput.value = savedData.data.unsplashAccessKey
+                if (savedData.data.pexelsToken && pexelsInput) {
+                    pexelsInput.value = savedData.data.pexelsToken
                 }
                 if (savedData.data.notionToken && notionTokenInput) {
                     notionTokenInput.value = savedData.data.notionToken
@@ -249,12 +249,12 @@ function formSettings() {
 
             const openaiApiKey = openaiInput.value.trim()
             const azureApiKey = azureInput.value.trim()
-            const unsplashAccessKey = unsplashInput.value.trim()
+            const pexelsToken = pexelsInput.value.trim()
 
             const settingsData = {
                 openaiApiKey,
                 azureApiKey,
-                unsplashAccessKey
+                pexelsToken: pexelsToken
             }
 
             setButtonLoading(btnSave, true, 'Saving...')

@@ -1,8 +1,8 @@
 import { v4 as uuidv4 } from 'uuid'
 import State from './state'
-import { searchImageUnsplash } from './unsplash'
 import { NotionService } from './notion'
 import { OpenAIService } from './open-ai'
+import { searchImagePexels } from './pexels'
 
 interface Flashcard {
     id: string
@@ -53,13 +53,13 @@ export const createFlashcards = async (
         const notionDatabaseId = State.getToken('notionDatabaseId') || ''
         await NotionService.updatePages(notionDatabaseId, dataFromOpenAI)
     }
-    const unsplashAccessKey = State.getToken('unsplashAccessKey')
+    const pexelsToken = State.getToken('pexelsToken')
 
     const notes = await Promise.all(
         dataFromOpenAI.map(async (item) => {
             let image: string | undefined
-            if (unsplashAccessKey) {
-                image = (await searchImageUnsplash(unsplashAccessKey, item.word)) || ''
+            if (pexelsToken) {
+                image = (await searchImagePexels(pexelsToken, item.word)) || ''
             }
 
             const cloze = clozeWord(item.word)
