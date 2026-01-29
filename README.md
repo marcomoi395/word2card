@@ -12,7 +12,7 @@ This is an Electron-based desktop application that automates the creation of hig
 - **AI-Powered Content:**
   - **OpenAI:** Automatically generates definitions, translations, examples, and IPA transcriptions.
   - **Azure Speech:** Generates high-quality, natural-sounding audio pronunciations.
-  - **Unsplash:** Fetches relevant, high-quality images to visualize the vocabulary.
+  - **Pexels:** Fetches relevant, high-quality images to visualize the vocabulary.
 
 - **Seamless Anki Integration:** Pushes cards directly to Anki via AnkiConnect.
 - **Notion Sync-Back:** Automatically updates your Notion rows (e.g., marks them as "Done") after the card is successfully created.
@@ -29,7 +29,7 @@ Before using the app, make sure you have the following ready:
 3. **API Keys:** You need to provide your own keys in the Settings menu:
     - `OpenAI API Key` (for content generation).
     - `Azure Speech API Key` & `Region` (for audio).
-    - `Unsplash Access Key` (for images).
+    - `Pexels API Key` (for images).
 
 _(Go to Settings, enter your keys, and hit "Save Keys")_
 
@@ -75,7 +75,7 @@ To use the Notion Sync feature effectively, please follow these steps:
 ## Notes
 
 - This app uses 3rd party APIs (OpenAI, Azure). Please be aware of your usage quotas and billing on those platforms.
-- Unsplash Free API has a rate limit (usually 50 requests/hour), so take it easy!
+- Pexels API has a rate limit (usually 20,000 requests per month), so take it easy!
 
 ## For Developers
 
