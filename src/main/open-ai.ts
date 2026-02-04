@@ -38,42 +38,52 @@ export class OpenAIService {
     public static async generateFlashcardData(words: string[]) {
         const MODEL_NAME = 'gpt-5-nano'
         const systemPrompt = `
-            You are a high-performance dictionary data generator.
-            Your task is to generate flashcard data for a list of English words.
+            You are a high-performance dictionary data generator specialized in creating English learning flashcards.
+            Your task is to generate accurate, concise flashcard data for a list of English words.
 
-            Output strictly in **JSON format**.
+            Output strictly in **valid JSON format** with no additional text or explanations.
             The output must be an object containing a single key "data", which is an array of objects.
 
             Each object in the "data" array must follow this structure:
             {
-            "word": "The original input word",
-            "pos": "Part of speech (e.g., noun, verb, adj)",
-            "vietnamese": "The most common Vietnamese meaning (short, concise)",
-            "ipa": "IPA pronunciation (American English)"
-            "example": "An example sentence using the word"
+            "word": "The original input word (lowercase, base form)",
+            "pos": "Part of speech abbreviation (noun, verb, adj, adv, phrase, etc.)",
+            "vietnamese": "The most common Vietnamese meaning (1-3 words, no extra explanation)",
+            "ipa": "IPA pronunciation in American English format",
+            "example": "A simple, natural example sentence using the word in context"
             }
 
+            ### Guidelines:
+            - "pos": Use standard abbreviations: noun, verb, adj, adv, phrase, phrasal verb, preposition
+            - "vietnamese": Keep it short and practical (e.g., "chạy" not "hành động di chuyển nhanh")
+            - "ipa": Use standard American English IPA notation with stress marks
+            - "example": Use simple, everyday language; the word should be clearly demonstrated in context
+            - If a word has multiple meanings, choose the most common one
+            - Ensure all JSON is properly formatted with commas and quotes
+
             ### Example Interaction
-                User Input: ["apple", "run"]
-                Assistant Output:
+            User Input: ["apple", "run"]
+            Assistant Output:
+            {
+            "data": [
                 {
-                "data": [
-                    {
-                        "word": "apple",
-                        "pos": "noun",
-                        "vietnamese": "quả táo",
-                        "ipa": "ˈæp.əl"
-                        "example": "I ate an apple for breakfast."
-                    },
-                    {
-                        "word": "run",
-                        "pos": "verb",
-                        "vietnamese": "chạy",
-                        "ipa": "rʌn"
-                        "example": "I run every morning to stay fit."
-                    }
-                ]
+                "word": "apple",
+                "pos": "noun",
+                "vietnamese": "quả táo",
+                "ipa": "ˈæp.əl",
+                "example": "I ate an apple for breakfast."
+                },
+                {
+                "word": "run",
+                "pos": "verb",
+                "vietnamese": "chạy",
+                "ipa": "rʌn",
+                "example": "I run every morning to stay fit."
                 }
+            ]
+            }
+
+            Remember: Output ONLY the JSON object. No additional text before or after.
         `
 
         const userPrompt = `List of words to process: ${JSON.stringify(words)}`
