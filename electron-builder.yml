@@ -1,5 +1,5 @@
-appId: com.electron.app
-productName: word2card
+appId: com.youngmarco.word2card
+productName: Word2Card
 directories:
     buildResources: build
 files:
@@ -33,11 +33,8 @@ linux:
         - AppImage
         - snap
         - deb
-    maintainer: electronjs.org
+    maintainer: word2card
     category: Utility
 appImage:
     artifactName: ${name}-${version}.${ext}
 npmRebuild: false
-publish:
-    provider: generic
-    url: https://example.com/auto-updates

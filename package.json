@@ -2,10 +2,8 @@
     "name": "word2card",
     "version": "2.1.0",
     "productName": "Word2Card",
-    "description": "A minimal Electron application with TypeScript",
+    "description": "Electron desktop app for generating Anki flashcards from text files or Notion.",
     "main": "./out/main/index.js",
-    "author": "example.com",
-    "homepage": "https://electron-vite.org",
     "scripts": {
         "format": "prettier --write .",
         "lint": "eslint --cache .",
