@@ -1,0 +1,17 @@
+name: Build Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    uses: ./.github/workflows/reusable-build-assets.yml
+    with:
+      ref_name: ${{ github.event.release.tag_name }}
+      upload_to_release: true
+    secrets:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

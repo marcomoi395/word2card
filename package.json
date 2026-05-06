@@ -3,6 +3,12 @@
     "version": "2.1.0",
     "productName": "Word2Card",
     "description": "Electron desktop app for generating Anki flashcards from text files or Notion.",
+    "author": "youngmarco",
+    "homepage": "https://github.com/marcomoi395/word2card",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/marcomoi395/word2card.git"
+    },
     "main": "./out/main/index.js",
     "scripts": {
         "format": "prettier --write .",
