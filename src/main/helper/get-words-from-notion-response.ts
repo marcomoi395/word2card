@@ -1,22 +1,57 @@
-import { PageObjectResponse } from '@notionhq/client'
+type NotionLikePage = {
+    id: string
+    properties: Record<string, unknown>
+}
 
-export const getWordsFromResponse = (
-    pages: PageObjectResponse[],
+export interface NotionWordEntry {
+    pageId: string
+    word: string
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+    return typeof value === 'object' && value !== null
+}
+
+const isNotionLikePage = (value: unknown): value is NotionLikePage => {
+    return isRecord(value) && typeof value.id === 'string' && isRecord(value.properties)
+}
+
+const hasTitleProperty = (
+    value: unknown
+): value is { type: 'title'; title: Array<{ plain_text?: string }> } => {
+    return typeof value === 'object' && value !== null && 'type' in value && 'title' in value
+}
+
+export const getWordEntriesFromResponse = (
+    pages: unknown[],
     propertyName: string = 'English'
-): string[] => {
+): NotionWordEntry[] => {
     if (!pages || !Array.isArray(pages)) {
         return []
     }
 
     return pages
+        .filter(isNotionLikePage)
         .map((page) => {
             const property = page.properties[propertyName]
-            if (property && property.type === 'title') {
-                const word = property.title?.[0]?.plain_text || ''
-                return word.trim().toLowerCase()
+            if (hasTitleProperty(property) && property.type === 'title') {
+                const word = property.title?.[0]?.plain_text?.trim().toLowerCase()
+                if (word) {
+                    return {
+                        pageId: page.id,
+                        word
+                    }
+                }
             }
 
-            return ''
+            return null
         })
-        .filter((word): word is string => word !== '')
+        .filter((entry): entry is NotionWordEntry => entry !== null)
+}
+
+export const getWordsFromResponse = (
+    pages: unknown[],
+    propertyName: string = 'English'
+): string[] => {
+    return getWordEntriesFromResponse(pages, propertyName).map((entry) => entry.word)
 }

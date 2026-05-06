@@ -20,17 +20,16 @@ export class SpeechService {
     }
 
     public static getInstance(): SpeechService {
-        const newKey = State.getToken('azureApiKey') // tên key do ní đặt
-
+        const newKey = State.getToken('azureApiKey')
         if (!newKey) {
             throw new Error('Missing Azure API key in state')
         }
 
         if (!SpeechService.instance || SpeechService.currentKey !== newKey) {
             SpeechService.instance = new SpeechService(newKey)
-
             SpeechService.currentKey = newKey
         }
+
         return SpeechService.instance
     }
 
@@ -54,13 +53,14 @@ export class SpeechService {
 
                     if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
                         resolve(`Done: ${filename}`)
-                    } else {
-                        reject(
-                            new Error(
-                                `Error synthesizing ${filename}. Reason: ${result.reason}. ErrorDetails: ${result.errorDetails}`
-                            )
-                        )
+                        return
                     }
+
+                    reject(
+                        new Error(
+                            `Error synthesizing ${filename}. Reason: ${result.reason}. ErrorDetails: ${result.errorDetails}`
+                        )
+                    )
                 },
                 (error) => {
                     if (synthesizer) {
@@ -72,7 +72,7 @@ export class SpeechService {
             )
         })
     }
-    // RETRY LOGIC (Helper)
+
     public async synthesizeWithRetry(
         text: string,
         filename: string,
@@ -81,11 +81,10 @@ export class SpeechService {
     ): Promise<string | null> {
         try {
             const service = SpeechService.getInstance()
-            const result = await service.textToSpeech(text, filename, outputDir)
-            return result
-        } catch (error: any) {
+            return await service.textToSpeech(text, filename, outputDir)
+        } catch (error: unknown) {
             if (attempt <= MAX_RETRIES) {
-                const delay = 2000 * attempt // Exponential backoff
+                const delay = 2000 * attempt
                 console.warn(
                     `Retrying file ${filename} (Attempt ${attempt} of ${MAX_RETRIES}) after ${delay}ms...`
                 )
@@ -93,12 +92,12 @@ export class SpeechService {
                 const errorMessage = error instanceof Error ? error.message : String(error)
                 console.warn(`Reason: ${errorMessage}`)
 
-                await new Promise((r) => setTimeout(r, delay))
+                await new Promise((resolve) => setTimeout(resolve, delay))
                 return this.synthesizeWithRetry(text, filename, outputDir, attempt + 1)
-            } else {
-                console.error(`Failed to synthesize ${filename} after ${MAX_RETRIES} attempts.`)
-                return null
             }
+
+            console.error(`Failed to synthesize ${filename} after ${MAX_RETRIES} attempts.`)
+            return null
         }
     }
 
@@ -106,7 +105,7 @@ export class SpeechService {
         const speechService = SpeechService.getInstance()
 
         const results: Promise<string | null>[] = []
-        const executing: Promise<any>[] = []
+        const executing: Promise<void>[] = []
 
         for (const item of words) {
             const filename = `${item}.mp3`
@@ -116,11 +115,17 @@ export class SpeechService {
                 results.push(Promise.resolve(fullPath))
                 continue
             }
-            const p = speechService.synthesizeWithRetry(item, filename, outputDir)
-            results.push(p)
 
-            const e = p.then(() => executing.splice(executing.indexOf(e), 1))
-            executing.push(e)
+            const task = speechService.synthesizeWithRetry(item, filename, outputDir)
+            results.push(task)
+
+            const executingTask = task.then(() => {
+                const index = executing.indexOf(executingTask)
+                if (index >= 0) {
+                    executing.splice(index, 1)
+                }
+            })
+            executing.push(executingTask)
 
             if (executing.length >= MAX_CONCURRENT_REQUESTS) {
                 await Promise.race(executing)
@@ -128,6 +133,6 @@ export class SpeechService {
         }
 
         const allResults = await Promise.all(results)
-        return allResults.filter((p): p is string => p !== null)
+        return allResults.filter((filePath): filePath is string => filePath !== null)
     }
 }

@@ -1,37 +1,27 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
-import { electronAPI } from '@electron-toolkit/preload'
+import type { ImportRequest, RendererApi, SaveSettingsPayload } from '../shared/ipc'
+import { IPC_CHANNELS } from '../shared/ipc'
 
-const api = {
-    minimize: () => ipcRenderer.send('window-minimize'),
-    close: () => ipcRenderer.send('window-close'),
+const api: RendererApi = {
+    minimize: () => ipcRenderer.send(IPC_CHANNELS.windowMinimize),
+    close: () => ipcRenderer.send(IPC_CHANNELS.windowClose),
     platform: process.platform,
-    getFilePath: (file) => {
-        return webUtils.getPathForFile(file)
-    },
-    openFileDialog: () => {
-        return ipcRenderer.invoke('open-file-dialog')
-    },
-    sendImport: (importData) => {
-        return ipcRenderer.invoke('send-import', importData)
-    },
-    saveSettings: (payload) => {
-        return ipcRenderer.invoke('save-settings', payload)
-    },
-    getSecret: () => {
-        return ipcRenderer.invoke('get-secret')
-    }
+    getFilePath: (file: File) => webUtils.getPathForFile(file),
+    openFileDialog: () => ipcRenderer.invoke(IPC_CHANNELS.openFileDialog),
+    sendImport: (importData: ImportRequest) =>
+        ipcRenderer.invoke(IPC_CHANNELS.sendImport, importData),
+    saveSettings: (payload: SaveSettingsPayload) =>
+        ipcRenderer.invoke(IPC_CHANNELS.saveSettings, payload),
+    getSecret: () => ipcRenderer.invoke(IPC_CHANNELS.getSecret)
 }
 
 if (process.contextIsolated) {
     try {
-        contextBridge.exposeInMainWorld('electron', electronAPI)
         contextBridge.exposeInMainWorld('api', api)
     } catch (error) {
         console.error(error)
     }
 } else {
-    // @ts-ignore (define in dts)
-    window.electron = electronAPI
     // @ts-ignore (define in dts)
     window.api = api
 }

@@ -5,7 +5,7 @@ import unusedImports from 'eslint-plugin-unused-imports'
 import globals from 'globals'
 
 export default defineConfig(
-    { ignores: ['**/node_modules', '**/dist', '**/out'] },
+    { ignores: ['**/node_modules', '**/dist', '**/out', 'eslint.config.mjs'] },
     tseslint.configs.recommended,
     eslintConfigPrettier,
     {

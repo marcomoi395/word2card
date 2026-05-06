@@ -1,10 +1,10 @@
-export interface TokenMap {
-    [key: string]: string
-}
+import type { SecretKey } from '../shared/ipc'
+
+export type TokenMap = Partial<Record<SecretKey, string>>
 
 export class State {
     private static instance: State
-    private _tokens: TokenMap = {}
+    private tokens: TokenMap = {}
 
     private constructor() {
         // Private constructor to prevent direct instantiation
@@ -17,24 +17,24 @@ export class State {
         return State.instance
     }
 
-    public setToken(type: string, value: string) {
-        this._tokens[type] = value
+    public setToken(type: SecretKey, value: string) {
+        this.tokens[type] = value
     }
 
     public setAllTokens(tokens: TokenMap) {
-        this._tokens = { ...this._tokens, ...tokens }
+        this.tokens = { ...this.tokens, ...tokens }
     }
 
-    public getToken(type: string): string | undefined {
-        return this._tokens[type]
+    public getToken(type: SecretKey): string | undefined {
+        return this.tokens[type]
     }
 
-    public getMissingTokens(requiredTypes: string[]): string[] {
-        return requiredTypes.filter((type) => !this._tokens[type])
+    public getMissingTokens(requiredTypes: SecretKey[]): SecretKey[] {
+        return requiredTypes.filter((type) => !this.tokens[type])
     }
 
-    public removeToken(type: string) {
-        delete this._tokens[type]
+    public removeToken(type: SecretKey) {
+        delete this.tokens[type]
     }
 }
 
