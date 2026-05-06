@@ -1,8 +1,8 @@
 import { v4 as uuidv4 } from 'uuid'
-import State from './state'
 import { NotionService } from './notion'
 import { OpenAIService } from './open-ai'
 import { searchImagePexels } from './pexels'
+import State from './state'
 
 interface Flashcard {
     id: string
@@ -45,14 +45,14 @@ export const createFlashcards = async (
     audioDir: string,
     deckName: string,
     isAudio: boolean,
-    type: string
+    notionPageMap?: Map<string, string>
 ): Promise<QuizNote[]> => {
     const dataFromOpenAI = await OpenAIService.generateFlashcardData(words)
-    // Save data to Notion if needed
-    if (type === 'NOTION_SYNC') {
-        const notionDatabaseId = State.getToken('notionDatabaseId') || ''
-        await NotionService.updatePages(notionDatabaseId, dataFromOpenAI)
+
+    if (notionPageMap) {
+        await NotionService.updatePages(notionPageMap, dataFromOpenAI)
     }
+
     const pexelsToken = State.getToken('pexelsToken')
 
     const notes = await Promise.all(
@@ -62,8 +62,6 @@ export const createFlashcards = async (
                 image = (await searchImagePexels(pexelsToken, item.word)) || ''
             }
 
-            const cloze = clozeWord(item.word)
-
             return {
                 deckName,
                 modelName: 'AnkiVNModel_Flashcard',
@@ -71,7 +69,7 @@ export const createFlashcards = async (
                     ...item,
                     id: uuidv4(),
                     image,
-                    cloze
+                    cloze: clozeWord(item.word)
                 },
                 options: {
                     allowDuplicate: false

@@ -16,11 +16,11 @@ export async function filterExistingWords(
             }
         }))
 
-        const response = (await sendRequest({
+        const response = await sendRequest<number[][]>({
             action: 'multi',
             version: 6,
             params: { actions }
-        })) as { result: number[][]; error: string | null }
+        })
 
         if (response.error) {
             throw new Error(response.error)

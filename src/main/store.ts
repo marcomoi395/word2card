@@ -1,14 +1,14 @@
 import { safeStorage } from 'electron'
 import Store from 'electron-store'
+import type { SecretKey } from '../shared/ipc'
 
 interface SecretItem {
     value: string
     encrypted: boolean
 }
 
-interface SecretStoreSchema {
-    [key: string]: SecretItem
-}
+type SecretStoreSchema = Partial<Record<SecretKey, SecretItem>>
+
 export class SecretManager {
     private static instance: SecretManager
     private store: Store<SecretStoreSchema>
@@ -31,9 +31,9 @@ export class SecretManager {
         return safeStorage.isEncryptionAvailable()
     }
 
-    public saveSecret(key: string, value: string): boolean {
+    public saveSecret(key: SecretKey, value: string): boolean {
         try {
-            let encrypted: boolean = false
+            let encrypted = false
             if (this.isEncryptionAvailable()) {
                 encrypted = true
                 const encryptedBuffer = safeStorage.encryptString(value)
@@ -51,23 +51,20 @@ export class SecretManager {
         }
     }
 
-    public getSecret(key: string): string | null {
+    public getSecret(key: SecretKey): string | null {
         try {
-            const item = this.store.get(key) as SecretItem | undefined
-
+            const item = this.store.get(key)
             if (!item) {
                 return null
             }
 
             if (item.encrypted) {
-                if (this.isEncryptionAvailable()) {
-                    const encryptedBuffer = Buffer.from(item.value, 'hex')
-                    const decryptedString = safeStorage.decryptString(encryptedBuffer)
-
-                    return decryptedString
-                } else {
+                if (!this.isEncryptionAvailable()) {
                     return null
                 }
+
+                const encryptedBuffer = Buffer.from(item.value, 'hex')
+                return safeStorage.decryptString(encryptedBuffer)
             }
 
             return item.value
@@ -77,8 +74,8 @@ export class SecretManager {
         }
     }
 
-    public deleteSecret(key: string): void {
-        this.store.delete(key as any)
+    public deleteSecret(key: SecretKey): void {
+        this.store.delete(key)
     }
 }
 

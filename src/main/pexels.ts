@@ -15,7 +15,7 @@ export async function searchImagePexels(token: string, query: string): Promise<s
         }
 
         return null
-    } catch (error) {
+    } catch {
         return null
     }
 }

@@ -1,14 +1,22 @@
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
-import { PageObjectResponse } from '@notionhq/client'
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import fs from 'fs'
 import path, { join } from 'path'
 import icon from '../../resources/icon.png?asset'
-import type { FileImport, NotionSync } from '../preload/index.d'
+import type {
+    AppResponse,
+    ImportOptions,
+    ImportRequest,
+    OpenFileDialogData,
+    SaveSettingsPayload,
+    SecretKey,
+    SecretsData
+} from '../shared/ipc'
+import { IPC_CHANNELS } from '../shared/ipc'
 import { checkAnkiConnect, sendRequest } from './anki-connect'
 import { createFlashcards, QuizNote } from './handle'
 import { filterExistingWords } from './helper/filter-existing-words'
-import { getWordsFromResponse } from './helper/get-words-from-notion-response'
+import { getWordEntriesFromResponse } from './helper/get-words-from-notion-response'
 import modelFlashcardParams from './helper/model-flashcard.json'
 import { readFileContent } from './helper/readFile'
 import { NotionService } from './notion'
@@ -24,16 +32,16 @@ function createWindow(): void {
         show: false,
         resizable: false,
         movable: true,
-        // autoHideMenuBar: true,
         icon,
-        // ...(process.platform === 'linux' ? { icon } : {}),
         webPreferences: {
             preload: join(__dirname, '../preload/index.js'),
-            sandbox: false
+            sandbox: true,
+            contextIsolation: true,
+            nodeIntegration: false,
+            webSecurity: true
         }
     })
 
-    // mainWindow.webContents.openDevTools()
     mainWindow.on('ready-to-show', () => {
         mainWindow.show()
     })
@@ -42,13 +50,12 @@ function createWindow(): void {
         shell.openExternal(details.url)
         return { action: 'deny' }
     })
-    mainWindow.loadFile('index.html')
 
-    ipcMain.on('window-minimize', () => {
+    ipcMain.on(IPC_CHANNELS.windowMinimize, () => {
         mainWindow.minimize()
     })
 
-    ipcMain.on('window-close', () => {
+    ipcMain.on(IPC_CHANNELS.windowClose, () => {
         mainWindow.close()
     })
 
@@ -59,76 +66,353 @@ function createWindow(): void {
     }
 }
 
-const init = async (audioDir: string): Promise<void | { status: string; message: string }> => {
-    // Check audio folder
-    if (!fs.existsSync(audioDir)) {
-        try {
-            fs.mkdirSync(audioDir, { recursive: true })
-        } catch (err) {
-            console.error('', err)
-        }
-    }
-
-    // Create default models if not exist
-    const modelsResponse = (await sendRequest({
-        action: 'findModelsByName',
-        version: 6,
-        params: {
-            modelNames: ['AnkiVNModel_Flashcard']
-        }
-    })) as { result: (object & { name: string })[]; error: string | null }
-
-    let models: string[] = []
-
-    if (modelsResponse.result !== null) {
-        models = modelsResponse.result.map((i) => i.name)
-    }
-
-    if (models.indexOf('AnkiVNModel_Flashcard') === -1) {
-        try {
-            await sendRequest({
-                action: 'createModel',
-                version: 6,
-                params: modelFlashcardParams
-            })
-        } catch (_err) {
-            return {
-                status: 'error',
-                message: 'Failed to create flashcard model.'
-            }
-        }
+const success = <T>(data?: T, message?: string): AppResponse<T> => {
+    return {
+        status: 'success',
+        ...(data === undefined ? {} : { data }),
+        ...(message ? { message } : {})
     }
 }
 
-const createDeckIfNotExist = async (deckName: string) => {
-    const decks = (await sendRequest({
-        action: 'deckNames',
-        version: 6
-    })) as { result: string[]; error: string | null }
+const failure = (message: string): AppResponse => ({
+    status: 'error',
+    message
+})
 
-    if (decks.result.includes(deckName)) {
-        return
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+    return typeof value === 'object' && value !== null
+}
+
+const isImportOptions = (value: unknown): value is ImportOptions => {
+    return (
+        isRecord(value) && typeof value.quiz === 'boolean' && typeof value.flashcard === 'boolean'
+    )
+}
+
+const parseSaveSettingsPayload = (value: unknown): SaveSettingsPayload | null => {
+    if (!isRecord(value)) {
+        return null
     }
 
-    await sendRequest({
+    if (
+        typeof value.openaiApiKey !== 'string' ||
+        typeof value.azureApiKey !== 'string' ||
+        typeof value.pexelsToken !== 'string'
+    ) {
+        return null
+    }
+
+    return {
+        openaiApiKey: value.openaiApiKey,
+        azureApiKey: value.azureApiKey,
+        pexelsToken: value.pexelsToken
+    }
+}
+
+const parseImportRequest = (value: unknown): ImportRequest | null => {
+    if (!isRecord(value) || typeof value.type !== 'string' || !isRecord(value.payload)) {
+        return null
+    }
+
+    const { payload } = value
+    if (typeof payload.deck !== 'string' || !isImportOptions(payload.options)) {
+        return null
+    }
+
+    if (value.type === 'FILE_IMPORT') {
+        if (typeof payload.filePath !== 'string') {
+            return null
+        }
+
+        return {
+            type: 'FILE_IMPORT',
+            payload: {
+                filePath: payload.filePath,
+                deck: payload.deck,
+                options: payload.options
+            }
+        }
+    }
+
+    if (value.type === 'NOTION_SYNC') {
+        if (typeof payload.token !== 'string' || typeof payload.notionDatabaseId !== 'string') {
+            return null
+        }
+
+        return {
+            type: 'NOTION_SYNC',
+            payload: {
+                token: payload.token,
+                notionDatabaseId: payload.notionDatabaseId,
+                deck: payload.deck,
+                options: payload.options
+            }
+        }
+    }
+
+    return null
+}
+
+const syncRuntimeSecret = (key: SecretKey, value: string): boolean => {
+    const trimmedValue = value.trim()
+    if (trimmedValue.length === 0) {
+        SecretManager.deleteSecret(key)
+        State.removeToken(key)
+        return true
+    }
+
+    const isSaved = SecretManager.saveSecret(key, trimmedValue)
+    if (isSaved) {
+        State.setToken(key, trimmedValue)
+    }
+    return isSaved
+}
+
+const loadTokensToState = () => {
+    const tokens: TokenMap = {
+        openaiApiKey: SecretManager.getSecret('openaiApiKey') ?? undefined,
+        azureApiKey: SecretManager.getSecret('azureApiKey') ?? undefined,
+        pexelsToken: SecretManager.getSecret('pexelsToken') ?? undefined,
+        notionToken: SecretManager.getSecret('notionToken') ?? undefined,
+        notionDatabaseId: SecretManager.getSecret('notionDatabaseId') ?? undefined
+    }
+
+    State.setAllTokens(tokens)
+}
+
+const ensureAudioDirectory = (audioDir: string): void => {
+    if (!fs.existsSync(audioDir)) {
+        fs.mkdirSync(audioDir, { recursive: true })
+    }
+}
+
+const init = async (audioDir: string): Promise<AppResponse> => {
+    try {
+        ensureAudioDirectory(audioDir)
+
+        const modelsResponse = await sendRequest<Array<string | { name?: string }>>({
+            action: 'findModelsByName',
+            version: 6,
+            params: {
+                modelNames: ['AnkiVNModel_Flashcard']
+            }
+        })
+
+        if (modelsResponse.error) {
+            throw new Error(modelsResponse.error)
+        }
+
+        const models = modelsResponse.result
+            .map((item) => (typeof item === 'string' ? item : item.name))
+            .filter((item): item is string => Boolean(item))
+
+        if (!models.includes('AnkiVNModel_Flashcard')) {
+            const createModelResponse = await sendRequest<null>({
+                action: 'createModel',
+                version: 6,
+                params: modelFlashcardParams as Record<string, unknown>
+            })
+
+            if (createModelResponse.error) {
+                throw new Error(createModelResponse.error)
+            }
+        }
+
+        return success()
+    } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to initialize runtime.'
+        return failure(message)
+    }
+}
+
+const createDeckIfNotExist = async (deckName: string): Promise<AppResponse> => {
+    const decksResponse = await sendRequest<string[]>({
+        action: 'deckNames',
+        version: 6
+    })
+
+    if (decksResponse.error) {
+        return failure(decksResponse.error)
+    }
+
+    if (decksResponse.result.includes(deckName)) {
+        return success()
+    }
+
+    const createDeckResponse = await sendRequest<null>({
         action: 'createDeck',
         version: 6,
         params: {
             deck: deckName
         }
     })
-}
 
-const loadTokensToState = () => {
-    const tokens: TokenMap = {
-        openaiApiKey: SecretManager.getSecret('openaiApiKey') as string,
-        azureApiKey: SecretManager.getSecret('azureApiKey') as string,
-        pexelsToken: SecretManager.getSecret('pexelsToken') as string,
-        notionToken: SecretManager.getSecret('notionToken') as string,
-        notionDatabaseId: SecretManager.getSecret('notionDatabaseId') as string
+    if (createDeckResponse.error) {
+        return failure(createDeckResponse.error)
     }
 
-    State.setAllTokens(tokens)
+    return success()
+}
+
+const getSecretsData = (): SecretsData => ({
+    openaiApiKey: State.getToken('openaiApiKey') || '',
+    azureApiKey: State.getToken('azureApiKey') || '',
+    pexelsToken: State.getToken('pexelsToken') || '',
+    notionToken: State.getToken('notionToken') || '',
+    notionDatabaseId: State.getToken('notionDatabaseId') || ''
+})
+
+const resolveDeckName = (deckName: string): string => {
+    const trimmedDeck = deckName.trim()
+    if (trimmedDeck) {
+        return trimmedDeck
+    }
+
+    return `Vocabulary::Imported::${new Date().toISOString().split('T')[0]}`
+}
+
+const loadWords = async (
+    importRequest: ImportRequest
+): Promise<AppResponse<{ notionPageMap?: Map<string, string>; words: string[] }>> => {
+    if (importRequest.type === 'FILE_IMPORT') {
+        const rawData = await readFileContent(importRequest.payload.filePath)
+        if (rawData === null) {
+            return failure('Failed to read words from the source.')
+        }
+
+        return success({
+            words: await filterExistingWords(rawData)
+        })
+    }
+
+    try {
+        const savedNotionToken = syncRuntimeSecret('notionToken', importRequest.payload.token)
+        const savedNotionDatabaseId = syncRuntimeSecret(
+            'notionDatabaseId',
+            importRequest.payload.notionDatabaseId
+        )
+
+        if (!savedNotionToken || !savedNotionDatabaseId) {
+            return failure('Failed to save Notion settings.')
+        }
+
+        const pages = await NotionService.getPages(importRequest.payload.notionDatabaseId)
+        if (!pages || pages.length === 0) {
+            return failure('No pages found in the Notion database.')
+        }
+
+        const wordEntries = getWordEntriesFromResponse(pages)
+        const words = await filterExistingWords(wordEntries.map((entry) => entry.word))
+        const allowedWords = new Set(words)
+        const notionPageMap = new Map(
+            wordEntries
+                .filter((entry) => allowedWords.has(entry.word))
+                .map((entry) => [entry.word, entry.pageId])
+        )
+
+        return success({ notionPageMap, words })
+    } catch (error) {
+        const message =
+            error instanceof Error
+                ? error.message
+                : 'Error retrieving data from Notion, please check your token and database ID.'
+        return failure(message)
+    }
+}
+
+const createNotes = async (
+    importRequest: ImportRequest,
+    words: string[],
+    audioDir: string,
+    notionPageMap?: Map<string, string>
+): Promise<AppResponse<QuizNote[]>> => {
+    const isAudioEnabled = Boolean(State.getToken('azureApiKey'))
+    if (isAudioEnabled) {
+        const speechFiles = await SpeechService.createSpeechFiles(words, audioDir)
+        if (speechFiles.length !== words.length) {
+            return failure("Some audio files couldn't be created, please try again.")
+        }
+    }
+
+    const deckName = resolveDeckName(importRequest.payload.deck)
+    const deckResult = await createDeckIfNotExist(deckName)
+    if (deckResult.status === 'error') {
+        return deckResult
+    }
+
+    const notes: QuizNote[] = []
+    if (importRequest.payload.options.flashcard) {
+        const newNotes = await createFlashcards(
+            words,
+            audioDir,
+            deckName,
+            isAudioEnabled,
+            notionPageMap
+        )
+        notes.push(...newNotes)
+    }
+
+    if (notes.length === 0) {
+        return failure('No cards to add.')
+    }
+
+    return success(notes)
+}
+
+const addNotesToAnki = async (notes: QuizNote[]): Promise<AppResponse> => {
+    const result = await sendRequest<(number | null)[]>({
+        action: 'addNotes',
+        version: 6,
+        params: {
+            notes
+        }
+    })
+
+    if (result.error) {
+        return failure(result.error)
+    }
+
+    return success()
+}
+
+const handleImportRequest = async (importRequest: ImportRequest): Promise<AppResponse> => {
+    const missingTokens = State.getMissingTokens(['openaiApiKey'])
+    if (missingTokens.includes('openaiApiKey')) {
+        return failure('OpenAI API key is missing. Please set it in the settings.')
+    }
+
+    if ((await checkAnkiConnect()) === false) {
+        return failure(
+            'AnkiConnect is not running. Please start Anki and ensure AnkiConnect is installed.'
+        )
+    }
+
+    const audioDir = path.join(app.getPath('userData'), 'audio')
+    const initResult = await init(audioDir)
+    if (initResult.status === 'error') {
+        return initResult
+    }
+
+    const loadedWordsResult = await loadWords(importRequest)
+    if (loadedWordsResult.status === 'error') {
+        return loadedWordsResult
+    }
+
+    if (!loadedWordsResult.data) {
+        return failure('Failed to load words from the source.')
+    }
+
+    const { words, notionPageMap } = loadedWordsResult.data
+    const notesResult = await createNotes(importRequest, words, audioDir, notionPageMap)
+    if (notesResult.status === 'error') {
+        return notesResult
+    }
+
+    if (!notesResult.data) {
+        return failure('Failed to create notes.')
+    }
+
+    return addNotesToAnki(notesResult.data)
 }
 
 app.whenReady().then(() => {
@@ -136,231 +420,65 @@ app.whenReady().then(() => {
     app.on('browser-window-created', (_, window) => {
         optimizer.watchWindowShortcuts(window)
     })
+
     loadTokensToState()
 
-    ipcMain.handle('open-file-dialog', async () => {
-        const { filePaths } = await dialog.showOpenDialog({
-            properties: ['openFile'],
-            filters: [{ name: 'Text Files', extensions: ['txt'] }]
-        })
-
-        if (filePaths.length > 0) {
-            const content = fs.readFileSync(filePaths[0], 'utf8')
-            return { content, filePath: filePaths[0] }
-        }
-        return { content: null, filePath: null }
-    })
-
     ipcMain.handle(
-        'save-settings',
-        async (_, payload: { openaiApiKey: string; azureApiKey: string; pexelsToken: string }) => {
-            try {
-                let s1: boolean = true
-                let s2: boolean = true
-                let s3: boolean = true
+        IPC_CHANNELS.openFileDialog,
+        async (): Promise<AppResponse<OpenFileDialogData>> => {
+            const { filePaths } = await dialog.showOpenDialog({
+                properties: ['openFile'],
+                filters: [{ name: 'Text Files', extensions: ['txt'] }]
+            })
 
-                if (payload.openaiApiKey) {
-                    s1 = SecretManager.saveSecret('openaiApiKey', payload.openaiApiKey.trim())
-                    State.setToken('openaiApiKey', payload.openaiApiKey.trim())
-                } else {
-                    SecretManager.deleteSecret('openaiApiKey')
-                    State.removeToken('openaiApiKey')
-                }
-
-                if (payload.azureApiKey) {
-                    s2 = SecretManager.saveSecret('azureApiKey', payload.azureApiKey.trim())
-                    State.setToken('azureApiKey', payload.azureApiKey.trim())
-                } else {
-                    SecretManager.deleteSecret('azureApiKey')
-                    State.removeToken('azureApiKey')
-                }
-
-                if (payload.pexelsToken) {
-                    s3 = SecretManager.saveSecret('pexelsToken', payload.pexelsToken.trim())
-                    State.setToken('pexelsToken', payload.pexelsToken.trim())
-                } else {
-                    SecretManager.deleteSecret('pexelsToken')
-                    State.removeToken('pexelsToken')
-                }
-
-                if (!s1 || !s2 || !s3) {
-                    throw new Error('Save failed')
-                }
-
-                return { status: 'success' }
-            } catch (error) {
-                return {
-                    status: 'error',
-                    message: error instanceof Error ? error.message : 'Unknown error occurred'
-                }
-            }
+            return success({
+                filePath: filePaths[0] ?? null
+            })
         }
     )
 
-    ipcMain.handle('get-secret', async () => {
-        const openaiApiKey = State.getToken('openaiApiKey') || ''
-        const azureApiKey = State.getToken('azureApiKey') || ''
-        const pexelsToken = State.getToken('pexelsToken') || ''
-        const notionToken = State.getToken('notionToken') || ''
-        const notionDatabaseId = State.getToken('notionDatabaseId') || ''
+    ipcMain.handle(IPC_CHANNELS.saveSettings, async (_, payload: unknown): Promise<AppResponse> => {
+        const parsedPayload = parseSaveSettingsPayload(payload)
+        if (!parsedPayload) {
+            return failure('Invalid settings payload.')
+        }
 
-        return {
-            status: 'success',
-            message: 'Secrets retrieved successfully',
-            data: {
-                openaiApiKey,
-                azureApiKey,
-                pexelsToken,
-                notionToken,
-                notionDatabaseId
+        const secretKeys: Array<keyof SaveSettingsPayload> = [
+            'openaiApiKey',
+            'azureApiKey',
+            'pexelsToken'
+        ]
+
+        for (const key of secretKeys) {
+            const isSaved = syncRuntimeSecret(key, parsedPayload[key])
+            if (!isSaved) {
+                return failure('Save failed')
             }
         }
+
+        return success(undefined, 'Settings saved successfully.')
     })
 
-    ipcMain.handle('send-import', async (_, importData: FileImport | NotionSync) => {
-        // Check openaiApiKey
-        State.getMissingTokens(['openaiApiKey'])
-
-        if (State.getMissingTokens(['openaiApiKey']).includes('openaiApiKey')) {
-            return {
-                status: 'error',
-                message: 'OpenAI API key is missing. Please set it in the settings.'
-            }
-        }
-
-        if ((await checkAnkiConnect()) === false) {
-            return {
-                status: 'error',
-                message:
-                    'AnkiConnect is not running. Please start Anki and ensure AnkiConnect is installed.'
-            }
-        }
-
-        //Save token and databaseId if type is NOTION_SYNC
-        if (importData.type === 'NOTION_SYNC') {
-            SecretManager.saveSecret('notionToken', importData.payload.token)
-            SecretManager.saveSecret('notionDatabaseId', importData.payload.databseId)
-        }
-
-        // Initialize folders and models
-        const pathFile = path.join(app.getPath('userData'))
-        const audioDir = path.join(pathFile, 'audio')
-        void (await init(audioDir))
-
-        let words: string[] | null = []
-        switch (importData.type) {
-            case 'FILE_IMPORT': {
-                const rawData: string[] | null = await readFileContent(importData.payload.filePath)
-                if (rawData === null) {
-                    break
-                }
-
-                words = await filterExistingWords(rawData)
-                break
-            }
-
-            case 'NOTION_SYNC': {
-                try {
-                    State.setToken('notionToken', importData.payload.token)
-                    State.setToken('notionDatabaseId', importData.payload.databseId)
-
-                    const pages = (await NotionService.getPages(
-                        importData.payload.databseId
-                    )) as PageObjectResponse[]
-
-                    if (pages.length === 0) {
-                        return {
-                            status: 'error',
-                            message: 'No pages found in the Notion database.'
-                        }
-                    }
-
-                    words = await filterExistingWords(getWordsFromResponse(pages))
-                    break
-                } catch (error) {
-                    const message =
-                        error instanceof Error
-                            ? error.message
-                            : 'Error retrieving data from Notion, please check your token and database ID.'
-
-                    return {
-                        status: 'error',
-                        message
-                    }
-                }
-            }
-            default:
-                return {
-                    status: 'error',
-                    message: 'Unknown import data type.'
-                }
-        }
-
-        if (words === null) {
-            return {
-                status: 'error',
-                message: 'Failed to read words from the source.'
-            }
-        }
-
-        let isAudio: boolean = false
-        const isAzureKey = State.getToken('azureApiKey')
-        if (isAzureKey) {
-            isAudio = true
-            const result = await SpeechService.createSpeechFiles(words, audioDir)
-            if (result.length !== words.length) {
-                return {
-                    status: 'error',
-                    message: "Some audio files couldn't be created, please try again."
-                }
-            }
-        }
-
-        // Check existing deck and create if not exist
-        if (importData.payload.deck === '') {
-            importData.payload.deck = `Vocabulary::Imported::${new Date().toISOString().split('T')[0]}`
-        }
-        createDeckIfNotExist(importData.payload.deck)
-
-        const notes: QuizNote[] = []
-
-        if (importData.payload.options.flashcard) {
-            const newNotes = await createFlashcards(
-                words,
-                audioDir,
-                importData.payload.deck,
-                isAudio,
-                importData.type
-            )
-            notes.push(...newNotes)
-        }
-
-        if (notes.length > 0) {
-            const result = (await sendRequest({
-                action: 'addNotes',
-                version: 6,
-                params: {
-                    notes: notes
-                }
-            })) as { result: string | null; error: string }
-
-            if (result.error === null) {
-                return {
-                    status: 'success'
-                }
-            } else {
-                return {
-                    status: 'error',
-                    error: result.error
-                }
-            }
-        } else {
-            return {
-                satus: 'error',
-                message: 'No cards to add.'
-            }
-        }
+    ipcMain.handle(IPC_CHANNELS.getSecret, async (): Promise<AppResponse<SecretsData>> => {
+        return success(getSecretsData(), 'Secrets retrieved successfully')
     })
+
+    ipcMain.handle(
+        IPC_CHANNELS.sendImport,
+        async (_, importData: unknown): Promise<AppResponse> => {
+            const parsedImportRequest = parseImportRequest(importData)
+            if (!parsedImportRequest) {
+                return failure('Invalid import payload.')
+            }
+
+            try {
+                return await handleImportRequest(parsedImportRequest)
+            } catch (error) {
+                const message = error instanceof Error ? error.message : 'Unknown error occurred'
+                return failure(message)
+            }
+        }
+    )
 
     createWindow()
 
