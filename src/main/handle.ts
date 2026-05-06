@@ -1,4 +1,6 @@
+import pLimit from 'p-limit'
 import { v4 as uuidv4 } from 'uuid'
+import { createNotionTargetQueueMap, shiftNotionTarget, type NotionSyncTarget } from './helper/notion-sync'
 import { NotionService } from './notion'
 import { OpenAIService } from './open-ai'
 import { searchImagePexels } from './pexels'
@@ -45,15 +47,28 @@ export const createFlashcards = async (
     audioDir: string,
     deckName: string,
     isAudio: boolean,
-    notionPageMap?: Map<string, string>
+    notionTargets?: NotionSyncTarget[]
 ): Promise<QuizNote[]> => {
     const dataFromOpenAI = await OpenAIService.generateFlashcardData(words)
+    const notionTargetsByWord = notionTargets ? createNotionTargetQueueMap(notionTargets) : undefined
 
-    if (notionPageMap) {
-        await NotionService.updatePages(notionPageMap, dataFromOpenAI)
+    if (notionTargetsByWord) {
+        const limit = pLimit(2)
+        await Promise.allSettled(
+            dataFromOpenAI.map((item) => {
+                const target = shiftNotionTarget(notionTargetsByWord, item.word)
+                if (!target) {
+                    console.log(`Not found: ${item.word}`)
+                    return Promise.resolve()
+                }
+
+                return limit(() => NotionService.update(target.pageId, item))
+            })
+        )
     }
 
     const pexelsToken = State.getToken('pexelsToken')
+    const noteTargetsByWord = notionTargets ? createNotionTargetQueueMap(notionTargets) : undefined
 
     const notes = await Promise.all(
         dataFromOpenAI.map(async (item) => {
@@ -62,8 +77,10 @@ export const createFlashcards = async (
                 image = (await searchImagePexels(pexelsToken, item.word)) || ''
             }
 
+            const target = noteTargetsByWord ? shiftNotionTarget(noteTargetsByWord, item.word) : undefined
+
             return {
-                deckName,
+                deckName: target?.deckName ?? deckName,
                 modelName: 'AnkiVNModel_Flashcard',
                 fields: {
                     ...item,

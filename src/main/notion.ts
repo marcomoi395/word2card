@@ -1,13 +1,19 @@
 import {
     APIErrorCode,
     Client,
-    DatabaseObjectResponse,
+    isFullDatabase,
+    isFullPage,
     isNotionClientError,
     PageObjectResponse
 } from '@notionhq/client'
-import pLimit from 'p-limit'
 import type { FlashcardResponse } from './open-ai'
 import State from './state'
+
+export interface NotionDataSourcePages {
+    dataSourceId: string
+    dataSourceName: string
+    pages: PageObjectResponse[]
+}
 
 export class NotionService {
     private static instance: Client | null = null
@@ -66,33 +72,35 @@ export class NotionService {
         return NotionService.instance
     }
 
-    public static async retrieveDataSource(databaseId: string) {
+    public static async retrieveDataSources(databaseId: string) {
         try {
             const notion = NotionService.getInstance()
-            const database = (await notion.databases.retrieve({
+            const database = await notion.databases.retrieve({
                 database_id: databaseId
-            })) as DatabaseObjectResponse
+            })
 
-            if (database.data_sources && database.data_sources.length > 0) {
-                return database.data_sources[0].id
+            if (!isFullDatabase(database)) {
+                return []
             }
 
-            return null
+            return database.data_sources.map((dataSource) => ({
+                id: dataSource.id,
+                name: dataSource.name.trim() || dataSource.id
+            }))
         } catch (error) {
             NotionService.handleError(error)
         }
     }
 
-    public static async getPages(databaseId: string) {
-        try {
-            const notion = NotionService.getInstance()
-            const dataSourceId = await NotionService.retrieveDataSource(databaseId)
-            if (!dataSourceId) {
-                throw new Error('No data source found for the given database ID')
-            }
+    private static async queryDataSourcePages(dataSourceId: string): Promise<PageObjectResponse[]> {
+        const notion = NotionService.getInstance()
+        const pages: PageObjectResponse[] = []
+        let nextCursor: string | undefined
 
-            const result = await notion.dataSources.query({
+        do {
+            const response = await notion.dataSources.query({
                 data_source_id: dataSourceId,
+                start_cursor: nextCursor,
                 filter: {
                     property: 'isSync',
                     checkbox: {
@@ -101,7 +109,29 @@ export class NotionService {
                 }
             })
 
-            return result.results
+            pages.push(...response.results.filter(isFullPage))
+            nextCursor = response.has_more ? response.next_cursor ?? undefined : undefined
+        } while (nextCursor)
+
+        return pages
+    }
+
+    public static async getPages(databaseId: string): Promise<NotionDataSourcePages[]> {
+        try {
+            const dataSources = await NotionService.retrieveDataSources(databaseId)
+            if (!dataSources || dataSources.length === 0) {
+                throw new Error('No data source found for the given database ID')
+            }
+
+            const results = await Promise.all(
+                dataSources.map(async (dataSource) => ({
+                    dataSourceId: dataSource.id,
+                    dataSourceName: dataSource.name,
+                    pages: await NotionService.queryDataSourcePages(dataSource.id)
+                }))
+            )
+
+            return results.filter((result) => result.pages.length > 0)
         } catch (error) {
             NotionService.handleError(error)
         }
@@ -167,27 +197,6 @@ export class NotionService {
                 }
             }
         })
-    }
-
-    public static async updatePages(pageMap: Map<string, string>, data: FlashcardResponse[]) {
-        try {
-            const limit = pLimit(2)
-            const promises = data.map((item) => {
-                return limit(() => {
-                    const pageId = pageMap.get(item.word.toLowerCase().trim())
-                    if (!pageId) {
-                        console.log(`Not found: ${item.word}`)
-                        return
-                    }
-
-                    return NotionService.update(pageId, item)
-                })
-            })
-
-            await Promise.allSettled(promises)
-        } catch (error) {
-            console.error('Error updating Notion pages:', error)
-        }
     }
 }
 

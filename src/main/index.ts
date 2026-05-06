@@ -17,6 +17,11 @@ import { checkAnkiConnect, sendRequest } from './anki-connect'
 import { createFlashcards, QuizNote } from './handle'
 import { filterExistingWords } from './helper/filter-existing-words'
 import { getWordEntriesFromResponse } from './helper/get-words-from-notion-response'
+import {
+    filterNotionTargetsByWords,
+    resolveNotionDeckName,
+    type NotionSyncTarget
+} from './helper/notion-sync'
 import modelFlashcardParams from './helper/model-flashcard.json'
 import { readFileContent } from './helper/readFile'
 import { NotionService } from './notion'
@@ -271,9 +276,20 @@ const resolveDeckName = (deckName: string): string => {
     return `Vocabulary::Imported::${new Date().toISOString().split('T')[0]}`
 }
 
+const createDecksIfNotExist = async (deckNames: string[]): Promise<AppResponse> => {
+    for (const deckName of new Set(deckNames)) {
+        const deckResult = await createDeckIfNotExist(deckName)
+        if (deckResult.status === 'error') {
+            return deckResult
+        }
+    }
+
+    return success()
+}
+
 const loadWords = async (
     importRequest: ImportRequest
-): Promise<AppResponse<{ notionPageMap?: Map<string, string>; words: string[] }>> => {
+): Promise<AppResponse<{ notionTargets?: NotionSyncTarget[]; words: string[] }>> => {
     if (importRequest.type === 'FILE_IMPORT') {
         const rawData = await readFileContent(importRequest.payload.filePath)
         if (rawData === null) {
@@ -296,21 +312,27 @@ const loadWords = async (
             return failure('Failed to save Notion settings.')
         }
 
-        const pages = await NotionService.getPages(importRequest.payload.notionDatabaseId)
-        if (!pages || pages.length === 0) {
+        const dataSources = await NotionService.getPages(importRequest.payload.notionDatabaseId)
+        if (!dataSources || dataSources.length === 0) {
             return failure('No pages found in the Notion database.')
         }
 
-        const wordEntries = getWordEntriesFromResponse(pages)
-        const words = await filterExistingWords(wordEntries.map((entry) => entry.word))
-        const allowedWords = new Set(words)
-        const notionPageMap = new Map(
-            wordEntries
-                .filter((entry) => allowedWords.has(entry.word))
-                .map((entry) => [entry.word, entry.pageId])
+        const notionTargets = dataSources.flatMap((dataSource) =>
+            getWordEntriesFromResponse(dataSource.pages).map((entry) => ({
+                pageId: entry.pageId,
+                word: entry.word,
+                deckName: resolveNotionDeckName(
+                    importRequest.payload.deck,
+                    dataSource.dataSourceName
+                )
+            }))
         )
+        const words = await filterExistingWords(notionTargets.map((target) => target.word))
 
-        return success({ notionPageMap, words })
+        return success({
+            notionTargets: filterNotionTargetsByWords(notionTargets, words),
+            words
+        })
     } catch (error) {
         const message =
             error instanceof Error
@@ -324,8 +346,8 @@ const createNotes = async (
     importRequest: ImportRequest,
     words: string[],
     audioDir: string,
-    notionPageMap?: Map<string, string>
-): Promise<AppResponse<QuizNote[]>> => {
+    notionTargets?: NotionSyncTarget[]
+ ): Promise<AppResponse<QuizNote[]>> => {
     const isAudioEnabled = Boolean(State.getToken('azureApiKey'))
     if (isAudioEnabled) {
         const speechFiles = await SpeechService.createSpeechFiles(words, audioDir)
@@ -334,8 +356,11 @@ const createNotes = async (
         }
     }
 
-    const deckName = resolveDeckName(importRequest.payload.deck)
-    const deckResult = await createDeckIfNotExist(deckName)
+    const deckNames =
+        importRequest.type === 'NOTION_SYNC' && notionTargets
+            ? notionTargets.map((target) => target.deckName)
+            : [resolveDeckName(importRequest.payload.deck)]
+    const deckResult = await createDecksIfNotExist(deckNames)
     if (deckResult.status === 'error') {
         return deckResult
     }
@@ -345,9 +370,9 @@ const createNotes = async (
         const newNotes = await createFlashcards(
             words,
             audioDir,
-            deckName,
+            deckNames[0] || resolveDeckName(importRequest.payload.deck),
             isAudioEnabled,
-            notionPageMap
+            notionTargets
         )
         notes.push(...newNotes)
     }
@@ -402,8 +427,8 @@ const handleImportRequest = async (importRequest: ImportRequest): Promise<AppRes
         return failure('Failed to load words from the source.')
     }
 
-    const { words, notionPageMap } = loadedWordsResult.data
-    const notesResult = await createNotes(importRequest, words, audioDir, notionPageMap)
+    const { words, notionTargets } = loadedWordsResult.data
+    const notesResult = await createNotes(importRequest, words, audioDir, notionTargets)
     if (notesResult.status === 'error') {
         return notesResult
     }
