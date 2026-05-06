@@ -1,6 +1,6 @@
 {
     "name": "word2card",
-    "version": "2.2.0",
+    "version": "2.3.0",
     "productName": "Word2Card",
     "description": "Electron desktop app for generating Anki flashcards from text files or Notion.",
     "author": "youngmarco",
