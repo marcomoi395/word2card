@@ -1,0 +1,108 @@
+name: Reusable Build Assets
+
+on:
+  workflow_call:
+    inputs:
+      ref_name:
+        required: true
+        type: string
+      upload_to_release:
+        required: true
+        type: boolean
+    secrets:
+      repo_token:
+        required: true
+
+jobs:
+  build-assets:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            build_args: --linux AppImage deb
+            upload_patterns: |
+              dist/*.AppImage
+              dist/*.deb
+          - os: windows-latest
+            build_args: --win nsis
+            upload_patterns: |
+              dist/*-setup.exe
+              dist/*.blockmap
+              dist/latest*.yml
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref_name }}
+          fetch-depth: 0
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Package release artifacts
+        env:
+          GH_TOKEN: ${{ secrets.repo_token }}
+          GITHUB_TOKEN: ${{ secrets.repo_token }}
+        run: npx electron-builder ${{ matrix.build_args }} --publish never
+
+      - name: Collect packaged assets
+        id: assets
+        shell: bash
+        run: |
+          files=()
+          while IFS= read -r pattern; do
+            [ -n "$pattern" ] || continue
+            while IFS= read -r match; do
+              files+=("$match")
+            done < <(compgen -G "$pattern")
+          done <<'EOF'
+          ${{ matrix.upload_patterns }}
+          EOF
+
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No packaged assets found on $RUNNER_OS"
+            exit 1
+          fi
+
+          printf '%s\n' "${files[@]}" > release-assets.txt
+          {
+            echo 'artifact_name=release-assets-'"${{ matrix.os }}"
+            echo 'asset_list<<EOF'
+            cat release-assets.txt
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Upload assets to GitHub release
+        if: ${{ inputs.upload_to_release }}
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.repo_token }}
+          TAG_NAME: ${{ inputs.ref_name }}
+        run: |
+          mapfile -t files < release-assets.txt
+          gh release upload "$TAG_NAME" "${files[@]}" --clobber
+
+      - name: Upload assets to workflow artifacts
+        if: ${{ !inputs.upload_to_release }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.assets.outputs.artifact_name }}
+          path: |
+            dist/*.AppImage
+            dist/*.deb
+            dist/*-setup.exe
+            dist/*.blockmap
+            dist/latest*.yml
+          if-no-files-found: error
