@@ -10,7 +10,7 @@ on:
         required: true
         type: boolean
     secrets:
-      GITHUB_TOKEN:
+      repo_token:
         required: true
 
 jobs:
@@ -53,8 +53,8 @@ jobs:
 
       - name: Package release artifacts
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.repo_token }}
+          GITHUB_TOKEN: ${{ secrets.repo_token }}
         run: npx electron-builder ${{ matrix.build_args }} --publish never
 
       - name: Collect packaged assets
@@ -88,7 +88,7 @@ jobs:
         if: ${{ inputs.upload_to_release }}
         shell: bash
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.repo_token }}
           TAG_NAME: ${{ inputs.ref_name }}
         run: |
           mapfile -t files < release-assets.txt
@@ -96,7 +96,7 @@ jobs:
 
       - name: Upload assets to workflow artifacts
         if: ${{ !inputs.upload_to_release }}
-        uses: actions/uploadu-artifact@v4
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.assets.outputs.artifact_name }}
           path: |

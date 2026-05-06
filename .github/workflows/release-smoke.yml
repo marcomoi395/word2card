@@ -18,4 +18,4 @@ jobs:
       ref_name: ${{ inputs.ref_name }}
       upload_to_release: false
     secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      repo_token: ${{ secrets.GITHUB_TOKEN }}

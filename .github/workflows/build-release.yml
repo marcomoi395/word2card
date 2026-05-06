@@ -14,4 +14,4 @@ jobs:
       ref_name: ${{ github.event.release.tag_name }}
       upload_to_release: true
     secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      repo_token: ${{ secrets.GITHUB_TOKEN }}
