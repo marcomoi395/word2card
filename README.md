@@ -10,9 +10,9 @@ This is an Electron-based desktop application that automates the creation of hig
 
 - **Flexible Input:** Import words via a simple `.txt` file or sync directly from a **Notion Database**.
 - **AI-Powered Content:**
-  - **OpenAI:** Automatically generates definitions, translations, examples, and IPA transcriptions.
-  - **Azure Speech:** Generates high-quality, natural-sounding audio pronunciations.
-  - **Pexels:** Fetches relevant, high-quality images to visualize the vocabulary.
+    - **OpenAI:** Automatically generates definitions, translations, examples, and IPA transcriptions.
+    - **Azure Speech:** Generates high-quality, natural-sounding audio pronunciations.
+    - **Pexels:** Fetches relevant, high-quality images to visualize the vocabulary.
 
 - **Seamless Anki Integration:** Pushes cards directly to Anki via AnkiConnect.
 - **Notion Sync-Back:** Automatically updates your Notion rows (e.g., marks them as "Done") after the card is successfully created.
@@ -35,11 +35,10 @@ _(Go to Settings, enter your keys, and hit "Save Keys")_
 
 ## Installation & Usage
 
-1. Go to the **[Releases](https://www.google.com/search?q=link-to-your-github-releases&authuser=1)** page of this repository.
-2. Download the installer for your OS (Windows, or Linux).
-3. Install and launch the application.
-4. Open **Settings** (gear icon) and configure your API keys.
-5. **Start Creating Cards:**
+1. Download the installer from your project release channel, or build one locally using the commands in [For Developers](#for-developers).
+2. Install and launch the application.
+3. Open **Settings** (gear icon) and configure your API keys.
+4. **Start Creating Cards:**
     - **File Import:** Upload a `.txt` file (one word per line), choose a Deck name, and click Submit.
     - **Notion Sync:** Enter your Notion details to fetch words directly (see guide below).
 
@@ -76,6 +75,8 @@ To use the Notion Sync feature effectively, please follow these steps:
 
 - This app uses 3rd party APIs (OpenAI, Azure). Please be aware of your usage quotas and billing on those platforms.
 - Pexels API has a rate limit (usually 20,000 requests per month), so take it easy!
+
+- Auto-update publishing is not configured in this repository yet. Distribute installers manually until a real update endpoint is set up.
 
 ## For Developers
 
