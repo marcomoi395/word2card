@@ -1,6 +1,7 @@
 import * as sdk from 'microsoft-cognitiveservices-speech-sdk'
 import * as fs from 'fs'
 import path from 'path'
+import { sanitizeFilename } from './helper/sanitize-filename'
 import State from './state'
 
 const SERVICE_REGION = 'southeastasia'
@@ -108,7 +109,7 @@ export class SpeechService {
         const executing: Promise<void>[] = []
 
         for (const item of words) {
-            const filename = `${item}.mp3`
+            const filename = `${sanitizeFilename(item)}.mp3`
             const fullPath = path.join(outputDir, filename)
 
             if (fs.existsSync(fullPath)) {

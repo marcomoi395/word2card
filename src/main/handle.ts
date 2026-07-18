@@ -1,6 +1,7 @@
 import pLimit from 'p-limit'
 import { v4 as uuidv4 } from 'uuid'
 import { createNotionTargetQueueMap, shiftNotionTarget, type NotionSyncTarget } from './helper/notion-sync'
+import { sanitizeFilename } from './helper/sanitize-filename'
 import { NotionService } from './notion'
 import { OpenAIService } from './open-ai'
 import { searchImagePexels } from './pexels'
@@ -94,8 +95,8 @@ export const createFlashcards = async (
                 audio: isAudio
                     ? [
                           {
-                              path: `${audioDir}/${item.word}.mp3`,
-                              filename: `${item.word}.mp3`,
+                              path: `${audioDir}/${sanitizeFilename(item.word)}.mp3`,
+                              filename: `${sanitizeFilename(item.word)}.mp3`,
                               fields: ['audio_word']
                           }
                       ]
