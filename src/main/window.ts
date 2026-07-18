@@ -10,6 +10,7 @@ export function createWindow(): BrowserWindow {
         show: false,
         resizable: false,
         movable: true,
+        autoHideMenuBar: true,
         icon,
         ...(process.platform === 'linux' ? { icon } : {}),
         webPreferences: {
