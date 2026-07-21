@@ -1,7 +1,7 @@
 import type { ImportOptions, ImportRequest, SaveSettingsPayload } from '../../shared/ipc'
 
 export const isRecord = (value: unknown): value is Record<string, unknown> => {
-    return typeof value === 'object' && value !== null
+    return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 export const isImportOptions = (value: unknown): value is ImportOptions => {

@@ -132,3 +132,7 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
+# Playwright
+/playwright-report/
+/playwright/.cache/
+/test-results/

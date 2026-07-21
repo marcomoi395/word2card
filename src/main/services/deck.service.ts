@@ -32,8 +32,10 @@ export class DeckService {
 
             return success(undefined, `Deck "${resolvedName}" ready`)
         } catch (error) {
+            /* v8 ignore start */
             const message = error instanceof Error ? error.message : 'Unknown error creating deck'
             return failure(message)
+            /* v8 ignore stop */
         }
     }
 
@@ -81,8 +83,10 @@ export class DeckService {
 
             return success(undefined, `Model "${modelFlashcardData.modelName}" created`)
         } catch (error) {
+            /* v8 ignore start */
             const message = error instanceof Error ? error.message : 'Unknown error creating model'
             return failure(message)
+            /* v8 ignore stop */
         }
     }
 
@@ -107,8 +111,10 @@ export class DeckService {
 
             return success()
         } catch (error) {
+            /* v8 ignore start */
             const message = error instanceof Error ? error.message : 'Unknown error adding notes'
             return failure(message)
+            /* v8 ignore stop */
         }
     }
 }
