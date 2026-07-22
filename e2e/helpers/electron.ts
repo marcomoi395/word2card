@@ -61,13 +61,14 @@ export async function closeElectronApp(app: ElectronApplication): Promise<void> 
         })
 
         // Wait a bit for windows to close gracefully
-        await new Promise((resolve) => setTimeout(resolve, 500))
+        await new Promise((resolve) => setTimeout(resolve, 300))
 
-        // Close the app with timeout protection
+        // Close the app with timeout protection (reduced to fit within worker timeout)
+        // Worker timeout is 10s, mock server takes 1s, so we have ~8s for app close
         await Promise.race([
             app.close(),
             new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('App close timeout')), 10000)
+                setTimeout(() => reject(new Error('App close timeout')), 5000)
             )
         ])
     } catch (error) {
@@ -78,7 +79,7 @@ export async function closeElectronApp(app: ElectronApplication): Promise<void> 
             await Promise.race([
                 app.close(),
                 new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error('Force close timeout')), 3000)
+                    setTimeout(() => reject(new Error('Force close timeout')), 2000)
                 )
             ])
         } catch {

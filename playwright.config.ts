@@ -15,6 +15,10 @@ export default defineConfig({
     globalTimeout: 10 * 60 * 1000, // 10 minutes
 
     // Increase worker teardown timeout to allow proper cleanup
+    // Mock server stops in 1s, Electron app closes in 5s max = 6s + buffer
+    // @ts-expect-error - workerTimeout is valid but not in @playwright/test types yet
+    workerTimeout: 10000,
+
     expect: {
         timeout: 5000
     },
@@ -25,8 +29,6 @@ export default defineConfig({
     retries: process.env.CI ? 2 : 0,
     workers: 1, // Single worker for Electron tests (must be 1 for shared mock server)
 
-    // Increase worker teardown timeout to prevent cleanup timeouts
-    // This allows enough time for Electron app and mock server to close gracefully
     maxFailures: process.env.CI ? 5 : undefined,
     // Reporter configuration
     reporter: [['html', { outputFolder: 'playwright-report' }], ['list']],

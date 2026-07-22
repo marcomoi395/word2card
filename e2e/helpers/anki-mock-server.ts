@@ -1,7 +1,9 @@
 import http from 'http'
+import { Socket } from 'net'
 
 let server: http.Server | null = null
 let currentScenario: 'success' | 'failure' = 'success'
+const activeSockets = new Set<Socket>()
 
 export function startAnkiMockServer(): Promise<void> {
     if (server) return Promise.resolve()
@@ -79,6 +81,14 @@ export function startAnkiMockServer(): Promise<void> {
         })
     })
 
+    // Track all active connections for proper cleanup
+    server.on('connection', (socket: Socket) => {
+        activeSockets.add(socket)
+        socket.on('close', () => {
+            activeSockets.delete(socket)
+        })
+    })
+
     server.listen(8765, () => {
         console.log('[Mock] AnkiConnect mock server listening on 0.0.0.0:8765')
         resolve()
@@ -93,29 +103,52 @@ export function startAnkiMockServer(): Promise<void> {
 }
 
 export function stopAnkiMockServer(): Promise<void> {
-    const { promise, resolve } = Promise.withResolvers<void>()
-    if (server) {
+    if (!server) {
+        return Promise.resolve()
+    }
+
+    return new Promise<void>((resolve) => {
         console.log('[Mock] Stopping AnkiConnect mock server...')
-        // Close all connections first
-        server.closeAllConnections()
-        server.close(() => {
-            console.log('[Mock] AnkiConnect mock server stopped')
-            server = null
-            currentScenario = 'success' // Reset scenario
-            resolve()
-        })
-        // Force close after timeout
-        setTimeout(() => {
-            if (server) {
-                console.warn('[Mock] Force closing mock server after timeout')
+
+        let resolved = false
+        const doResolve = () => {
+            if (!resolved) {
+                resolved = true
+                console.log('[Mock] AnkiConnect mock server stopped')
                 server = null
+                currentScenario = 'success' // Reset scenario
+                activeSockets.clear()
                 resolve()
             }
-        }, 2000) // Reduced from 5s to 2s for faster worker teardown
-    } else {
-        resolve()
-    }
-    return promise
+        }
+
+        // Destroy all active sockets immediately
+        for (const socket of activeSockets) {
+            socket.destroy()
+        }
+        activeSockets.clear()
+
+        // Close all connections (Node 18+)
+        if (server.closeAllConnections) {
+            server.closeAllConnections()
+        }
+
+        // Close server and wait for callback
+        server.close((err) => {
+            if (err) {
+                console.warn('[Mock] Error closing server:', err)
+            }
+            doResolve()
+        })
+
+        // Force close after 1 second if graceful close fails
+        setTimeout(() => {
+            if (!resolved) {
+                console.warn('[Mock] Force closing mock server after timeout')
+                doResolve()
+            }
+        }, 1000)
+    })
 }
 
 export async function setAnkiMockScenario(scenario: 'success' | 'failure'): Promise<void> {
