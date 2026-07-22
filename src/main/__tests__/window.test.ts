@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { join } from 'path'
 import { shell } from 'electron'
 
 // Define hoisted mocks
@@ -129,7 +128,7 @@ describe('window.ts', () => {
     const utils = await import('@electron-toolkit/utils')
     // Temporarily set dev to true
     Object.defineProperty(utils.is, 'dev', { value: true, configurable: true })
-    process.env['ELECTRON_RENDERER_URL'] = 'http://localhost:5173'
+    Object.defineProperty(process.env, 'ELECTRON_RENDERER_URL', { value: 'http://localhost:5173', configurable: true })
     
     createWindow()
     

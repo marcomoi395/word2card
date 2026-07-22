@@ -19,7 +19,15 @@
   - `npm run build:win` → electron-builder `--win`
   - `npm run build:mac` → electron-builder `--mac`
   - `npm run build:linux` → electron-builder `--linux`
-- No test runner configured (only `node:test` used in `src/main/helper/notion-sync.test.ts`; run with `node --test src/main/helper/notion-sync.test.ts`)
+- Test (unit): `npm test` (runs Vitest)
+  - Watch mode: `npm run test:watch`
+  - Coverage: `npm run test:coverage`
+- Test (E2E): `npm run test:e2e` (builds app, runs Playwright tests)
+  - Alternative: `npm run test:e2e:local`
+  - UI mode: `npm run test:e2e:ui`
+  - Debug mode: `npm run test:e2e:debug`
+  - Clean up: `npm run test:e2e:clean`
+- Legacy: Manual test with `node --test src/main/helper/notion-sync.test.ts`
 
 ## Verification
 - Run `npm run typecheck` after any TypeScript change

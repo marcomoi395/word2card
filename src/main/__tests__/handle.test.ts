@@ -27,7 +27,7 @@ describe('createFlashcards', () => {
         audio_word: 'test.mp3',
       },
     ])
-    vi.mocked(State.getToken).mockReturnValue(null)
+    vi.mocked(State.getToken).mockReturnValue(undefined)
 
     const result = await createFlashcards(['test'], '/audio', 'TestDeck', false)
 
@@ -52,7 +52,7 @@ describe('createFlashcards', () => {
         audio_word: 'hello.mp3',
       },
     ])
-    vi.mocked(State.getToken).mockReturnValue(null)
+    vi.mocked(State.getToken).mockReturnValue(undefined)
 
     const result = await createFlashcards(['hello'], '/mock/audio', 'TestDeck', true)
 
@@ -112,7 +112,7 @@ describe('createFlashcards', () => {
         audio_word: 'word1.mp3',
       },
     ])
-    vi.mocked(State.getToken).mockReturnValue(null)
+    vi.mocked(State.getToken).mockReturnValue(undefined)
 
     const notionTargets = [
       { pageId: 'page-1', word: 'word1', deckName: 'NotionDeck' },
@@ -146,7 +146,7 @@ describe('createFlashcards', () => {
         audio_word: 'word1.mp3',
       },
     ])
-    vi.mocked(State.getToken).mockReturnValue(null)
+    vi.mocked(State.getToken).mockReturnValue(undefined)
 
     const mockQueue = new Map()
     vi.mocked(notionSync.createNotionTargetQueueMap).mockReturnValue(mockQueue)
@@ -180,7 +180,7 @@ describe('createFlashcards', () => {
         audio_word: 'word2.mp3',
       },
     ])
-    vi.mocked(State.getToken).mockReturnValue(null)
+    vi.mocked(State.getToken).mockReturnValue(undefined)
 
     const notionTargets = [
       { pageId: 'page-1', word: 'word1', deckName: 'Deck1' },
@@ -214,7 +214,7 @@ describe('createFlashcards', () => {
         audio_word: 'a.mp3',
       },
     ])
-    vi.mocked(State.getToken).mockReturnValue(null)
+    vi.mocked(State.getToken).mockReturnValue(undefined)
 
     const result = await createFlashcards(['a'], '/audio', 'TestDeck', false)
 
@@ -231,7 +231,7 @@ describe('createFlashcards', () => {
         audio_word: 'go.mp3',
       },
     ])
-    vi.mocked(State.getToken).mockReturnValue(null)
+    vi.mocked(State.getToken).mockReturnValue(undefined)
 
     const result = await createFlashcards(['go'], '/audio', 'TestDeck', false)
 
@@ -248,7 +248,7 @@ describe('createFlashcards', () => {
         audio_word: 'wonderful.mp3',
       },
     ])
-    vi.mocked(State.getToken).mockReturnValue(null)
+    vi.mocked(State.getToken).mockReturnValue(undefined)
 
     const result = await createFlashcards(['wonderful'], '/audio', 'TestDeck', false)
 
@@ -257,7 +257,7 @@ describe('createFlashcards', () => {
 
   it('handles empty words array', async () => {
     vi.mocked(OpenAIService.generateFlashcardData).mockResolvedValue([])
-    vi.mocked(State.getToken).mockReturnValue(null)
+    vi.mocked(State.getToken).mockReturnValue(undefined)
 
     const result = await createFlashcards([], '/audio', 'TestDeck', false)
 
@@ -275,7 +275,7 @@ describe('createFlashcards', () => {
         audio_word: 'test.mp3',
       },
     ])
-    vi.mocked(State.getToken).mockReturnValue(null)
+    vi.mocked(State.getToken).mockReturnValue(undefined)
 
     const result = await createFlashcards(['test/word'], '/audio', 'TestDeck', true)
 

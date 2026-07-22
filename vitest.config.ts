@@ -3,10 +3,12 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   test: {
     globals: true,
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/e2e/**', // Playwright e2e tests
+    ],
     environmentMatchGlobs: [
-      ['src/renderer/**', 'jsdom'],
-      ['src/main/**', 'node'],
-      ['src/shared/**', 'node'],
     ],
     setupFiles: ['./test/setup.ts'],
     coverage: {

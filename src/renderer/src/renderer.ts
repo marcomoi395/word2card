@@ -35,15 +35,13 @@ function setButtonLoading(
 }
 
 function showResponseAlert(actionLabel: string, response: AppResponse | undefined): void {
-    if (response?.status === 'success') {
-        alert(`${actionLabel} successful!`)
-        return
+    // Only show alerts for errors; success feedback comes from button state
+    if (response?.status !== 'success') {
+        /* v8 ignore start */
+        alert(`${actionLabel} failed: ${response?.message || 'Unknown error.'}`)
+        /* v8 ignore stop */
     }
-
-    /* v8 ignore start */
-    alert(`${actionLabel} failed: ${response?.message || 'Unknown error.'}`)
 }
-    /* v8 ignore stop */
 
 function switchTab(tabName: TabName): void {
     const importSection = document.getElementById('section-import')
@@ -359,10 +357,8 @@ function initSettingsForm(): void {
 
         try {
             const result = await window.api.saveSettings(settingsData)
-            if (result.status === 'success') {
-        /* v8 ignore next */
-                alert(result.message || 'Saved!')
-            } else {
+            // Only show alert on error; success feedback is provided by button state
+            if (result.status !== 'success') {
                 alert(`Failed to save settings: ${result.message}`)
             }
         } catch (error) {

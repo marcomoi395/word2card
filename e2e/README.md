@@ -12,7 +12,7 @@ npm install
 
 ## Running Tests
 
-**Run all e2e tests:**
+**Run all tests:**
 ```bash
 npm run test:e2e
 ```
@@ -32,9 +32,24 @@ npm run test:e2e:debug
 ```
 e2e/
 ├── helpers/
-│   └── electron.ts       # Electron app launch/close utilities
-├── smoke.spec.ts         # Basic app launch tests
-└── README.md            # This file
+│   ├── electron.ts           # Electron app launch/close utilities
+│   ├── anki-mock-server.ts   # Mock AnkiConnect server
+│   ├── mocks.ts              # Mock data and helpers
+│   └── fixtures.ts           # Test fixtures
+├── fixtures/
+│   └── test-words.txt        # Sample test data
+├── smoke.spec.ts             # Basic app launch tests
+├── navigation.spec.ts        # Navigation flow tests
+├── drag-drop.spec.ts         # Drag and drop tests
+├── window-controls.spec.ts   # Window control tests
+├── settings.spec.ts          # Settings page tests
+├── file-import.spec.ts       # File import tests
+├── notion-sync.spec.ts       # Notion sync tests
+├── form-validation.spec.ts   # Form validation tests
+├── error-handling.spec.ts    # Error handling tests
+├── global-setup.ts           # Global test setup
+├── global-teardown.ts        # Global test teardown
+└── README.md                 # This file
 ```
 
 ## Writing Tests
@@ -81,15 +96,36 @@ test.describe('Feature Name', () => {
 - Screenshots and videos are captured on failure (in `test-results/`)
 - Use `await window.pause()` to pause execution and inspect
 
+
 ## CI/CD
 
-E2E tests should run in CI after:
-- Unit tests pass
-- Application builds successfully
+### GitHub Actions Workflow
 
-Recommended CI workflow:
+E2E tests run automatically on every PR via `.github/workflows/e2e-tests.yml`:
+
 ```yaml
+- run: npm run lint          # Lint
+- run: npm run typecheck     # Type check
 - run: npm run test          # Unit tests
-- run: npm run build         # Build app
 - run: npm run test:e2e      # E2E tests
 ```
+
+Test reports and failure artifacts are uploaded automatically.
+
+
+## Viewing Test Reports
+
+After running tests, view the HTML report:
+
+```bash
+npx playwright show-report
+```
+
+Or open `playwright-report/index.html` in your browser.
+
+## Troubleshooting
+
+- **Tests timeout**: Increase timeout in `playwright.config.ts`
+- **Element not found**: Add `waitForSelector` before interaction
+- **Flaky tests**: Add proper waits, check for race conditions
+- **Mock server issues**: Ensure AnkiConnect mock is running on correct port

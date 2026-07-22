@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { BrowserWindow, ipcMain } from 'electron'
+import { ipcMain } from 'electron'
 import { registerWindowHandlers } from '../window.handler'
 import { IPC_CHANNELS } from '../../../../shared/ipc'
 

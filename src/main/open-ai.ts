@@ -5,8 +5,9 @@ export interface FlashcardResponse {
     word: string
     pos: string
     vietnamese: string
-    ipa: string
-    example: string
+    ipa?: string
+    example?: string
+    audio_word?: string
 }
 
 export class OpenAIService {

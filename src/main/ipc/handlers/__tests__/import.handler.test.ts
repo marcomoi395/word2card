@@ -41,12 +41,16 @@ describe('registerImportHandlers', () => {
 
     const mockParsedRequest = {
       type: 'FILE_IMPORT' as const,
-      filePath: '/path/to/file.txt',
+      payload: {
+        filePath: '/path/to/file.txt',
+        deck: 'TestDeck',
+        options: { quiz: false, flashcard: true }
+      }
     }
 
     const mockServiceResponse = {
       status: 'success' as const,
-      data: { imported: 10 },
+      message: '10 items imported',
     }
 
     vi.mocked(parseImportRequest).mockReturnValue(mockParsedRequest)
@@ -64,18 +68,22 @@ describe('registerImportHandlers', () => {
 
     const mockParsedRequest = {
       type: 'NOTION_SYNC' as const,
-      notionToken: 'token',
-      notionDatabaseId: 'db-id',
+      payload: {
+        token: 'token',
+        notionDatabaseId: 'db-id',
+        deck: 'TestDeck',
+        options: { quiz: false, flashcard: true }
+      }
     }
+
 
     const mockServiceResponse = {
       status: 'success' as const,
-      data: { synced: 5 },
+      message: '5 items synced',
     }
 
     vi.mocked(parseImportRequest).mockReturnValue(mockParsedRequest)
     vi.mocked(ImportService.handleImportRequest).mockResolvedValue(mockServiceResponse)
-
     const result = await handlers[IPC_CHANNELS.sendImport](null, mockParsedRequest)
 
     expect(ImportService.handleImportRequest).toHaveBeenCalledWith(mockParsedRequest)

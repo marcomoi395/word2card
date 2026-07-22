@@ -43,7 +43,7 @@ describe('ImportService', () => {
   describe('handleImportRequest - FILE_IMPORT', () => {
     it('successfully imports words from file', async () => {
       vi.mocked(State.getMissingTokens).mockReturnValue([])
-      vi.mocked(State.getToken).mockReturnValue(null)
+      vi.mocked(State.getToken).mockReturnValue(undefined)
       vi.mocked(ankiConnect.checkAnkiConnect).mockResolvedValue(true)
       vi.mocked(readFile.readFileContent).mockResolvedValue(['word1', 'word2'])
       vi.mocked(filterExistingWords.filterExistingWords).mockResolvedValue(['word1', 'word2'])
@@ -55,8 +55,8 @@ describe('ImportService', () => {
         {
           deckName: 'TestDeck',
           modelName: 'Word2Card',
-          fields: { Word: 'word1' },
-          tags: [],
+          fields: { id: '1', word: 'word1', vietnamese: 'từ 1' },
+          options: { allowDuplicate: false }
         },
       ])
       vi.mocked(DeckService.addNotesToAnki).mockResolvedValue({
@@ -131,13 +131,13 @@ describe('ImportService', () => {
     })
     it('uses default deck name when deck is empty', async () => {
       vi.mocked(State.getMissingTokens).mockReturnValue([])
-      vi.mocked(State.getToken).mockReturnValue(null)
+      vi.mocked(State.getToken).mockReturnValue(undefined)
       vi.mocked(ankiConnect.checkAnkiConnect).mockResolvedValue(true)
       vi.mocked(readFile.readFileContent).mockResolvedValue(['word1'])
       vi.mocked(filterExistingWords.filterExistingWords).mockResolvedValue(['word1'])
       vi.mocked(DeckService.createDecksIfNotExist).mockResolvedValue({ status: 'success' })
       vi.mocked(createFlashcards.createFlashcards).mockResolvedValue([
-        { deckName: 'Default', modelName: 'Word2Card', fields: { Word: 'word1' } as any, tags: [], options: { allowDuplicate: false } }
+        { deckName: 'Default', modelName: 'Word2Card', fields: { id: '1', word: 'word1', vietnamese: 'từ 1' }, options: { allowDuplicate: false } }
       ])
       vi.mocked(DeckService.addNotesToAnki).mockResolvedValue({ status: 'success' })
 
@@ -153,7 +153,7 @@ describe('ImportService', () => {
 
     it('returns failure when no notes are created', async () => {
       vi.mocked(State.getMissingTokens).mockReturnValue([])
-      vi.mocked(State.getToken).mockReturnValue(null)
+      vi.mocked(State.getToken).mockReturnValue(undefined)
       vi.mocked(ankiConnect.checkAnkiConnect).mockResolvedValue(true)
       vi.mocked(readFile.readFileContent).mockResolvedValue(['word1'])
       vi.mocked(filterExistingWords.filterExistingWords).mockResolvedValue(['word1'])
@@ -192,8 +192,8 @@ describe('ImportService', () => {
         {
           deckName: 'TestDeck',
           modelName: 'Word2Card',
-          fields: { Word: 'word1' },
-          tags: [],
+          fields: { id: '1', word: 'word1', vietnamese: 'từ 1' },
+          options: { allowDuplicate: false }
         },
       ])
       vi.mocked(DeckService.addNotesToAnki).mockResolvedValue({
@@ -247,7 +247,7 @@ describe('ImportService', () => {
       vi.mocked(DeckService.createDecksIfNotExist).mockResolvedValue({ status: 'success' })
       vi.mocked(DeckService.addNotesToAnki).mockResolvedValue({ status: 'success' })
       vi.mocked(createFlashcards.createFlashcards).mockResolvedValue([
-        { deckName: 'D', modelName: 'M', fields: { Word: 'w' } as any, tags: [], options: { allowDuplicate: false } }
+        { deckName: 'D', modelName: 'M', fields: { id: '1', word: 'w', vietnamese: 'v' }, options: { allowDuplicate: false } }
       ])
       
       vi.mocked(fs.existsSync).mockReturnValueOnce(false)
@@ -316,20 +316,21 @@ describe('ImportService', () => {
   describe('handleImportRequest - NOTION_SYNC', () => {
     it('successfully syncs words from Notion', async () => {
       vi.mocked(State.getMissingTokens).mockReturnValue([])
-      vi.mocked(State.getToken).mockReturnValue(null)
+      vi.mocked(State.getToken).mockReturnValue(undefined)
       vi.mocked(ankiConnect.checkAnkiConnect).mockResolvedValue(true)
       vi.mocked(SecretManager.saveSecret).mockReturnValue(true)
       vi.mocked(State.setToken).mockReturnValue()
       vi.mocked(NotionService.getPages).mockResolvedValue([
         {
+          dataSourceId: 'source1',
           dataSourceName: 'Source1',
           pages: [
             {
               id: 'page1',
               properties: {
-                Word: { type: 'title', title: [{ plain_text: 'word1' }] },
+                Word: { id: 'prop1', type: 'title', title: [{ plain_text: 'word1', href: null, annotations: {} as unknown as never }] as unknown as never },
               },
-            },
+            } as unknown as never,
           ],
         },
       ])
@@ -342,8 +343,8 @@ describe('ImportService', () => {
         {
           deckName: 'TestDeck',
           modelName: 'Word2Card',
-          fields: { Word: 'word1' },
-          tags: [],
+          fields: { id: '1', word: 'word1', vietnamese: 'từ 1' },
+          options: { allowDuplicate: false }
         },
       ])
       vi.mocked(DeckService.addNotesToAnki).mockResolvedValue({
@@ -368,7 +369,7 @@ describe('ImportService', () => {
 
     it('returns default error message when Notion throws non-Error', async () => {
       vi.mocked(State.getMissingTokens).mockReturnValue([])
-      vi.mocked(State.getToken).mockReturnValue(null)
+      vi.mocked(State.getToken).mockReturnValue(undefined)
       vi.mocked(ankiConnect.checkAnkiConnect).mockResolvedValue(true)
       vi.mocked(SecretManager.saveSecret).mockReturnValue(true)
       vi.mocked(NotionService.getPages).mockRejectedValue('String error')

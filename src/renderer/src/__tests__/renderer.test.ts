@@ -194,7 +194,7 @@ describe('Renderer UI', () => {
 
       vi.mocked(window.api.saveSettings).mockResolvedValue({
         status: 'error',
-      })
+      } as any)
 
       saveButton.click()
 
@@ -292,7 +292,7 @@ describe('Renderer UI', () => {
 
       vi.mocked(window.api.sendImport).mockResolvedValue({
         status: 'success',
-        data: { imported: 10 },
+        message: '10 items imported',
       })
 
       form.dispatchEvent(new Event('submit'))
@@ -390,7 +390,7 @@ describe('Renderer UI', () => {
 
       vi.mocked(window.api.sendImport).mockResolvedValue({
         status: 'success',
-        data: { synced: 5 },
+        message: '5 items synced',
       })
 
       form.dispatchEvent(new Event('submit'))

@@ -133,8 +133,9 @@ describe('DeckService', () => {
         {
           deckName: 'TestDeck',
           modelName: 'Word2Card',
-          fields: { Word: 'test', Definition: 'test def' },
+          fields: { Word: 'test', Definition: 'test def' } as any,
           tags: [],
+          options: { allowDuplicate: false }
         },
       ]
 
@@ -156,18 +157,19 @@ describe('DeckService', () => {
       vi.mocked(ankiConnect.sendRequest)
         .mockResolvedValueOnce({
           result: ['Basic', 'AnkiVNModel_Flashcard', 'Cloze'],
+          error: null,
         })
         .mockResolvedValueOnce({
           result: null,
           error: null,
         })
-
       const notes = [
         {
           deckName: 'TestDeck',
           modelName: 'Word2Card',
-          fields: { Word: 'test', Definition: 'test def' },
+          fields: { Word: 'test', Definition: 'test def' } as any,
           tags: [],
+          options: { allowDuplicate: false }
         },
       ]
 
@@ -193,8 +195,9 @@ describe('DeckService', () => {
         {
           deckName: 'TestDeck',
           modelName: 'Word2Card',
-          fields: { Word: 'test', Definition: 'test def' },
+          fields: { Word: 'test', Definition: 'test def' } as any,
           tags: [],
+          options: { allowDuplicate: false }
         },
       ]
 
@@ -219,8 +222,9 @@ describe('DeckService', () => {
         {
           deckName: 'TestDeck',
           modelName: 'Word2Card',
-          fields: { Word: 'test', Definition: 'test def' },
+          fields: { Word: 'test', Definition: 'test def' } as any,
           tags: [],
+          options: { allowDuplicate: false }
         },
       ]
 
@@ -245,8 +249,9 @@ describe('DeckService', () => {
         {
           deckName: 'TestDeck',
           modelName: 'Word2Card',
-          fields: { Word: 'test', Definition: 'test def' },
+          fields: { Word: 'test', Definition: 'test def' } as any,
           tags: [],
+          options: { allowDuplicate: false }
         },
       ]
 
@@ -268,8 +273,9 @@ describe('DeckService', () => {
         {
           deckName: 'TestDeck',
           modelName: 'Word2Card',
-          fields: { Word: 'test', Definition: 'test def' },
+          fields: { Word: 'test', Definition: 'test def' } as any,
           tags: [],
+          options: { allowDuplicate: false }
         },
       ]
 
@@ -292,8 +298,9 @@ describe('DeckService', () => {
         {
           deckName: 'TestDeck',
           modelName: 'Word2Card',
-          fields: { Word: 'test', Definition: 'test def' },
+          fields: { Word: 'test', Definition: 'test def' } as any,
           tags: [],
+          options: { allowDuplicate: false }
         },
       ]
 
