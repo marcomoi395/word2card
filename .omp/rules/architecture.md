@@ -8,7 +8,7 @@
 - Electron app with strict process separation: main, preload, renderer
 - Build tool: `electron-vite` (config: `electron.vite.config.ts`, currently empty/default)
 - Packaging: `electron-builder` (config: `electron-builder.yml`)
-- CI: release-please + reusable GitHub Actions workflow for multi-platform builds (Linux + Windows; macOS dmg target defined but not in CI matrix)
+- CI: Comprehensive CI pipeline (lint, typecheck, unit tests, E2E tests) on PRs and main pushes; tag-triggered builds for Linux + Windows with draft releases (macOS dmg target defined but not in CI matrix)
 
 ### Process boundaries
 - `src/main/` — main process: app lifecycle, IPC handlers, OS integration, all API calls (OpenAI, Azure Speech, Pexels, Notion, AnkiConnect)
