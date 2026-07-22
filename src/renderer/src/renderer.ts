@@ -163,7 +163,7 @@ function initImportForm(): void {
     const form = document.getElementById('form-import') as HTMLFormElement | null
     if (!form) {
         return
-    /* v8 ignore stop */
+        /* v8 ignore stop */
     }
 
     form.addEventListener('submit', async (event) => {
@@ -228,7 +228,7 @@ function initNotionForm(): void {
     const form = document.getElementById('form-notion') as HTMLFormElement | null
     if (!form) {
         return
-    /* v8 ignore stop */
+        /* v8 ignore stop */
     }
 
     form.addEventListener('submit', async (event) => {
@@ -346,11 +346,11 @@ function initSettingsForm(): void {
         }
 
         const settingsData: SaveSettingsPayload = {
-        /* v8 ignore start */
+            /* v8 ignore start */
             openaiApiKey: openaiInput?.value.trim() || '',
             azureApiKey: azureInput?.value.trim() || '',
             pexelsToken: pexelsInput?.value.trim() || ''
-        /* v8 ignore stop */
+            /* v8 ignore stop */
         }
 
         setButtonLoading(saveButton, true, 'Saving...')

@@ -6,187 +6,222 @@ import { expectAlertContaining, expectAlertWithMessage } from './helpers/dialogs
 import { waitForButtonLoadingComplete, waitForButtonDisabled } from './helpers/waits'
 
 test.describe('Form Validation Edge Cases', () => {
-  let context: ElectronAppContext
+    let context: ElectronAppContext
 
-  test.beforeEach(async () => {
-    context = await launchElectronApp()
-    await setupApiKeys(context.window)
-    await mockOpenAI(context.window, ['test', 'word', 'apple'])
-  })
+    test.beforeEach(async () => {
+        context = await launchElectronApp()
+        await setupApiKeys(context.window)
+        await mockOpenAI(context.window, ['test', 'word', 'apple'])
+    })
 
-  test.afterEach(async () => {
-    await closeElectronApp(context.app)
-  })
+    test.afterEach(async () => {
+        await closeElectronApp(context.app)
+    })
 
-  test('should auto-generate deck name when empty on file import', async () => {
-    const { window } = context
+    test('should auto-generate deck name when empty on file import', async () => {
+        const { window } = context
 
-    await mockAnkiConnect(window, 'success')
+        await mockAnkiConnect(window, 'success')
 
-    await window.fill('#source-file', '/path/to/test.txt')
-    await window.fill('input[name="deck"]', '') // Empty deck name
-    await window.check('#chk-flashcard-import')
+        await window.fill('#source-file', '/path/to/test.txt')
+        await window.fill('input[name="deck"]', '') // Empty deck name
+        await window.check('#chk-flashcard-import')
 
-    await window.click('#form-import button[type="submit"]')
-    
-    // Wait for import to complete with auto-generated deck name
-    await waitForButtonLoadingComplete(window, '#form-import button[type="submit"]', undefined, 15000)
-  })
+        await window.click('#form-import button[type="submit"]')
 
-  test('should handle very long deck names', async () => {
-    const { window } = context
+        // Wait for import to complete with auto-generated deck name
+        await waitForButtonLoadingComplete(
+            window,
+            '#form-import button[type="submit"]',
+            undefined,
+            15000
+        )
+    })
 
-    const longDeckName = 'Vocabulary::' + 'A'.repeat(200)
+    test('should handle very long deck names', async () => {
+        const { window } = context
 
-    const deckInput = window.locator('#form-import input[name="deck"]')
-    await deckInput.fill(longDeckName)
+        const longDeckName = 'Vocabulary::' + 'A'.repeat(200)
 
-    const value = await deckInput.inputValue()
-  })
+        const deckInput = window.locator('#form-import input[name="deck"]')
+        await deckInput.fill(longDeckName)
 
-  test('should handle deck names with special characters', async () => {
-    const { window } = context
+        const value = await deckInput.inputValue()
+    })
 
-    const specialDeckName = 'Vocabulary::Test::Special-Chars_123::éüñ'
+    test('should handle deck names with special characters', async () => {
+        const { window } = context
 
-    const deckInput = window.locator('#form-import input[name="deck"]')
-    await deckInput.fill(specialDeckName)
+        const specialDeckName = 'Vocabulary::Test::Special-Chars_123::éüñ'
 
-    const value = await deckInput.inputValue()
-    expect(value).toBe(specialDeckName)
-  })
+        const deckInput = window.locator('#form-import input[name="deck"]')
+        await deckInput.fill(specialDeckName)
 
-  test('should handle invalid file path gracefully', async () => {
-    const { window } = context
+        const value = await deckInput.inputValue()
+        expect(value).toBe(specialDeckName)
+    })
 
-    await mockAnkiConnect(window, 'success')
+    test('should handle invalid file path gracefully', async () => {
+        const { window } = context
 
-    const invalidPath = '/path/to/nonexistent/file.txt'
-    await window.fill('#source-file', invalidPath)
-    await window.fill('input[name="deck"]', testDeckNames.fileImport)
-    await window.check('#chk-flashcard-import')
+        await mockAnkiConnect(window, 'success')
 
-    const alertPromise = expectAlertContaining(window, 'Failed to read')
-    await window.click('#form-import button[type="submit"]')
-    await alertPromise
-  })
+        const invalidPath = '/path/to/nonexistent/file.txt'
+        await window.fill('#source-file', invalidPath)
+        await window.fill('input[name="deck"]', testDeckNames.fileImport)
+        await window.check('#chk-flashcard-import')
 
-  test('should disable submit button during processing', async () => {
-    const { window } = context
+        const alertPromise = expectAlertContaining(window, 'Failed to read')
+        await window.click('#form-import button[type="submit"]')
+        await alertPromise
+    })
 
-    await mockAnkiConnect(window, 'success')
+    test('should disable submit button during processing', async () => {
+        const { window } = context
 
-    await window.fill('#source-file', '/path/to/test.txt')
-    await window.fill('input[name="deck"]', testDeckNames.fileImport)
-    await window.check('#chk-flashcard-import')
+        await mockAnkiConnect(window, 'success')
 
-    const submitButton = window.locator('#form-import button[type="submit"]')
+        await window.fill('#source-file', '/path/to/test.txt')
+        await window.fill('input[name="deck"]', testDeckNames.fileImport)
+        await window.check('#chk-flashcard-import')
 
-    let isDisabled = await submitButton.isDisabled()
-    expect(isDisabled).toBe(false)
+        const submitButton = window.locator('#form-import button[type="submit"]')
 
-    // Click and wait for operation to complete
-    // (Loading state is too fast with mocks to observe reliably)
-    await submitButton.click()
-    await waitForButtonLoadingComplete(window, '#form-import button[type="submit"]', undefined, 15000)
-  })
+        let isDisabled = await submitButton.isDisabled()
+        expect(isDisabled).toBe(false)
 
-  test('should re-enable submit button after successful completion', async () => {
-    const { window } = context
+        // Click and wait for operation to complete
+        // (Loading state is too fast with mocks to observe reliably)
+        await submitButton.click()
+        await waitForButtonLoadingComplete(
+            window,
+            '#form-import button[type="submit"]',
+            undefined,
+            15000
+        )
+    })
 
-    await mockAnkiConnect(window, 'success')
+    test('should re-enable submit button after successful completion', async () => {
+        const { window } = context
 
-    await window.fill('#source-file', '/path/to/test.txt')
-    await window.fill('input[name="deck"]', testDeckNames.fileImport)
-    await window.check('#chk-flashcard-import')
+        await mockAnkiConnect(window, 'success')
 
-    await window.click('#form-import button[type="submit"]')
-    
-    // Wait for import to complete and button to re-enable
-    await waitForButtonLoadingComplete(window, '#form-import button[type="submit"]', undefined, 15000)
-  })
+        await window.fill('#source-file', '/path/to/test.txt')
+        await window.fill('input[name="deck"]', testDeckNames.fileImport)
+        await window.check('#chk-flashcard-import')
 
-  test('should re-enable submit button after error', async () => {
-    const { window } = context
+        await window.click('#form-import button[type="submit"]')
 
-    await mockAnkiConnect(window, 'failure')
+        // Wait for import to complete and button to re-enable
+        await waitForButtonLoadingComplete(
+            window,
+            '#form-import button[type="submit"]',
+            undefined,
+            15000
+        )
+    })
 
-    await window.fill('#source-file', '/path/to/test.txt')
-    await window.fill('input[name="deck"]', testDeckNames.fileImport)
-    await window.check('#chk-flashcard-import')
+    test('should re-enable submit button after error', async () => {
+        const { window } = context
 
-    const alertPromise = expectAlertContaining(window, 'AnkiConnect')
-    await window.click('#form-import button[type="submit"]')
-    await alertPromise
-  })
+        await mockAnkiConnect(window, 'failure')
 
-  test('should handle rapid clicks on submit button', async () => {
-    const { window } = context
+        await window.fill('#source-file', '/path/to/test.txt')
+        await window.fill('input[name="deck"]', testDeckNames.fileImport)
+        await window.check('#chk-flashcard-import')
 
-    await mockAnkiConnect(window, 'success')
+        const alertPromise = expectAlertContaining(window, 'AnkiConnect')
+        await window.click('#form-import button[type="submit"]')
+        await alertPromise
+    })
 
-    await window.fill('#source-file', '/path/to/test.txt')
-    await window.fill('input[name="deck"]', testDeckNames.fileImport)
-    await window.check('#chk-flashcard-import')
+    test('should handle rapid clicks on submit button', async () => {
+        const { window } = context
 
-    const submitButton = window.locator('#form-import button[type="submit"]')
+        await mockAnkiConnect(window, 'success')
 
-    // Rapid clicks - only first should process
-    await submitButton.click()
-    await submitButton.click().catch(() => {}) // May fail if button disabled
-    await submitButton.click().catch(() => {}) // May fail if button disabled
+        await window.fill('#source-file', '/path/to/test.txt')
+        await window.fill('input[name="deck"]', testDeckNames.fileImport)
+        await window.check('#chk-flashcard-import')
 
-    // Wait for the operation to complete successfully
-    // (Button protection happens too fast with mocks to observe reliably)
-    await waitForButtonLoadingComplete(window, '#form-import button[type="submit"]', undefined, 15000)
-  })
-  test('should handle empty Notion credentials gracefully', async () => {
-    const { window } = context
+        const submitButton = window.locator('#form-import button[type="submit"]')
 
-    await window.click('#tab-notion-btn')
-    await window.waitForSelector('#section-notion', { state: 'visible' })
+        // Rapid clicks - only first should process
+        await submitButton.click()
+        await submitButton.click().catch(() => {}) // May fail if button disabled
+        await submitButton.click().catch(() => {}) // May fail if button disabled
 
-    await window.fill('#notion-token', '')
-    await window.fill('#notion-database-id', '')
-    await window.fill('#form-notion input[name="deck"]', testDeckNames.notionSync)
-    await window.check('#chk-flashcard-notion')
+        // Wait for the operation to complete successfully
+        // (Button protection happens too fast with mocks to observe reliably)
+        await waitForButtonLoadingComplete(
+            window,
+            '#form-import button[type="submit"]',
+            undefined,
+            15000
+        )
+    })
+    test('should handle empty Notion credentials gracefully', async () => {
+        const { window } = context
 
-    // First validation: empty token
-    let alertPromise = expectAlertWithMessage(window, 'Please provide a Notion token.')
-    await window.click('#form-notion button[type="submit"]')
-    await alertPromise
+        await window.click('#tab-notion-btn')
+        await window.waitForSelector('#section-notion', { state: 'visible' })
 
-    // Fill token, keep database ID empty
-    await window.fill('#notion-token', 'test-token')
+        await window.fill('#notion-token', '')
+        await window.fill('#notion-database-id', '')
+        await window.fill('#form-notion input[name="deck"]', testDeckNames.notionSync)
+        await window.check('#chk-flashcard-notion')
 
-    // Second validation: empty database ID
-    alertPromise = expectAlertWithMessage(window, 'Please provide a Notion database ID.')
-    await window.click('#form-notion button[type="submit"]')
-    await alertPromise
-  })
+        // First validation: empty token
+        let alertPromise = expectAlertWithMessage(window, 'Please provide a Notion token.')
+        await window.click('#form-notion button[type="submit"]')
+        await alertPromise
 
-  test('should allow multiple successive imports', async () => {
-    const { window } = context
+        // Fill token, keep database ID empty
+        await window.fill('#notion-token', 'test-token')
 
-    await mockAnkiConnect(window, 'success')
+        // Second validation: empty database ID
+        alertPromise = expectAlertWithMessage(window, 'Please provide a Notion database ID.')
+        await window.click('#form-notion button[type="submit"]')
+        await alertPromise
+    })
 
-    // First import
-    await window.fill('#source-file', '/path/to/test1.txt')
-    await window.fill('input[name="deck"]', 'Deck1')
-    await window.check('#chk-flashcard-import')
-    await window.click('#form-import button[type="submit"]')
-    await waitForButtonLoadingComplete(window, '#form-import button[type="submit"]', undefined, 15000)
+    test('should allow multiple successive imports', async () => {
+        const { window } = context
 
-    // Second import
-    await window.fill('#source-file', '/path/to/test2.txt')
-    await window.fill('input[name="deck"]', 'Deck2')
-    await window.click('#form-import button[type="submit"]')
-    await waitForButtonLoadingComplete(window, '#form-import button[type="submit"]', undefined, 15000)
+        await mockAnkiConnect(window, 'success')
 
-    // Third import
-    await window.fill('#source-file', '/path/to/test3.txt')
-    await window.fill('input[name="deck"]', 'Deck3')
-    await window.click('#form-import button[type="submit"]')
-    await waitForButtonLoadingComplete(window, '#form-import button[type="submit"]', undefined, 15000)
-  })
+        // First import
+        await window.fill('#source-file', '/path/to/test1.txt')
+        await window.fill('input[name="deck"]', 'Deck1')
+        await window.check('#chk-flashcard-import')
+        await window.click('#form-import button[type="submit"]')
+        await waitForButtonLoadingComplete(
+            window,
+            '#form-import button[type="submit"]',
+            undefined,
+            15000
+        )
+
+        // Second import
+        await window.fill('#source-file', '/path/to/test2.txt')
+        await window.fill('input[name="deck"]', 'Deck2')
+        await window.click('#form-import button[type="submit"]')
+        await waitForButtonLoadingComplete(
+            window,
+            '#form-import button[type="submit"]',
+            undefined,
+            15000
+        )
+
+        // Third import
+        await window.fill('#source-file', '/path/to/test3.txt')
+        await window.fill('input[name="deck"]', 'Deck3')
+        await window.click('#form-import button[type="submit"]')
+        await waitForButtonLoadingComplete(
+            window,
+            '#form-import button[type="submit"]',
+            undefined,
+            15000
+        )
+    })
 })

@@ -129,10 +129,10 @@ export class ImportService {
 
         const deckNames =
             importRequest.type === 'NOTION_SYNC' && notionTargets
-                /* v8 ignore start */
-                ? notionTargets.map((target) => target.deckName)
+                ? /* v8 ignore start */
+                  notionTargets.map((target) => target.deckName)
                 : [resolveDeckName(importRequest.payload.deck)]
-                /* v8 ignore stop */
+        /* v8 ignore stop */
         const deckResult = await DeckService.createDecksIfNotExist(deckNames)
         if (deckResult.status === 'error') {
             return deckResult

@@ -13,16 +13,19 @@ npm install
 ## Running Tests
 
 **Run all tests:**
+
 ```bash
 npm run test:e2e
 ```
 
 **Run with UI mode (interactive):**
+
 ```bash
 npm run test:e2e:ui
 ```
 
 **Run with debug mode (step-through):**
+
 ```bash
 npm run test:e2e:debug
 ```
@@ -61,23 +64,23 @@ import { test, expect } from '@playwright/test'
 import { launchElectronApp, closeElectronApp, ElectronAppContext } from './helpers/electron'
 
 test.describe('Feature Name', () => {
-  let context: ElectronAppContext
+    let context: ElectronAppContext
 
-  test.beforeEach(async () => {
-    context = await launchElectronApp()
-  })
+    test.beforeEach(async () => {
+        context = await launchElectronApp()
+    })
 
-  test.afterEach(async () => {
-    await closeElectronApp(context.app)
-  })
+    test.afterEach(async () => {
+        await closeElectronApp(context.app)
+    })
 
-  test('should do something', async () => {
-    const { window } = context
-    
-    // Your test code here
-    await window.click('button#submit')
-    expect(await window.textContent('h1')).toBe('Expected Text')
-  })
+    test('should do something', async () => {
+        const { window } = context
+
+        // Your test code here
+        await window.click('button#submit')
+        expect(await window.textContent('h1')).toBe('Expected Text')
+    })
 })
 ```
 
@@ -96,7 +99,6 @@ test.describe('Feature Name', () => {
 - Screenshots and videos are captured on failure (in `test-results/`)
 - Use `await window.pause()` to pause execution and inspect
 
-
 ## CI/CD
 
 ### GitHub Actions Workflow
@@ -104,14 +106,13 @@ test.describe('Feature Name', () => {
 E2E tests run automatically on every PR via `.github/workflows/e2e-tests.yml`:
 
 ```yaml
-- run: npm run lint          # Lint
-- run: npm run typecheck     # Type check
-- run: npm run test          # Unit tests
-- run: npm run test:e2e      # E2E tests
+- run: npm run lint # Lint
+- run: npm run typecheck # Type check
+- run: npm run test # Unit tests
+- run: npm run test:e2e # E2E tests
 ```
 
 Test reports and failure artifacts are uploaded automatically.
-
 
 ## Viewing Test Reports
 
