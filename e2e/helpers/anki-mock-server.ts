@@ -92,11 +92,18 @@ export function startAnkiMockServer(): Promise<void> {
     return promise
 }
 
-export function stopAnkiMockServer() {
+export function stopAnkiMockServer(): Promise<void> {
+    const { promise, resolve } = Promise.withResolvers<void>()
     if (server) {
-        server.close()
-        server = null
+        server.close(() => {
+            console.log('[Mock] AnkiConnect mock server stopped')
+            server = null
+            resolve()
+        })
+    } else {
+        resolve()
     }
+    return promise
 }
 
 export async function setAnkiMockScenario(scenario: 'success' | 'failure'): Promise<void> {

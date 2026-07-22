@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './helpers/test-base'
 import { launchElectronApp, closeElectronApp, ElectronAppContext } from './helpers/electron'
 
 test.describe('Window Controls', () => {

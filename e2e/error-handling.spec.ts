@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './helpers/test-base'
 import { launchElectronApp, closeElectronApp, ElectronAppContext } from './helpers/electron'
 import { testApiKeys, testDeckNames, getTestWordsPath } from './helpers/fixtures'
 import { mockAnkiConnect, setupApiKeys, mockOpenAI } from './helpers/mocks'
