@@ -6,12 +6,15 @@ import { parseImportRequest } from '../../utils/validators'
 import { ImportService } from '../../services/import.service'
 
 export function registerImportHandlers(): void {
-    ipcMain.handle(IPC_CHANNELS.sendImport, async (_event, payload: unknown): Promise<AppResponse> => {
-        const importRequest = parseImportRequest(payload)
-        if (!importRequest) {
-            return failure('Invalid import request payload')
-        }
+    ipcMain.handle(
+        IPC_CHANNELS.sendImport,
+        async (_event, payload: unknown): Promise<AppResponse> => {
+            const importRequest = parseImportRequest(payload)
+            if (!importRequest) {
+                return failure('Invalid import request payload')
+            }
 
-        return ImportService.handleImportRequest(importRequest)
-    })
+            return ImportService.handleImportRequest(importRequest)
+        }
+    )
 }

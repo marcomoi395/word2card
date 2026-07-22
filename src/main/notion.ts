@@ -110,7 +110,7 @@ export class NotionService {
             })
 
             pages.push(...response.results.filter(isFullPage))
-            nextCursor = response.has_more ? response.next_cursor ?? undefined : undefined
+            nextCursor = response.has_more ? (response.next_cursor ?? undefined) : undefined
         } while (nextCursor)
 
         return pages

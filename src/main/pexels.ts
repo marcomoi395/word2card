@@ -1,9 +1,9 @@
 import { createClient } from 'pexels'
 
 export async function searchImagePexels(token: string, query: string): Promise<string | null> {
-    const client = createClient(token)
-
     try {
+        const client = createClient(token)
+
         const response = await client.photos.search({
             query,
             per_page: 1,

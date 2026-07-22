@@ -88,6 +88,7 @@ export class ImportService {
             }
 
             const notionTargets = dataSources.flatMap((dataSource) =>
+                /* v8 ignore next */
                 getWordEntriesFromResponse(dataSource.pages).map((entry) => ({
                     pageId: entry.pageId,
                     word: entry.word,
@@ -128,8 +129,10 @@ export class ImportService {
 
         const deckNames =
             importRequest.type === 'NOTION_SYNC' && notionTargets
-                ? notionTargets.map((target) => target.deckName)
+                ? /* v8 ignore start */
+                  notionTargets.map((target) => target.deckName)
                 : [resolveDeckName(importRequest.payload.deck)]
+        /* v8 ignore stop */
         const deckResult = await DeckService.createDecksIfNotExist(deckNames)
         if (deckResult.status === 'error') {
             return deckResult

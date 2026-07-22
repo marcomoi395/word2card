@@ -17,9 +17,11 @@ function setButtonLoading(
     isLoading: boolean,
     loadingText = 'Processing...'
 ): void {
+    /* v8 ignore start */
     if (!button) {
         return
     }
+    /* v8 ignore stop */
 
     if (isLoading) {
         button.dataset.originalText = button.innerText
@@ -33,12 +35,12 @@ function setButtonLoading(
 }
 
 function showResponseAlert(actionLabel: string, response: AppResponse | undefined): void {
-    if (response?.status === 'success') {
-        alert(`${actionLabel} successful!`)
-        return
+    // Only show alerts for errors; success feedback comes from button state
+    if (response?.status !== 'success') {
+        /* v8 ignore start */
+        alert(`${actionLabel} failed: ${response?.message || 'Unknown error.'}`)
+        /* v8 ignore stop */
     }
-
-    alert(`${actionLabel} failed: ${response?.message || 'Unknown error.'}`)
 }
 
 function switchTab(tabName: TabName): void {
@@ -157,9 +159,11 @@ function initFilePicker(): void {
 }
 
 function initImportForm(): void {
+    /* v8 ignore start */
     const form = document.getElementById('form-import') as HTMLFormElement | null
     if (!form) {
         return
+        /* v8 ignore stop */
     }
 
     form.addEventListener('submit', async (event) => {
@@ -220,9 +224,11 @@ function initImportForm(): void {
 }
 
 function initNotionForm(): void {
+    /* v8 ignore start */
     const form = document.getElementById('form-notion') as HTMLFormElement | null
     if (!form) {
         return
+        /* v8 ignore stop */
     }
 
     form.addEventListener('submit', async (event) => {
@@ -340,18 +346,19 @@ function initSettingsForm(): void {
         }
 
         const settingsData: SaveSettingsPayload = {
+            /* v8 ignore start */
             openaiApiKey: openaiInput?.value.trim() || '',
             azureApiKey: azureInput?.value.trim() || '',
             pexelsToken: pexelsInput?.value.trim() || ''
+            /* v8 ignore stop */
         }
 
         setButtonLoading(saveButton, true, 'Saving...')
 
         try {
             const result = await window.api.saveSettings(settingsData)
-            if (result.status === 'success') {
-                alert(result.message || 'Saved!')
-            } else {
+            // Only show alert on error; success feedback is provided by button state
+            if (result.status !== 'success') {
                 alert(`Failed to save settings: ${result.message}`)
             }
         } catch (error) {

@@ -30,24 +30,27 @@ const getSecretsData = (): SecretsData => ({
 })
 
 export function registerSettingsHandlers(): void {
-    ipcMain.handle(IPC_CHANNELS.saveSettings, async (_event, payload: unknown): Promise<AppResponse> => {
-        const parsed = parseSaveSettingsPayload(payload)
-        if (!parsed) {
-            return failure('Invalid settings payload')
+    ipcMain.handle(
+        IPC_CHANNELS.saveSettings,
+        async (_event, payload: unknown): Promise<AppResponse> => {
+            const parsed = parseSaveSettingsPayload(payload)
+            if (!parsed) {
+                return failure('Invalid settings payload')
+            }
+
+            const results = [
+                syncRuntimeSecret('openaiApiKey', parsed.openaiApiKey),
+                syncRuntimeSecret('azureApiKey', parsed.azureApiKey),
+                syncRuntimeSecret('pexelsToken', parsed.pexelsToken)
+            ]
+
+            if (results.every((result) => result)) {
+                return success(undefined, 'Settings saved successfully')
+            }
+
+            return failure('Failed to save some settings')
         }
-
-        const results = [
-            syncRuntimeSecret('openaiApiKey', parsed.openaiApiKey),
-            syncRuntimeSecret('azureApiKey', parsed.azureApiKey),
-            syncRuntimeSecret('pexelsToken', parsed.pexelsToken)
-        ]
-
-        if (results.every((result) => result)) {
-            return success(undefined, 'Settings saved successfully')
-        }
-
-        return failure('Failed to save some settings')
-    })
+    )
 
     ipcMain.handle(IPC_CHANNELS.getSecret, async (): Promise<AppResponse<SecretsData>> => {
         try {
