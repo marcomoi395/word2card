@@ -206,8 +206,7 @@ describe('createFlashcards', () => {
                 word: 'a',
                 pos: 'article',
                 vietnamese: 'một',
-                ipa: '/eɪ/',
-                audio_word: 'a.mp3'
+                ipa: '/eɪ/'
             }
         ])
         vi.mocked(State.getToken).mockReturnValue(undefined)
@@ -223,8 +222,7 @@ describe('createFlashcards', () => {
                 word: 'go',
                 pos: 'verb',
                 vietnamese: 'đi',
-                ipa: '/ɡoʊ/',
-                audio_word: 'go.mp3'
+                ipa: '/ɡoʊ/'
             }
         ])
         vi.mocked(State.getToken).mockReturnValue(undefined)
@@ -240,8 +238,7 @@ describe('createFlashcards', () => {
                 word: 'wonderful',
                 pos: 'adjective',
                 vietnamese: 'tuyệt vời',
-                ipa: '/ˈwʌndərfəl/',
-                audio_word: 'wonderful.mp3'
+                ipa: '/ˈwʌndərfəl/'
             }
         ])
         vi.mocked(State.getToken).mockReturnValue(undefined)
@@ -267,8 +264,7 @@ describe('createFlashcards', () => {
                 word: 'test/word',
                 pos: 'noun',
                 vietnamese: 'từ thử',
-                ipa: '/test/',
-                audio_word: 'test.mp3'
+                ipa: '/test/'
             }
         ])
         vi.mocked(State.getToken).mockReturnValue(undefined)
