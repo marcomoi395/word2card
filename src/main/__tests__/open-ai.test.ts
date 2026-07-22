@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { OpenAIService, FlashcardResponse } from '../open-ai'
+import { resetOpenAIService } from '../../../test/helpers/singleton-reset'
 
 // Mock OpenAI with prototype pattern
 vi.mock('openai', () => {
@@ -22,9 +23,8 @@ import State from '../state'
 
 describe('OpenAIService', () => {
   beforeEach(() => {
-    // Reset singleton
-    ;(OpenAIService as any).instance = null
-    ;(OpenAIService as any).currentKey = null
+    // Reset singleton to prevent test contamination
+    resetOpenAIService(OpenAIService)
 
     // Reset mocks
     vi.clearAllMocks()

@@ -1,10 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { State } from '../state'
+import { resetState } from '../../../test/helpers/singleton-reset'
 
 describe('State', () => {
   beforeEach(() => {
-    // Reset singleton instance before each test to prevent contamination
-    ;(State as any).instance = undefined
+    // Reset singleton instance to prevent test contamination
+    resetState(State)
   })
 
   describe('singleton pattern', () => {

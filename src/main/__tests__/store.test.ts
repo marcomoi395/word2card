@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { SecretManager } from '../store'
+import { resetSecretManager } from '../../../test/helpers/singleton-reset'
 import { safeStorage } from 'electron'
 
 // Mock electron-store module with factory
@@ -15,8 +16,8 @@ import Store from 'electron-store'
 
 describe('SecretManager / Store', () => {
   beforeEach(() => {
-    // Reset singleton instance
-    ;(SecretManager as any).instance = undefined
+    // Reset singleton instance to prevent test contamination
+    resetSecretManager(SecretManager)
 
     // Reset all mocks
     vi.clearAllMocks()

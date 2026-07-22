@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NotionService } from '../notion'
+import { resetNotionService } from '../../../test/helpers/singleton-reset'
 import { APIErrorCode } from '@notionhq/client'
 
 // Mock @notionhq/client with prototype pattern
@@ -34,9 +35,8 @@ import State from '../state'
 
 describe('NotionService', () => {
   beforeEach(() => {
-    // Reset singleton
-    ;(NotionService as any).instance = null
-    ;(NotionService as any).currentToken = null
+    // Reset singleton to prevent test contamination
+    resetNotionService(NotionService)
 
     // Reset mocks
     vi.clearAllMocks()

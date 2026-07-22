@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { SpeechService } from '../speech'
+import { resetSpeechService } from '../../../test/helpers/singleton-reset'
 
 // Mock microsoft-cognitiveservices-speech-sdk with prototype pattern
 vi.mock('microsoft-cognitiveservices-speech-sdk', () => {
@@ -49,9 +50,8 @@ import State from '../state'
 
 describe('SpeechService', () => {
   beforeEach(() => {
-    // Reset singleton
-    ;(SpeechService as any).instance = null
-    ;(SpeechService as any).currentKey = null
+    // Reset singleton to prevent test contamination
+    resetSpeechService(SpeechService)
 
     // Reset mocks
     vi.clearAllMocks()
@@ -94,8 +94,8 @@ describe('SpeechService', () => {
     it('resolves with success message when synthesis completes', async () => {
       const service = SpeechService.getInstance()
 
-      vi.mocked(sdk.SpeechSynthesizer.prototype.speakTextAsync).mockImplementation((text, onSuccess) => {
-        onSuccess({ reason: sdk.ResultReason.SynthesizingAudioCompleted })
+      vi.mocked(sdk.SpeechSynthesizer.prototype.speakTextAsync).mockImplementation((_text, onSuccess) => {
+        onSuccess?.({ reason: sdk.ResultReason.SynthesizingAudioCompleted } as unknown as sdk.SpeechSynthesisResult)
       })
 
       const result = await service.textToSpeech('test', 'test.mp3', '/output')
@@ -107,11 +107,11 @@ describe('SpeechService', () => {
     it('rejects when synthesis fails', async () => {
       const service = SpeechService.getInstance()
 
-      vi.mocked(sdk.SpeechSynthesizer.prototype.speakTextAsync).mockImplementation((text, onSuccess) => {
-        onSuccess({
+      vi.mocked(sdk.SpeechSynthesizer.prototype.speakTextAsync).mockImplementation((_text, onSuccess) => {
+        onSuccess?.({
           reason: sdk.ResultReason.Canceled,
           errorDetails: 'Network error',
-        })
+        } as unknown as sdk.SpeechSynthesisResult)
       })
 
       await expect(service.textToSpeech('test', 'test.mp3', '/output')).rejects.toThrow(
@@ -123,8 +123,8 @@ describe('SpeechService', () => {
     it('rejects on SDK error callback', async () => {
       const service = SpeechService.getInstance()
 
-      vi.mocked(sdk.SpeechSynthesizer.prototype.speakTextAsync).mockImplementation((text, onSuccess, onError) => {
-        onError(new Error('SDK error'))
+      vi.mocked(sdk.SpeechSynthesizer.prototype.speakTextAsync).mockImplementation((_text, _onSuccess, onError) => {
+        onError?.('SDK error')
       })
 
       await expect(service.textToSpeech('test', 'test.mp3', '/output')).rejects.toThrow('SDK error')
@@ -136,8 +136,8 @@ describe('SpeechService', () => {
     it('returns result on first successful attempt', async () => {
       const service = SpeechService.getInstance()
 
-      vi.mocked(sdk.SpeechSynthesizer.prototype.speakTextAsync).mockImplementation((text, onSuccess) => {
-        onSuccess({ reason: sdk.ResultReason.SynthesizingAudioCompleted })
+      vi.mocked(sdk.SpeechSynthesizer.prototype.speakTextAsync).mockImplementation((_text, onSuccess) => {
+        onSuccess?.({ reason: sdk.ResultReason.SynthesizingAudioCompleted } as unknown as sdk.SpeechSynthesisResult)
       })
 
       const result = await service.synthesizeWithRetry('test', 'test.mp3', '/output')
@@ -148,12 +148,12 @@ describe('SpeechService', () => {
       const service = SpeechService.getInstance()
 
       let attempts = 0
-      vi.mocked(sdk.SpeechSynthesizer.prototype.speakTextAsync).mockImplementation((text, onSuccess, onError) => {
+      vi.mocked(sdk.SpeechSynthesizer.prototype.speakTextAsync).mockImplementation((_text, onSuccess, onError) => {
         attempts++
         if (attempts === 1) {
-          onError(new Error('First attempt failed'))
+          onError?.('First attempt failed')
         } else {
-          onSuccess({ reason: sdk.ResultReason.SynthesizingAudioCompleted })
+          onSuccess?.({ reason: sdk.ResultReason.SynthesizingAudioCompleted } as unknown as sdk.SpeechSynthesisResult)
         }
       })
 
@@ -173,8 +173,8 @@ describe('SpeechService', () => {
     it('returns null after MAX_RETRIES failures', async () => {
       const service = SpeechService.getInstance()
 
-      vi.mocked(sdk.SpeechSynthesizer.prototype.speakTextAsync).mockImplementation((text, onSuccess, onError) => {
-        onError(new Error('Always fails'))
+      vi.mocked(sdk.SpeechSynthesizer.prototype.speakTextAsync).mockImplementation((_text, _onSuccess, onError) => {
+        onError?.('Always fails')
       })
 
       vi.spyOn(global, 'setTimeout').mockImplementation(((cb: any) => {
@@ -192,12 +192,12 @@ describe('SpeechService', () => {
 
     it('logs string error if error is not an Error instance', async () => {
       let attempt = 0
-      vi.mocked(sdk.SpeechSynthesizer.prototype.speakTextAsync).mockImplementation((text, onSuccess, onError) => {
+      vi.mocked(sdk.SpeechSynthesizer.prototype.speakTextAsync).mockImplementation((_text, onSuccess, onError) => {
         attempt++
         if (attempt <= 1 && onError) {
-          onError('String error message' as any)
+          onError('String error message')
         } else {
-          onSuccess({ reason: sdk.ResultReason.SynthesizingAudioCompleted })
+          onSuccess?.({ reason: sdk.ResultReason.SynthesizingAudioCompleted } as unknown as sdk.SpeechSynthesisResult)
         }
       })
       const consoleSpy = vi.spyOn(console, 'warn')
@@ -210,8 +210,8 @@ describe('SpeechService', () => {
     })
   describe('createSpeechFiles', () => {
     it('creates speech files for all words', async () => {
-      vi.mocked(sdk.SpeechSynthesizer.prototype.speakTextAsync).mockImplementation((text, onSuccess) => {
-        onSuccess({ reason: sdk.ResultReason.SynthesizingAudioCompleted })
+      vi.mocked(sdk.SpeechSynthesizer.prototype.speakTextAsync).mockImplementation((_text, onSuccess) => {
+        onSuccess?.({ reason: sdk.ResultReason.SynthesizingAudioCompleted } as unknown as sdk.SpeechSynthesisResult)
       })
 
       const result = await SpeechService.createSpeechFiles(['apple', 'banana'], '/output')
@@ -219,8 +219,8 @@ describe('SpeechService', () => {
     })
 
     it('handles concurrent requests properly', async () => {
-      vi.mocked(sdk.SpeechSynthesizer.prototype.speakTextAsync).mockImplementation((text, onSuccess) => {
-        onSuccess({ reason: sdk.ResultReason.SynthesizingAudioCompleted })
+      vi.mocked(sdk.SpeechSynthesizer.prototype.speakTextAsync).mockImplementation((_text, onSuccess) => {
+        onSuccess?.({ reason: sdk.ResultReason.SynthesizingAudioCompleted } as unknown as sdk.SpeechSynthesisResult)
       })
       const words = ['w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w7']
       const result = await SpeechService.createSpeechFiles(words, '/output')
@@ -241,8 +241,8 @@ describe('SpeechService', () => {
         .mockReturnValueOnce(true)
         .mockReturnValueOnce(false)
 
-      vi.mocked(sdk.SpeechSynthesizer.prototype.speakTextAsync).mockImplementation((text, onSuccess) => {
-        onSuccess({ reason: sdk.ResultReason.SynthesizingAudioCompleted })
+      vi.mocked(sdk.SpeechSynthesizer.prototype.speakTextAsync).mockImplementation((_text, onSuccess) => {
+        onSuccess?.({ reason: sdk.ResultReason.SynthesizingAudioCompleted } as unknown as sdk.SpeechSynthesisResult)
       })
 
       const result = await SpeechService.createSpeechFiles(['apple', 'banana'], '/output')
@@ -253,12 +253,12 @@ describe('SpeechService', () => {
 
     it('filters out null results from failed syntheses', async () => {
       let callCount = 0
-      vi.mocked(sdk.SpeechSynthesizer.prototype.speakTextAsync).mockImplementation((text, onSuccess, onError) => {
+      vi.mocked(sdk.SpeechSynthesizer.prototype.speakTextAsync).mockImplementation((_text, onSuccess, onError) => {
         callCount++
         if (callCount === 1) {
-          onSuccess({ reason: sdk.ResultReason.SynthesizingAudioCompleted })
+          onSuccess?.({ reason: sdk.ResultReason.SynthesizingAudioCompleted } as unknown as sdk.SpeechSynthesisResult)
         } else {
-          onError(new Error('Failed'))
+          onError?.('Failed')
         }
       })
 
