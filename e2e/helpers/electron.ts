@@ -63,15 +63,27 @@ export async function closeElectronApp(app: ElectronApplication): Promise<void> 
         // Wait a bit for windows to close gracefully
         await new Promise((resolve) => setTimeout(resolve, 500))
 
-        // Close the app
-        await app.close()
+        // Close the app with timeout protection
+        await Promise.race([
+            app.close(),
+            new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('App close timeout')), 10000)
+            )
+        ])
     } catch (error) {
         // If graceful close fails, force close
         console.warn('[Test] Failed to close Electron gracefully, forcing close:', error)
         try {
-            await app.close()
+            // Try one more time with shorter timeout
+            await Promise.race([
+                app.close(),
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Force close timeout')), 3000)
+                )
+            ])
         } catch {
-            // Ignore errors on force close
+            // Ignore errors on final force close attempt
+            console.warn('[Test] Force close also timed out, giving up')
         }
     }
 }

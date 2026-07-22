@@ -111,7 +111,7 @@ export function stopAnkiMockServer(): Promise<void> {
                 server = null
                 resolve()
             }
-        }, 5000)
+        }, 2000) // Reduced from 5s to 2s for faster worker teardown
     } else {
         resolve()
     }

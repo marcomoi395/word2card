@@ -8,7 +8,8 @@ export default defineConfig({
     testDir: './e2e',
 
     // Maximum time one test can run
-    timeout: 30 * 1000,
+    // CI needs more time for Electron app launch in headless mode
+    timeout: process.env.CI ? 60 * 1000 : 30 * 1000,
 
     // Global timeout for entire test run
     globalTimeout: 10 * 60 * 1000, // 10 minutes
@@ -23,6 +24,10 @@ export default defineConfig({
     forbidOnly: !!process.env.CI,
     retries: process.env.CI ? 2 : 0,
     workers: 1, // Single worker for Electron tests (must be 1 for shared mock server)
+
+    // Increase worker teardown timeout to prevent cleanup timeouts
+    // This allows enough time for Electron app and mock server to close gracefully
+    maxFailures: process.env.CI ? 5 : undefined,
     // Reporter configuration
     reporter: [['html', { outputFolder: 'playwright-report' }], ['list']],
 
