@@ -5,7 +5,17 @@ import unusedImports from 'eslint-plugin-unused-imports'
 import globals from 'globals'
 
 export default defineConfig(
-    { ignores: ['**/node_modules', '**/dist', '**/out', 'eslint.config.mjs'] },
+    {
+        ignores: [
+            '**/node_modules',
+            '**/dist',
+            '**/out',
+            '**/coverage',
+            'e2e/**',
+            'playwright.config.ts',
+            'eslint.config.mjs'
+        ]
+    },
     tseslint.configs.recommended,
     eslintConfigPrettier,
     {
