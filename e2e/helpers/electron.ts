@@ -50,8 +50,28 @@ export async function launchElectronApp(): Promise<ElectronAppContext> {
 }
 
 /**
- * Close the Electron application
+ * Close the Electron application with proper cleanup
  */
 export async function closeElectronApp(app: ElectronApplication): Promise<void> {
-    await app.close()
+    try {
+        // Close all windows first using BrowserWindow API
+        await app.evaluate(({ BrowserWindow }) => {
+            const windows = BrowserWindow.getAllWindows()
+            windows.forEach((window) => window.close())
+        })
+
+        // Wait a bit for windows to close gracefully
+        await new Promise((resolve) => setTimeout(resolve, 500))
+
+        // Close the app
+        await app.close()
+    } catch (error) {
+        // If graceful close fails, force close
+        console.warn('[Test] Failed to close Electron gracefully, forcing close:', error)
+        try {
+            await app.close()
+        } catch {
+            // Ignore errors on force close
+        }
+    }
 }

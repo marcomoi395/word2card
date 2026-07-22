@@ -10,6 +10,14 @@ export default defineConfig({
     // Maximum time one test can run
     timeout: 30 * 1000,
 
+    // Global timeout for entire test run
+    globalTimeout: 10 * 60 * 1000, // 10 minutes
+
+    // Increase worker teardown timeout to allow proper cleanup
+    expect: {
+        timeout: 5000
+    },
+
     // Test execution settings
     fullyParallel: false, // Run tests sequentially for Electron
     forbidOnly: !!process.env.CI,

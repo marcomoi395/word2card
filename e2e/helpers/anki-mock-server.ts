@@ -95,11 +95,23 @@ export function startAnkiMockServer(): Promise<void> {
 export function stopAnkiMockServer(): Promise<void> {
     const { promise, resolve } = Promise.withResolvers<void>()
     if (server) {
+        console.log('[Mock] Stopping AnkiConnect mock server...')
+        // Close all connections first
+        server.closeAllConnections()
         server.close(() => {
             console.log('[Mock] AnkiConnect mock server stopped')
             server = null
+            currentScenario = 'success' // Reset scenario
             resolve()
         })
+        // Force close after timeout
+        setTimeout(() => {
+            if (server) {
+                console.warn('[Mock] Force closing mock server after timeout')
+                server = null
+                resolve()
+            }
+        }, 5000)
     } else {
         resolve()
     }
