@@ -12,7 +12,9 @@ export default defineConfig(
             '**/out',
             '**/coverage',
             'e2e/**',
+            'test/**',
             'playwright.config.ts',
+            'vitest.config.ts',
             'eslint.config.mjs'
         ]
     },
