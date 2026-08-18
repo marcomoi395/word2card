@@ -14,10 +14,6 @@ export default defineConfig({
     // Global timeout for entire test run
     globalTimeout: 10 * 60 * 1000, // 10 minutes
 
-    // Increase worker teardown timeout to allow proper cleanup
-    // Mock server stops in 1s, Electron app closes in 5s max = 6s + buffer
-    // @ts-expect-error - workerTimeout is valid but not in @playwright/test types yet
-    workerTimeout: 10000,
 
     expect: {
         timeout: 5000

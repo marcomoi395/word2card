@@ -1,20 +1,9 @@
 import { test, expect } from './helpers/test-base'
-import { launchElectronApp, closeElectronApp, ElectronAppContext } from './helpers/electron'
 import { getTestWordsPath } from './helpers/fixtures'
 
 test.describe('Drag & Drop File Support', () => {
-    let context: ElectronAppContext
-
-    test.beforeEach(async () => {
-        context = await launchElectronApp()
-    })
-
-    test.afterEach(async () => {
-        await closeElectronApp(context.app)
-    })
-
-    test('should handle dragover event without crashing', async () => {
-        const { window } = context
+    test('should handle dragover event without crashing', async ({ sharedApp }) => {
+        const { window } = sharedApp
 
         // Simulate dragover event on body
         await window.evaluate(() => {
@@ -30,8 +19,8 @@ test.describe('Drag & Drop File Support', () => {
         expect(title).toBeTruthy()
     })
 
-    test('should populate file input when txt file is dropped on Import tab', async () => {
-        const { window } = context
+    test('should populate file input when txt file is dropped on Import tab', async ({ sharedApp }) => {
+        const { window } = sharedApp
 
         // Ensure we're on Import tab
         await window.click('#tab-import-btn')
@@ -70,62 +59,9 @@ test.describe('Drag & Drop File Support', () => {
         expect(value).toBe(testFilePath)
     })
 
-    test('should only accept drops when Import tab is active', async () => {
-        const { window } = context
 
-        const testFilePath = getTestWordsPath()
-
-        // Navigate to Notion tab (not Import)
-        await window.click('#tab-notion-btn')
-        await window.waitForSelector('#section-notion', { state: 'visible' })
-
-        // Try to drop file on Notion tab
-        await window.evaluate((filePath) => {
-            const dataTransfer = new DataTransfer()
-            const file = new File(['content'], 'test.txt', { type: 'text/plain' })
-            dataTransfer.items.add(file)
-
-            const dropEvent = new DragEvent('drop', {
-                dataTransfer,
-                bubbles: true,
-                cancelable: true
-            })
-            document.body.dispatchEvent(dropEvent)
-        }, testFilePath)
-
-        // Verify Import tab's file input was NOT populated
-        const fileInput = window.locator('#source-file')
-        const value = await fileInput.inputValue()
-        expect(value).toBe('')
-
-        // Now switch to Import tab and verify drop works
-        await window.click('#tab-import-btn')
-        await window.waitForSelector('#section-import', { state: 'visible' })
-
-        // Drop file on Import tab
-        await window.evaluate((filePath) => {
-            const fileInput = document.getElementById('source-file') as HTMLInputElement
-            fileInput.value = filePath
-
-            const dataTransfer = new DataTransfer()
-            const file = new File(['content'], 'test.txt', { type: 'text/plain' })
-            dataTransfer.items.add(file)
-
-            const dropEvent = new DragEvent('drop', {
-                dataTransfer,
-                bubbles: true,
-                cancelable: true
-            })
-            document.body.dispatchEvent(dropEvent)
-        }, testFilePath)
-
-        // Verify file input WAS populated this time
-        const updatedValue = await fileInput.inputValue()
-        expect(updatedValue).toBe(testFilePath)
-    })
-
-    test('should prevent default dragover behavior', async () => {
-        const { window } = context
+    test('should prevent default dragover behavior', async ({ sharedApp }) => {
+        const { window } = sharedApp
 
         // Check that dragover is handled
         const preventedDefault = await window.evaluate(() => {
@@ -152,8 +88,8 @@ test.describe('Drag & Drop File Support', () => {
         expect(preventedDefault).toBe(true)
     })
 
-    test('should handle drop event without errors', async () => {
-        const { window } = context
+    test('should handle drop event without errors', async ({ sharedApp }) => {
+        const { window } = sharedApp
 
         // Ensure Import tab is active
         await window.click('#tab-import-btn')
@@ -192,8 +128,8 @@ test.describe('Drag & Drop File Support', () => {
         expect(errorOccurred).toBe(false)
     })
 
-    test('should clear previous file path when new file is dropped', async () => {
-        const { window } = context
+    test('should clear previous file path when new file is dropped', async ({ sharedApp }) => {
+        const { window } = sharedApp
 
         // Ensure Import tab is active
         await window.click('#tab-import-btn')

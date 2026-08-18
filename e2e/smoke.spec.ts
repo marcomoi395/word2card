@@ -1,19 +1,8 @@
 import { test, expect } from './helpers/test-base'
-import { launchElectronApp, closeElectronApp, ElectronAppContext } from './helpers/electron'
 
 test.describe('Smoke Tests', () => {
-    let context: ElectronAppContext
-
-    test.beforeEach(async () => {
-        context = await launchElectronApp()
-    })
-
-    test.afterEach(async () => {
-        await closeElectronApp(context.app)
-    })
-
-    test('should launch application successfully', async () => {
-        const { app, window } = context
+    test('should launch application successfully', async ({ sharedApp }) => {
+        const { app, window } = sharedApp
 
         // Verify app is running
         expect(app).toBeTruthy()
@@ -24,8 +13,8 @@ test.describe('Smoke Tests', () => {
         expect(title).toBeTruthy()
     })
 
-    test('should have correct window title', async () => {
-        const { window } = context
+    test('should have correct window title', async ({ sharedApp }) => {
+        const { window } = sharedApp
 
         // Get window title
         const title = await window.title()
@@ -34,8 +23,8 @@ test.describe('Smoke Tests', () => {
         expect(title).toContain('Word2Card')
     })
 
-    test('should load main page', async () => {
-        const { window } = context
+    test('should load main page', async ({ sharedApp }) => {
+        const { window } = sharedApp
 
         // Wait for main content to load
         await window.waitForSelector('body', { timeout: 5000 })

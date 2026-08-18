@@ -1,19 +1,24 @@
 import { test as base } from '@playwright/test'
-import { stopAnkiMockServer } from './anki-mock-server'
+import { launchElectronApp, closeElectronApp, ElectronAppContext, resetAppState } from './electron'
 
 /**
- * Extended test with worker-scoped cleanup
- * Ensures mock server is properly stopped when worker exits
+ * Extended test with worker-scoped shared app and auto state reset.
  */
-export const test = base.extend({
-    workerCleanup: [
+export const test = base.extend<{ resetState: void }, { sharedApp: ElectronAppContext }>({
+    sharedApp: [
         async ({}, use) => {
-            // No setup needed - mock server starts lazily in launchElectronApp
-            await use()
-            // Cleanup: stop mock server when worker is done
-            await stopAnkiMockServer()
+            const context = await launchElectronApp()
+            await use(context)
+            await closeElectronApp(context.app)
         },
         { scope: 'worker', auto: true }
+    ],
+    resetState: [
+        async ({ sharedApp }, use) => {
+            await resetAppState(sharedApp.window)
+            await use()
+        },
+        { scope: 'test', auto: true }
     ]
 })
 

@@ -1,19 +1,8 @@
 import { test, expect } from './helpers/test-base'
-import { launchElectronApp, closeElectronApp, ElectronAppContext } from './helpers/electron'
 
 test.describe('Window Controls', () => {
-    let context: ElectronAppContext
-
-    test.beforeEach(async () => {
-        context = await launchElectronApp()
-    })
-
-    test.afterEach(async () => {
-        await closeElectronApp(context.app)
-    })
-
-    test('should have minimize button visible', async () => {
-        const { window } = context
+    test('should have minimize button visible', async ({ sharedApp }) => {
+        const { window } = sharedApp
 
         const minimizeButton = window.locator('#minimize-btn')
 
@@ -33,15 +22,15 @@ test.describe('Window Controls', () => {
         }
     })
 
-    test('should have close button visible', async () => {
-        const { window } = context
+    test('should have close button visible', async ({ sharedApp }) => {
+        const { window } = sharedApp
 
         const closeButton = window.locator('#close-btn')
         await expect(closeButton).toBeVisible()
     })
 
-    test('should trigger minimize action when minimize button clicked (non-Linux)', async () => {
-        const { window } = context
+    test('should trigger minimize action when minimize button clicked (non-Linux)', async ({ sharedApp }) => {
+        const { window } = sharedApp
 
         const platform = await window.evaluate(() => window.api.platform)
 
@@ -81,8 +70,8 @@ test.describe('Window Controls', () => {
         expect(minimizeCalled).toBe(true)
     })
 
-    test('should have close button clickable', async () => {
-        const { window } = context
+    test('should have close button clickable', async ({ sharedApp }) => {
+        const { window } = sharedApp
 
         const closeButton = window.locator('#close-btn')
 
@@ -98,8 +87,8 @@ test.describe('Window Controls', () => {
         expect(isVisible).toBe(true)
     })
 
-    test('should hide minimize button on Linux platform', async () => {
-        const { window } = context
+    test('should hide minimize button on Linux platform', async ({ sharedApp }) => {
+        const { window } = sharedApp
 
         const platform = await window.evaluate(() => window.api.platform)
 
@@ -118,8 +107,8 @@ test.describe('Window Controls', () => {
         expect(display).toBe('none')
     })
 
-    test('should show minimize button on Windows platform', async () => {
-        const { window } = context
+    test('should show minimize button on Windows platform', async ({ sharedApp }) => {
+        const { window } = sharedApp
 
         const platform = await window.evaluate(() => window.api.platform)
 
@@ -138,8 +127,8 @@ test.describe('Window Controls', () => {
         expect(display).not.toBe('none')
     })
 
-    test('should show minimize button on macOS platform', async () => {
-        const { window } = context
+    test('should show minimize button on macOS platform', async ({ sharedApp }) => {
+        const { window } = sharedApp
 
         const platform = await window.evaluate(() => window.api.platform)
 
@@ -158,8 +147,8 @@ test.describe('Window Controls', () => {
         expect(display).not.toBe('none')
     })
 
-    test('should have correct button layout in window controls', async () => {
-        const { window } = context
+    test('should have correct button layout in window controls', async ({ sharedApp }) => {
+        const { window } = sharedApp
 
         // Both buttons should exist
         const minimizeButton = window.locator('#minimize-btn')
@@ -172,8 +161,8 @@ test.describe('Window Controls', () => {
         expect(closeExists).toBe(1)
     })
 
-    test('should detect platform correctly', async () => {
-        const { window } = context
+    test('should detect platform correctly', async ({ sharedApp }) => {
+        const { window } = sharedApp
 
         const platform = await window.evaluate(() => window.api.platform)
 
