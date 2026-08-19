@@ -3,14 +3,15 @@ import { createFlashcards } from '../handle'
 import { OpenAIService } from '../open-ai'
 import { NotionService } from '../notion'
 import { searchImagePexels } from '../pexels'
-import State from '../state'
+import { getRuntimeSetting } from '../state/runtime'
 import * as notionSync from '../helper/notion-sync'
 
 vi.mock('../open-ai')
 vi.mock('../notion')
 vi.mock('../pexels')
-vi.mock('../state')
+vi.mock('../state/runtime')
 vi.mock('../helper/notion-sync')
+const State = { getToken: getRuntimeSetting }
 
 describe('createFlashcards', () => {
     beforeEach(() => {
@@ -26,7 +27,7 @@ describe('createFlashcards', () => {
                 ipa: '/test/'
             }
         ])
-        vi.mocked(State.getToken).mockReturnValue(undefined)
+        vi.mocked(getRuntimeSetting).mockReturnValue(undefined)
 
         const result = await createFlashcards(['test'], '/audio', 'TestDeck', false)
 

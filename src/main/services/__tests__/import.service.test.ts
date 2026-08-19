@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ImportService } from '../import.service'
 import * as ankiConnect from '../../anki-connect'
-import State from '../../state'
+import { getMissingRuntimeSettings, getRuntimeSetting, getRuntimeState } from '../../state/runtime'
 import { DeckService } from '../deck.service'
 import { NotionService } from '../../notion'
 import { SpeechService } from '../../speech'
@@ -10,14 +10,30 @@ import * as filterExistingWords from '../../helper/filter-existing-words'
 import * as createFlashcards from '../../handle'
 
 import * as fs from 'fs'
+vi.mock('../../state/runtime', () => {
+    const runtimeSettings = vi.fn(() => ({}))
+    const updateRuntimeSettings = vi.fn(() => true)
+    return {
+        getMissingRuntimeSettings: vi.fn(),
+        getRuntimeSetting: vi.fn(),
+        getRuntimeState: vi.fn(() => ({
+            getRuntimeSettings: runtimeSettings,
+            updateRuntimeSettings
+        }))
+    }
+})
 vi.mock('../../anki-connect')
-vi.mock('../../state')
 vi.mock('../deck.service')
 vi.mock('../../notion')
 vi.mock('../../speech')
 vi.mock('../../helper/readFile')
 vi.mock('../../helper/filter-existing-words')
 vi.mock('../../handle')
+const State = {
+    getMissingTokens: getMissingRuntimeSettings,
+    getToken: getRuntimeSetting,
+    setToken: vi.fn((_key?: string, _value?: string) => undefined)
+}
 vi.mock('../../store', () => ({
     default: {
         saveSecret: vi.fn()
@@ -42,8 +58,8 @@ describe('ImportService', () => {
 
     describe('handleImportRequest - FILE_IMPORT', () => {
         it('successfully imports words from file', async () => {
-            vi.mocked(State.getMissingTokens).mockReturnValue([])
-            vi.mocked(State.getToken).mockReturnValue(undefined)
+            vi.mocked(getMissingRuntimeSettings).mockReturnValue([])
+            vi.mocked(getRuntimeState().getRuntimeSettings).mockReturnValue({})
             vi.mocked(ankiConnect.checkAnkiConnect).mockResolvedValue(true)
             vi.mocked(readFile.readFileContent).mockResolvedValue(['word1', 'word2'])
             vi.mocked(filterExistingWords.filterExistingWords).mockResolvedValue(['word1', 'word2'])
@@ -337,8 +353,7 @@ describe('ImportService', () => {
             vi.mocked(State.getMissingTokens).mockReturnValue([])
             vi.mocked(State.getToken).mockReturnValue(undefined)
             vi.mocked(ankiConnect.checkAnkiConnect).mockResolvedValue(true)
-            vi.mocked(SecretManager.saveSecret).mockReturnValue(true)
-            vi.mocked(State.setToken).mockReturnValue()
+            vi.mocked(getRuntimeState().updateRuntimeSettings).mockReturnValue(true)
             vi.mocked(NotionService.getPages).mockResolvedValue([
                 {
                     dataSourceId: 'source1',
@@ -393,7 +408,9 @@ describe('ImportService', () => {
 
             expect(result.status).toBe('success')
             expect(NotionService.getPages).toHaveBeenCalledWith('db-id')
-            expect(SecretManager.saveSecret).toHaveBeenCalledWith('notionToken', 'notion-token')
+            expect(getRuntimeState().updateRuntimeSettings).toHaveBeenCalledWith({
+                notionToken: 'notion-token'
+            })
         })
 
         it('returns default error message when Notion throws non-Error', async () => {
@@ -440,7 +457,6 @@ describe('ImportService', () => {
             vi.mocked(State.getMissingTokens).mockReturnValue([])
             vi.mocked(ankiConnect.checkAnkiConnect).mockResolvedValue(true)
             vi.mocked(SecretManager.saveSecret).mockReturnValue(true)
-            vi.mocked(State.setToken).mockReturnValue()
             vi.mocked(NotionService.getPages).mockResolvedValue([])
 
             const result = await ImportService.handleImportRequest({

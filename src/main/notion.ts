@@ -7,7 +7,7 @@ import {
     PageObjectResponse
 } from '@notionhq/client'
 import type { FlashcardResponse } from './open-ai'
-import State from './state'
+import { getRuntimeSetting } from './state/runtime'
 
 export interface NotionDataSourcePages {
     dataSourceId: string
@@ -59,7 +59,7 @@ export class NotionService {
     }
 
     public static getInstance(): Client {
-        const newKey = State.getToken('notionToken')
+        const newKey = getRuntimeSetting('notionToken')
         if (!newKey) {
             throw new Error('Notion token is not set. Please provide a valid token in Settings.')
         }

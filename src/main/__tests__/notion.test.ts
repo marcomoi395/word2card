@@ -1,7 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import {
+    APIErrorCode,
+    Client,
+    isFullDatabase,
+    isFullPage,
+    isNotionClientError
+} from '@notionhq/client'
 import { NotionService } from '../notion'
+import { getRuntimeSetting } from '../state/runtime'
 import { resetNotionService } from '../../../test/helpers/singleton-reset'
-import { APIErrorCode } from '@notionhq/client'
 
 // Mock @notionhq/client with prototype pattern
 vi.mock('@notionhq/client', () => {
@@ -25,13 +32,11 @@ vi.mock('@notionhq/client', () => {
     }
 })
 
-// Mock State
-vi.mock('../state', () => ({
-    default: { getToken: vi.fn() }
+vi.mock('../state/runtime', () => ({
+    getRuntimeSetting: vi.fn()
 }))
 
-import { Client, isFullDatabase, isFullPage, isNotionClientError } from '@notionhq/client'
-import State from '../state'
+const State = { getToken: getRuntimeSetting }
 
 describe('NotionService', () => {
     beforeEach(() => {
@@ -40,7 +45,7 @@ describe('NotionService', () => {
 
         // Reset mocks
         vi.clearAllMocks()
-        vi.mocked(State.getToken).mockReturnValue('test-token')
+        vi.mocked(getRuntimeSetting).mockReturnValue('test-token')
         vi.mocked(isNotionClientError).mockReturnValue(false)
     })
 

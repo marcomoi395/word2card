@@ -95,3 +95,18 @@ describe('persistent state store', () => {
         expect(state.getRuntimeSettings()).toEqual({ openaiApiKey: 'openai-key' })
     })
 })
+
+describe('runtime state bootstrap', () => {
+    it('initializes the authoritative store from persistence', async () => {
+        const { getRuntimeState, initializeRuntimeState } = await import('../runtime')
+        const persistence = {
+            load: () => ({ openaiApiKey: 'loaded-key' }),
+            save: () => true,
+            delete: () => true
+        }
+
+        initializeRuntimeState(persistence)
+
+        expect(getRuntimeState().getRuntimeSettings()).toEqual({ openaiApiKey: 'loaded-key' })
+    })
+})

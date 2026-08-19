@@ -4,10 +4,9 @@ import { checkAnkiConnect } from '../anki-connect'
 import { createFlashcards, type QuizNote } from '../handle'
 import { NotionService } from '../notion'
 import { SpeechService } from '../speech'
-import State from '../state'
+import { getMissingRuntimeSettings, getRuntimeSetting, getRuntimeState } from '../state/runtime'
 import type { ImportRequest, AppResponse, SecretKey } from '../../shared/ipc'
 import { success, failure } from '../utils/response'
-import SecretManager from '../store'
 import { filterExistingWords } from '../helper/filter-existing-words'
 import { readFileContent } from '../helper/readFile'
 import { getWordEntriesFromResponse } from '../helper/get-words-from-notion-response'
@@ -25,11 +24,7 @@ const syncRuntimeSecret = (key: SecretKey, value: string): boolean => {
         return false
     }
 
-    const saved = SecretManager.saveSecret(key, trimmedValue)
-    if (saved) {
-        State.setToken(key, trimmedValue)
-    }
-    return saved
+    return getRuntimeState().updateRuntimeSettings({ [key]: trimmedValue })
 }
 
 const ensureAudioDirectory = (audioDir: string): void => {
@@ -119,7 +114,7 @@ export class ImportService {
         audioDir: string,
         notionTargets?: NotionSyncTarget[]
     ): Promise<AppResponse<QuizNote[]>> {
-        const isAudioEnabled = Boolean(State.getToken('azureApiKey'))
+        const isAudioEnabled = Boolean(getRuntimeSetting('azureApiKey'))
         if (isAudioEnabled) {
             const speechFiles = await SpeechService.createSpeechFiles(words, audioDir)
             if (speechFiles.length !== words.length) {
@@ -158,7 +153,7 @@ export class ImportService {
     }
 
     public static async handleImportRequest(importRequest: ImportRequest): Promise<AppResponse> {
-        const missingTokens = State.getMissingTokens(['openaiApiKey'])
+        const missingTokens = getMissingRuntimeSettings(['openaiApiKey'])
         if (missingTokens.includes('openaiApiKey')) {
             return failure('OpenAI API key is missing. Please set it in the settings.')
         }

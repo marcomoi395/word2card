@@ -2,19 +2,8 @@ import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { app, BrowserWindow } from 'electron'
 import { createWindow } from './window'
 import { registerAllIpcHandlers } from './ipc'
-import SecretManager from './store'
-import State, { type TokenMap } from './state'
-
-const loadTokensToState = (): void => {
-    const tokens: TokenMap = {
-        openaiApiKey: SecretManager.getSecret('openaiApiKey') ?? undefined,
-        azureApiKey: SecretManager.getSecret('azureApiKey') ?? undefined,
-        pexelsToken: SecretManager.getSecret('pexelsToken') ?? undefined,
-        notionToken: SecretManager.getSecret('notionToken') ?? undefined,
-        notionDatabaseId: SecretManager.getSecret('notionDatabaseId') ?? undefined
-    }
-    State.setAllTokens(tokens)
-}
+import SecretManager, { createSecretPersistence } from './store'
+import { initializeRuntimeState } from './state/runtime'
 
 app.whenReady().then(() => {
     electronApp.setAppUserModelId('com.youngmarco.word2card')
@@ -22,15 +11,14 @@ app.whenReady().then(() => {
         optimizer.watchWindowShortcuts(window)
     })
 
-    loadTokensToState()
+    initializeRuntimeState(createSecretPersistence(SecretManager))
 
     const mainWindow = createWindow()
     registerAllIpcHandlers(mainWindow)
 
     app.on('activate', function () {
         if (BrowserWindow.getAllWindows().length === 0) {
-            const newWindow = createWindow()
-            registerAllIpcHandlers(newWindow)
+            createWindow()
         }
     })
 })

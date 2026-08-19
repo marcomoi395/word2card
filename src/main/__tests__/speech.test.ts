@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import * as sdk from 'microsoft-cognitiveservices-speech-sdk'
+import * as fs from 'fs'
 import { SpeechService } from '../speech'
+import { getRuntimeSetting } from '../state/runtime'
 import { resetSpeechService } from '../../../test/helpers/singleton-reset'
 
 // Mock microsoft-cognitiveservices-speech-sdk with prototype pattern
@@ -34,9 +37,8 @@ vi.mock('fs', () => ({
     existsSync: vi.fn()
 }))
 
-// Mock State
-vi.mock('../state', () => ({
-    default: { getToken: vi.fn() }
+vi.mock('../state/runtime', () => ({
+    getRuntimeSetting: vi.fn()
 }))
 
 // Mock sanitizeFilename
@@ -44,9 +46,7 @@ vi.mock('./helper/sanitize-filename', () => ({
     sanitizeFilename: vi.fn((text: string) => text.replace(/[^a-z0-9]/gi, '_'))
 }))
 
-import * as sdk from 'microsoft-cognitiveservices-speech-sdk'
-import * as fs from 'fs'
-import State from '../state'
+const State = { getToken: getRuntimeSetting }
 
 describe('SpeechService', () => {
     beforeEach(() => {
@@ -55,7 +55,7 @@ describe('SpeechService', () => {
 
         // Reset mocks
         vi.clearAllMocks()
-        vi.mocked(State.getToken).mockReturnValue('test-azure-key')
+        vi.mocked(getRuntimeSetting).mockReturnValue('test-azure-key')
         vi.mocked(fs.existsSync).mockReturnValue(false)
     })
 

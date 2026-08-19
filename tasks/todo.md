@@ -18,7 +18,7 @@
 
 ## Phase 1: Secret flow migration
 
-- [ ] Task 3 — Migrate main bootstrap and services to State package
+- [x] Task 3 — Migrate main bootstrap and services to State package
   - Depends on: Task 2
   - Verify: import/state tests, `npm test`, node typecheck
 - [ ] Task 4 — Replace secret-returning IPC with redacted settings status

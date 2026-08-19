@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import OpenAI from 'openai'
 import { OpenAIService, FlashcardResponse } from '../open-ai'
+import { getRuntimeSetting } from '../state/runtime'
 import { resetOpenAIService } from '../../../test/helpers/singleton-reset'
 
 // Mock OpenAI with prototype pattern
@@ -13,13 +15,11 @@ vi.mock('openai', () => {
     return { default: OpenAI }
 })
 
-// Mock State
-vi.mock('../state', () => ({
-    default: { getToken: vi.fn() }
+vi.mock('../state/runtime', () => ({
+    getRuntimeSetting: vi.fn()
 }))
 
-import OpenAI from 'openai'
-import State from '../state'
+const State = { getToken: getRuntimeSetting }
 
 describe('OpenAIService', () => {
     beforeEach(() => {
@@ -28,7 +28,7 @@ describe('OpenAIService', () => {
 
         // Reset mocks
         vi.clearAllMocks()
-        vi.mocked(State.getToken).mockReturnValue('test-api-key')
+        vi.mocked(getRuntimeSetting).mockReturnValue('test-api-key')
     })
 
     describe('getInstance', () => {

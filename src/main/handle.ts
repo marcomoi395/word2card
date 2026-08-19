@@ -9,7 +9,7 @@ import { sanitizeFilename } from './helper/sanitize-filename'
 import { NotionService } from './notion'
 import { OpenAIService } from './open-ai'
 import { searchImagePexels } from './pexels'
-import State from './state'
+import { getRuntimeSetting } from './state/runtime'
 
 interface Flashcard {
     id: string
@@ -74,7 +74,7 @@ export const createFlashcards = async (
         )
     }
 
-    const pexelsToken = State.getToken('pexelsToken')
+    const pexelsToken = getRuntimeSetting('pexelsToken')
     const noteTargetsByWord = notionTargets ? createNotionTargetQueueMap(notionTargets) : undefined
 
     const notes = await Promise.all(
