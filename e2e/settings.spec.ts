@@ -156,4 +156,21 @@ test.describe('Settings Management', () => {
         const title = await window.title()
         expect(title).toContain('Word2Card')
     })
+
+    test('shows configuration status without rendering stored secrets', async ({ sharedApp }) => {
+        const { window } = sharedApp
+
+        await window.click('#tab-settings-btn')
+        await window.waitForSelector('#section-settings', { state: 'visible' })
+        await expect(window.locator('#openai-key-status')).toContainText(
+            /Configured|Not configured/
+        )
+        await expect(window.locator('#azure-key-status')).toContainText(/Configured|Not configured/)
+        await expect(window.locator('#pexels-token-status')).toContainText(
+            /Configured|Not configured/
+        )
+        await expect(window.locator('#openai-key-global')).toHaveValue('')
+        await expect(window.locator('#azure-key-global')).toHaveValue('')
+        await expect(window.locator('#pexels-token-global')).toHaveValue('')
+    })
 })

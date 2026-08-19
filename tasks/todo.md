@@ -68,7 +68,7 @@
 - [x] Task 11 — Close coverage gap and update regression tests
   - Depends on: Tasks 1–10
   - Verify: `npm run test:coverage`, `npm test`, lint, typecheck
-- [ ] Task 12 — Full end-to-end verification and documentation alignment
+- [x] Task 12 — Full end-to-end verification and documentation alignment
   - Depends on: Task 11
   - Verify: `npm run test:e2e`, build, coverage, lint, typecheck, diff review
 

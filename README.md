@@ -26,12 +26,12 @@ Before using the app, make sure you have the following ready:
     - Download here: [AnkiConnect (Code: 2055492159)](https://ankiweb.net/shared/info/2055492159)
     - _Note: Restart Anki after installation._
 
-3. **API Keys:** You need to provide your own keys in the Settings menu:
+3. **API Keys:** Configure keys in Settings. Existing values are never displayed; password fields accept newly entered values, and configured/not-configured status is shown separately.
     - `OpenAI API Key` (for content generation).
     - `Azure Speech API Key` & `Region` (for audio).
     - `Pexels API Key` (for images).
 
-_(Go to Settings, enter your keys, and hit "Save Keys")_
+_(Go to Settings, enter new values when needed, and hit "Save Keys".)_
 
 ## Installation & Usage
 

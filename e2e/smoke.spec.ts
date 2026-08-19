@@ -33,4 +33,16 @@ test.describe('Smoke Tests', () => {
         const body = await window.locator('body')
         expect(await body.count()).toBe(1)
     })
+
+    test('loads without CSP or security console errors', async ({ sharedApp }) => {
+        const errors: string[] = []
+        sharedApp.window.on('console', (message) => {
+            if (message.type() === 'error') {
+                errors.push(message.text())
+            }
+        })
+
+        await sharedApp.window.waitForSelector('body', { timeout: 5000 })
+        expect(errors.filter((message) => /csp|content security policy/i.test(message))).toEqual([])
+    })
 })
