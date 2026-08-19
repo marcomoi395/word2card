@@ -303,33 +303,13 @@ function initSettingsForm(): void {
     const openaiInput = document.getElementById('openai-key-global') as HTMLInputElement | null
     const azureInput = document.getElementById('azure-key-global') as HTMLInputElement | null
     const pexelsInput = document.getElementById('pexels-token-global') as HTMLInputElement | null
-    const notionTokenInput = document.getElementById('notion-token') as HTMLInputElement | null
-    const notionDatabaseIdInput = document.getElementById(
-        'notion-database-id'
-    ) as HTMLInputElement | null
     const saveButton = document.getElementById('btn-save-settings') as HTMLButtonElement | null
 
     const loadSavedSettings = async () => {
         try {
-            const savedData = await window.api.getSecret()
+            const savedData = await window.api.getSettingsStatus()
             if (savedData.status !== 'success' || !savedData.data) {
                 return
-            }
-
-            if (openaiInput) {
-                openaiInput.value = savedData.data.openaiApiKey
-            }
-            if (azureInput) {
-                azureInput.value = savedData.data.azureApiKey
-            }
-            if (pexelsInput) {
-                pexelsInput.value = savedData.data.pexelsToken
-            }
-            if (notionTokenInput) {
-                notionTokenInput.value = savedData.data.notionToken
-            }
-            if (notionDatabaseIdInput) {
-                notionDatabaseIdInput.value = savedData.data.notionDatabaseId
             }
         } catch (error) {
             console.error('Error loading settings:', error)

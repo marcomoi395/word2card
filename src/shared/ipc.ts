@@ -3,7 +3,7 @@ export const IPC_CHANNELS = {
     windowClose: 'window-close',
     openFileDialog: 'open-file-dialog',
     saveSettings: 'save-settings',
-    getSecret: 'get-secret',
+    getSettingsStatus: 'get-settings-status',
     sendImport: 'send-import'
 } as const
 
@@ -50,12 +50,8 @@ export interface SaveSettingsPayload {
     pexelsToken: string
 }
 
-export interface SecretsData {
-    openaiApiKey: string
-    azureApiKey: string
-    pexelsToken: string
-    notionToken: string
-    notionDatabaseId: string
+export interface SettingsStatus {
+    configured: Record<SecretKey, boolean>
 }
 
 export interface OpenFileDialogData {
@@ -81,5 +77,5 @@ export interface RendererApi {
     openFileDialog: () => Promise<AppResponse<OpenFileDialogData>>
     sendImport: (importData: ImportRequest) => Promise<AppResponse>
     saveSettings: (payload: SaveSettingsPayload) => Promise<AppResponse>
-    getSecret: () => Promise<AppResponse<SecretsData>>
+    getSettingsStatus: () => Promise<AppResponse<SettingsStatus>>
 }

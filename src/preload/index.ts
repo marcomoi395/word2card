@@ -12,7 +12,7 @@ const api: RendererApi = {
         ipcRenderer.invoke(IPC_CHANNELS.sendImport, importData),
     saveSettings: (payload: SaveSettingsPayload) =>
         ipcRenderer.invoke(IPC_CHANNELS.saveSettings, payload),
-    getSecret: () => ipcRenderer.invoke(IPC_CHANNELS.getSecret)
+    getSettingsStatus: () => ipcRenderer.invoke(IPC_CHANNELS.getSettingsStatus)
 }
 
 if (process.contextIsolated) {

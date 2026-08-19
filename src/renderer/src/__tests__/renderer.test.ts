@@ -14,8 +14,6 @@ describe('Renderer UI', () => {
         // Load actual HTML into jsdom
         const html = readFileSync(resolve(__dirname, '../../index.html'), 'utf-8')
         document.documentElement.innerHTML = html
-
-        // Mock window.api (preload bridge)
         ;(window as any).api = {
             minimize: vi.fn(),
             close: vi.fn(),
@@ -24,14 +22,16 @@ describe('Renderer UI', () => {
             openFileDialog: vi.fn(),
             sendImport: vi.fn(),
             saveSettings: vi.fn(),
-            getSecret: vi.fn().mockResolvedValue({
+            getSettingsStatus: vi.fn().mockResolvedValue({
                 status: 'success',
                 data: {
-                    openaiApiKey: 'test-openai',
-                    azureApiKey: 'test-azure',
-                    pexelsToken: 'test-pexels',
-                    notionToken: 'test-notion',
-                    notionDatabaseId: 'test-db-id'
+                    configured: {
+                        openaiApiKey: true,
+                        azureApiKey: true,
+                        pexelsToken: true,
+                        notionToken: true,
+                        notionDatabaseId: true
+                    }
                 }
             })
         }
@@ -52,54 +52,43 @@ describe('Renderer UI', () => {
             expect(document.getElementById('section-notion')).toBeTruthy()
             expect(document.getElementById('section-settings')).toBeTruthy()
         })
-
-        it('calls getSecret on load', () => {
-            expect(window.api.getSecret).toHaveBeenCalled()
+        it('calls getSettingsStatus on load', () => {
+            expect(window.api.getSettingsStatus).toHaveBeenCalled()
         })
 
-        it('populates settings inputs from getSecret response', async () => {
+        it('does not populate secret inputs from settings status', async () => {
             const { promise, resolve: res } = Promise.withResolvers<void>()
             setTimeout(res, 0)
             await promise
 
-            const openaiInput = document.getElementById('openai-key-global') as HTMLInputElement
-            const azureInput = document.getElementById('azure-key-global') as HTMLInputElement
-            const pexelsInput = document.getElementById('pexels-token-global') as HTMLInputElement
-
-            expect(openaiInput?.value).toBe('test-openai')
-            expect(azureInput?.value).toBe('test-azure')
-            expect(pexelsInput?.value).toBe('test-pexels')
+            expect((document.getElementById('openai-key-global') as HTMLInputElement).value).toBe(
+                ''
+            )
+            expect((document.getElementById('azure-key-global') as HTMLInputElement).value).toBe('')
+            expect((document.getElementById('pexels-token-global') as HTMLInputElement).value).toBe(
+                ''
+            )
         })
 
-        it('handles getSecret returning error status gracefully', async () => {
-            vi.mocked(window.api.getSecret).mockResolvedValueOnce({
+        it('handles settings status errors gracefully', async () => {
+            vi.mocked(window.api.getSettingsStatus).mockResolvedValueOnce({
                 status: 'error',
-                message: 'Failed to load secrets'
+                message: 'Failed to load settings status'
             })
             window.dispatchEvent(new Event('DOMContentLoaded'))
             const { promise, resolve: res } = Promise.withResolvers<void>()
             setTimeout(res, 0)
             await promise
 
-            const openaiInput = document.getElementById('openai-key-global') as HTMLInputElement
-            expect(openaiInput?.value).toBe('test-openai')
+            expect((document.getElementById('openai-key-global') as HTMLInputElement).value).toBe(
+                ''
+            )
         })
 
-        it('handles getSecret returning success but no data', async () => {
-            vi.mocked(window.api.getSecret).mockResolvedValueOnce({
-                status: 'success'
-            })
-            window.dispatchEvent(new Event('DOMContentLoaded'))
-            const { promise, resolve: res } = Promise.withResolvers<void>()
-            setTimeout(res, 0)
-            await promise
-
-            const openaiInput = document.getElementById('openai-key-global') as HTMLInputElement
-            expect(openaiInput?.value).toBe('test-openai')
-        })
-
-        it('handles getSecret throwing error', async () => {
-            vi.mocked(window.api.getSecret).mockRejectedValueOnce(new Error('Network error'))
+        it('handles settings status request errors', async () => {
+            vi.mocked(window.api.getSettingsStatus).mockRejectedValueOnce(
+                new Error('Network error')
+            )
             const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
             window.dispatchEvent(new Event('DOMContentLoaded'))
             const { promise, resolve: res } = Promise.withResolvers<void>()

@@ -21,7 +21,7 @@
 - [x] Task 3 — Migrate main bootstrap and services to State package
   - Depends on: Task 2
   - Verify: import/state tests, `npm test`, node typecheck
-- [ ] Task 4 — Replace secret-returning IPC with redacted settings status
+- [x] Task 4 — Replace secret-returning IPC with redacted settings status
   - Depends on: Task 3
   - Verify: settings handler tests, no-secret response assertions, node typecheck
 - [ ] Task 5 — Migrate preload and renderer settings UI to status-only state
