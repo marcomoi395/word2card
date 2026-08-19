@@ -5,7 +5,7 @@
 - [x] Task 1 — Define State package model and redacted snapshot
   - Depends on: none
   - Verify: focused state tests, `npm run typecheck:node`
-- [ ] Task 2 — Add typed persistence adapter and atomic state commit
+- [x] Task 2 — Add typed persistence adapter and atomic state commit
   - Depends on: Task 1
   - Verify: persistence failure/success tests, focused store tests, typecheck
 

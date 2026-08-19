@@ -57,3 +57,41 @@ describe('state package', () => {
         expect(JSON.stringify(snapshot)).not.toContain('database-id')
     })
 })
+
+describe('persistent state store', () => {
+    it('loads settings through a typed persistence adapter', () => {
+        const persistence = {
+            load: () => ({ openaiApiKey: 'loaded-key' }),
+            save: () => true,
+            delete: () => true
+        }
+
+        const state = createStateStore({}, persistence)
+
+        expect(state.getRuntimeSettings()).toEqual({ openaiApiKey: 'loaded-key' })
+    })
+
+    it('does not publish a runtime update when persistence fails', () => {
+        const persistence = {
+            load: () => ({}),
+            save: () => false,
+            delete: () => true
+        }
+        const state = createStateStore({ openaiApiKey: 'existing-key' }, persistence)
+
+        expect(state.updateRuntimeSettings({ azureApiKey: 'azure-key' })).toBe(false)
+        expect(state.getRuntimeSettings()).toEqual({ openaiApiKey: 'existing-key' })
+    })
+
+    it('only clears runtime state after persistence succeeds', () => {
+        const persistence = {
+            load: () => ({ openaiApiKey: 'openai-key' }),
+            save: () => true,
+            delete: () => false
+        }
+        const state = createStateStore({}, persistence)
+
+        expect(state.clearRuntimeSetting('openaiApiKey')).toBe(false)
+        expect(state.getRuntimeSettings()).toEqual({ openaiApiKey: 'openai-key' })
+    })
+})

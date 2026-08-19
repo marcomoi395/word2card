@@ -8,8 +8,8 @@ export interface StateSnapshot {
 
 export interface StateStore {
     getRuntimeSettings(): RuntimeSettings
-    updateRuntimeSettings(patch: RuntimeSettings): void
-    clearRuntimeSetting(key: SecretKey): void
+    updateRuntimeSettings(patch: RuntimeSettings): boolean
+    clearRuntimeSetting(key: SecretKey): boolean
     getMissingRuntimeSettings(requiredKeys: SecretKey[]): SecretKey[]
     getRendererSnapshot(): StateSnapshot
 }

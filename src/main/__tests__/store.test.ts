@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { SecretManager } from '../store'
+import { SecretManager, createSecretPersistence } from '../store'
 import { resetSecretManager } from '../../../test/helpers/singleton-reset'
+
 import { safeStorage } from 'electron'
 
 // Mock electron-store module with factory
@@ -160,5 +161,49 @@ describe('SecretManager / Store', () => {
 
             expect(Store.prototype.delete).toHaveBeenCalledWith('openaiApiKey')
         })
+    })
+})
+
+describe('typed state persistence adapter', () => {
+    it('loads and saves complete runtime settings through SecretManager', () => {
+        const manager = {
+            getSecret: vi.fn((key: string) => (key === 'openaiApiKey' ? 'existing-key' : null)),
+            saveSecret: vi.fn(() => true),
+            deleteSecret: vi.fn()
+        }
+
+        const persistence = createSecretPersistence(manager)
+
+        expect(persistence.load()).toEqual({ openaiApiKey: 'existing-key' })
+        expect(persistence.save({ openaiApiKey: 'new-key', azureApiKey: 'azure-key' })).toBe(true)
+        expect(manager.saveSecret).toHaveBeenCalledWith('openaiApiKey', 'new-key')
+        expect(manager.saveSecret).toHaveBeenCalledWith('azureApiKey', 'azure-key')
+    })
+
+    it('restores earlier writes when a later setting fails', () => {
+        const values: Partial<Record<'openaiApiKey' | 'azureApiKey', string>> = {
+            openaiApiKey: 'old-key'
+        }
+        const manager = {
+            getSecret: vi.fn((key: 'openaiApiKey' | 'azureApiKey') => values[key] ?? null),
+            saveSecret: vi.fn((key: 'openaiApiKey' | 'azureApiKey', value: string) => {
+                if (key === 'azureApiKey') {
+                    return false
+                }
+                values[key] = value
+                return true
+            }),
+            deleteSecret: vi.fn((key: 'openaiApiKey' | 'azureApiKey') => {
+                delete values[key]
+            })
+        }
+
+        expect(
+            createSecretPersistence(manager).save({
+                openaiApiKey: 'new-key',
+                azureApiKey: 'azure-key'
+            })
+        ).toBe(false)
+        expect(values.openaiApiKey).toBe('old-key')
     })
 })
