@@ -11,10 +11,10 @@
 
 ### Checkpoint: State foundation
 
-- [ ] State tests pass
-- [ ] Store tests pass
-- [ ] Typecheck passes
-- [ ] No raw state/snapshot contract crosses boundaries
+- [x] State tests pass
+- [x] Store tests pass
+- [x] Typecheck passes
+- [x] No raw state/snapshot contract crosses boundaries
 
 ## Phase 1: Secret flow migration
 
@@ -30,10 +30,10 @@
 
 ### Checkpoint: Secret boundary
 
-- [ ] Renderer receives no raw secrets
-- [ ] Main services still access secrets
-- [ ] Settings save/clear behavior preserved
-- [ ] Unit tests and build pass
+- [x] Renderer receives no raw secrets
+- [x] Main services still access secrets
+- [x] Settings save/clear behavior preserved
+- [x] Unit tests and build pass
 
 ## Phase 2: Trust boundaries
 
@@ -49,10 +49,10 @@
 
 ### Checkpoint: Main trust boundaries
 
-- [ ] File path validation passes
-- [ ] URL allowlist passes
-- [ ] Window recreation does not duplicate IPC handlers
-- [ ] Import/window E2E smoke paths remain green
+- [x] File path validation passes
+- [x] URL allowlist passes
+- [x] Window recreation does not duplicate IPC handlers
+- [x] Import/window E2E smoke paths remain green
 
 ## Phase 3: Renderer security surface
 
@@ -74,9 +74,9 @@
 
 ### Final checkpoint
 
-- [ ] All acceptance criteria pass
-- [ ] No raw secrets in renderer/artifacts/logs
-- [ ] No unapproved dependencies
+- [x] All acceptance criteria pass
+- [x] No raw secrets in renderer/artifacts/logs
+- [x] No unapproved dependency additions
 - [ ] Security review complete
-- [ ] SPEC.md and implementation remain aligned
+- [x] SPEC.md and implementation remain aligned
 - [ ] Human approves release readiness
