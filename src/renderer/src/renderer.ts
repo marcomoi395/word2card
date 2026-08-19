@@ -311,6 +311,20 @@ function initSettingsForm(): void {
             if (savedData.status !== 'success' || !savedData.data) {
                 return
             }
+
+            const status = savedData.data.configured
+            const openaiStatus = document.getElementById('openai-key-status')
+            const azureStatus = document.getElementById('azure-key-status')
+            const pexelsStatus = document.getElementById('pexels-token-status')
+            if (openaiStatus) {
+                openaiStatus.textContent = status.openaiApiKey ? 'Configured' : 'Not configured'
+            }
+            if (azureStatus) {
+                azureStatus.textContent = status.azureApiKey ? 'Configured' : 'Not configured'
+            }
+            if (pexelsStatus) {
+                pexelsStatus.textContent = status.pexelsToken ? 'Configured' : 'Not configured'
+            }
         } catch (error) {
             console.error('Error loading settings:', error)
         }

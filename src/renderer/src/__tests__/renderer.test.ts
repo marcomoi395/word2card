@@ -98,6 +98,28 @@ describe('Renderer UI', () => {
             expect(consoleSpy).toHaveBeenCalled()
             consoleSpy.mockRestore()
         })
+
+        it('shows configured status without exposing secret values', async () => {
+            const { promise, resolve: res } = Promise.withResolvers<void>()
+            setTimeout(res, 0)
+            await promise
+
+            expect(document.getElementById('openai-key-status')?.textContent).toBe('Configured')
+            expect(document.getElementById('azure-key-status')?.textContent).toBe('Configured')
+            expect(document.getElementById('pexels-token-status')?.textContent).toBe('Configured')
+        })
+
+        it('uses password controls for secret inputs', () => {
+            expect((document.getElementById('openai-key-global') as HTMLInputElement).type).toBe(
+                'password'
+            )
+            expect((document.getElementById('azure-key-global') as HTMLInputElement).type).toBe(
+                'password'
+            )
+            expect((document.getElementById('pexels-token-global') as HTMLInputElement).type).toBe(
+                'password'
+            )
+        })
     })
 
     describe('Settings Form', () => {

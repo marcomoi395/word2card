@@ -24,7 +24,7 @@
 - [x] Task 4 — Replace secret-returning IPC with redacted settings status
   - Depends on: Task 3
   - Verify: settings handler tests, no-secret response assertions, node typecheck
-- [ ] Task 5 — Migrate preload and renderer settings UI to status-only state
+- [x] Task 5 — Migrate preload and renderer settings UI to status-only state
   - Depends on: Task 4
   - Verify: renderer tests, web typecheck, build
 

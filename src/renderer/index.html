@@ -123,31 +123,34 @@
                 <form id="form-settings">
                     <div class="form-group">
                         <input
-                            type="text"
+                            type="password"
                             id="openai-key-global"
                             name="openaiKeyGlobal"
                             placeholder="OpenAI API Key (e.g., sk-...)"
                         />
+                        <span id="openai-key-status" class="settings-status"></span>
                     </div>
                     <br />
 
                     <div class="form-group">
                         <input
-                            type="text"
+                            type="password"
                             id="azure-key-global"
                             name="azureKeyGlobal"
                             placeholder="Azure Speech Key"
                         />
+                        <span id="azure-key-status" class="settings-status"></span>
                     </div>
                     <br />
 
                     <div class="form-group">
                         <input
-                            type="text"
+                            type="password"
                             id="pexels-token-global"
                             name="pexelsTokenGlobal"
                             placeholder="Pexels API Key"
                         />
+                        <span id="pexels-token-status" class="settings-status"></span>
                     </div>
                     <br />
                     <button class="submit-btn" type="button" id="btn-save-settings">
