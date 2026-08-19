@@ -1,48 +1,54 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { ipcMain } from 'electron'
-import { registerWindowHandlers } from '../window.handler'
+import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { BrowserWindow, ipcMain } from 'electron'
+import { registerWindowHandlers, resetWindowHandlerRegistration } from '../window.handler'
 import { IPC_CHANNELS } from '../../../../shared/ipc'
 
+vi.mock('electron', () => ({
+    BrowserWindow: {
+        fromWebContents: vi.fn()
+    },
+    ipcMain: {
+        on: vi.fn()
+    }
+}))
+
 describe('registerWindowHandlers', () => {
-    let mockWindow: any
-    let handlers: Record<string, (...args: any[]) => void>
+    let handlers: Record<string, (event: unknown) => void>
 
     beforeEach(() => {
         vi.clearAllMocks()
+        resetWindowHandlerRegistration()
         handlers = {}
-
-        // Mock BrowserWindow
-        mockWindow = {
-            minimize: vi.fn(),
-            close: vi.fn()
-        }
-
-        // Capture handlers registered via ipcMain.on
         vi.spyOn(ipcMain, 'on').mockImplementation((channel, handler) => {
-            handlers[channel] = handler
+            handlers[channel] = handler as (event: unknown) => void
             return ipcMain
         })
     })
 
-    it('registers windowMinimize handler', () => {
-        registerWindowHandlers(mockWindow)
-        expect(ipcMain.on).toHaveBeenCalledWith(IPC_CHANNELS.windowMinimize, expect.any(Function))
+    it('registers window controls once', () => {
+        registerWindowHandlers()
+        registerWindowHandlers()
+
+        expect(ipcMain.on).toHaveBeenCalledTimes(2)
     })
 
-    it('registers windowClose handler', () => {
-        registerWindowHandlers(mockWindow)
-        expect(ipcMain.on).toHaveBeenCalledWith(IPC_CHANNELS.windowClose, expect.any(Function))
+    it('targets the sender window at event time', () => {
+        const senderWindow = { minimize: vi.fn(), close: vi.fn() }
+        vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(senderWindow as never)
+        registerWindowHandlers()
+
+        handlers[IPC_CHANNELS.windowMinimize]({ sender: {} })
+        handlers[IPC_CHANNELS.windowClose]({ sender: {} })
+
+        expect(senderWindow.minimize).toHaveBeenCalled()
+        expect(senderWindow.close).toHaveBeenCalled()
     })
 
-    it('windowMinimize handler calls mainWindow.minimize()', () => {
-        registerWindowHandlers(mockWindow)
-        handlers[IPC_CHANNELS.windowMinimize]()
-        expect(mockWindow.minimize).toHaveBeenCalled()
-    })
+    it('ignores stale or invalid sender events', () => {
+        vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(null)
+        registerWindowHandlers()
 
-    it('windowClose handler calls mainWindow.close()', () => {
-        registerWindowHandlers(mockWindow)
-        handlers[IPC_CHANNELS.windowClose]()
-        expect(mockWindow.close).toHaveBeenCalled()
+        expect(() => handlers[IPC_CHANNELS.windowMinimize]({ sender: {} })).not.toThrow()
+        expect(() => handlers[IPC_CHANNELS.windowClose]({ sender: {} })).not.toThrow()
     })
 })

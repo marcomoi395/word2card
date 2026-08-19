@@ -43,7 +43,7 @@
 - [x] Task 7 — Allowlist external URL schemes
   - Depends on: none
   - Verify: window URL tests, node typecheck
-- [ ] Task 8 — Make IPC registration lifecycle-safe
+- [x] Task 8 — Make IPC registration lifecycle-safe
   - Depends on: none
   - Verify: registration/window handler tests, node typecheck
 
