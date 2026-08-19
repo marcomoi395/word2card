@@ -14,12 +14,7 @@
         <div id="bg-mascot"></div>
         <header>
             <div class="window-controls">
-                <button
-                    class="btn"
-                    id="tab-settings-btn"
-                    title="Settings"
-                    onclick="switchTab('settings')"
-                >
+                <button class="btn" id="tab-settings-btn" title="Settings">
                     <i class="fa-solid fa-gear settings-icon"></i>
                 </button>
                 <button class="btn" id="minimize-btn" title="Minimize">
@@ -33,10 +28,8 @@
         <main>
             <div class="app-title">Word2Card</div>
             <nav>
-                <button id="tab-import-btn" class="active-btn" onclick="switchTab('import')">
-                    File Import
-                </button>
-                <button id="tab-notion-btn" onclick="switchTab('notion')">Notion Sync</button>
+                <button id="tab-import-btn" class="active-btn">File Import</button>
+                <button id="tab-notion-btn">Notion Sync</button>
             </nav>
             <section class="active-section" id="section-import">
                 <form id="form-import">
@@ -160,67 +153,5 @@
             </section>
         </main>
         <script type="module" src="./src/renderer.ts"></script>
-        <script>
-            const platform = window.api.platform
-            const minimizeBtn = document.getElementById('minimize-btn')
-            if (minimizeBtn) {
-                minimizeBtn.addEventListener('click', () => {
-                    window.api.minimize()
-                })
-            }
-
-            if (platform === 'linux') {
-                if (minimizeBtn) {
-                    minimizeBtn.style.display = 'none'
-                }
-            }
-
-            const closeBtn = document.getElementById('close-btn')
-            if (closeBtn) {
-                closeBtn.addEventListener('click', () => {
-                    window.api.close()
-                })
-            }
-
-            function switchTab(tabName) {
-                const importSection = document.getElementById('section-import')
-                const notionSection = document.getElementById('section-notion')
-                const settingsSection = document.getElementById('section-settings')
-
-                ;[importSection, notionSection, settingsSection].forEach((section) => {
-                    if (section) section.classList.remove('active-section')
-                })
-
-                if (tabName === 'import') importSection.classList.add('active-section')
-                else if (tabName === 'notion') notionSection.classList.add('active-section')
-                else if (tabName === 'settings') settingsSection.classList.add('active-section')
-
-                const btnImport = document.getElementById('tab-import-btn')
-                const btnNotion = document.getElementById('tab-notion-btn')
-                const btnSettings = document.getElementById('tab-settings-btn')
-
-                ;[btnImport, btnNotion, btnSettings].forEach((btn) => {
-                    if (btn) btn.classList.remove('active-btn')
-                })
-
-                if (tabName === 'import') btnImport.classList.add('active-btn')
-                else if (tabName === 'notion') btnNotion.classList.add('active-btn')
-                else if (tabName === 'settings') btnSettings.classList.add('active-btn')
-
-                const mascot = document.getElementById('bg-mascot')
-
-                mascot.classList.remove('bg-import', 'bg-notion', 'bg-settings')
-
-                if (tabName === 'import') {
-                    mascot.classList.add('bg-import')
-                } else if (tabName === 'notion') {
-                    mascot.classList.add('bg-notion')
-                } else if (tabName === 'settings') {
-                    mascot.classList.add('bg-settings')
-                }
-            }
-
-            switchTab('import')
-        </script>
     </body>
 </html>

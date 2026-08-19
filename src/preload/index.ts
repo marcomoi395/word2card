@@ -15,13 +15,12 @@ const api: RendererApi = {
     getSettingsStatus: () => ipcRenderer.invoke(IPC_CHANNELS.getSettingsStatus)
 }
 
-if (process.contextIsolated) {
-    try {
-        contextBridge.exposeInMainWorld('api', api)
-    } catch (error) {
-        console.error(error)
-    }
-} else {
-    // @ts-ignore (define in dts)
-    window.api = api
+if (!process.contextIsolated) {
+    throw new Error('Context isolation is required')
+}
+
+try {
+    contextBridge.exposeInMainWorld('api', api)
+} catch (error) {
+    console.error(error)
 }

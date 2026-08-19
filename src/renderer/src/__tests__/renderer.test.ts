@@ -598,3 +598,19 @@ describe('Renderer UI', () => {
         })
     })
 })
+
+describe('renderer security boundaries', () => {
+    it('contains no inline event handlers or bootstrap scripts', () => {
+        const html = readFileSync(resolve(__dirname, '../../index.html'), 'utf-8')
+
+        expect(html).not.toMatch(/\son[a-z]+=/i)
+        expect(html).not.toContain('<script>')
+    })
+
+    it('does not include a preload fallback assignment', () => {
+        const preload = readFileSync(resolve(__dirname, '../../../preload/index.ts'), 'utf-8')
+
+        expect(preload).not.toContain('window.api = api')
+        expect(preload).not.toContain('else {')
+    })
+})
