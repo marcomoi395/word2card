@@ -3,6 +3,13 @@ import { BrowserWindow, shell } from 'electron'
 import { is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 
+export const isAllowedExternalUrl = (rawUrl: string): boolean => {
+    try {
+        return new URL(rawUrl).protocol === 'https:'
+    } catch {
+        return false
+    }
+}
 export function createWindow(): BrowserWindow {
     const mainWindow = new BrowserWindow({
         width: 400,
@@ -27,7 +34,9 @@ export function createWindow(): BrowserWindow {
     })
 
     mainWindow.webContents.setWindowOpenHandler((details) => {
-        shell.openExternal(details.url)
+        if (isAllowedExternalUrl(details.url)) {
+            void shell.openExternal(details.url)
+        }
         return { action: 'deny' }
     })
 

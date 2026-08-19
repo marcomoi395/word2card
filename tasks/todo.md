@@ -40,7 +40,7 @@
 - [x] Task 6 — Validate file import paths in main
   - Depends on: Task 1
   - Verify: path rejection/acceptance tests, import tests, node typecheck
-- [ ] Task 7 — Allowlist external URL schemes
+- [x] Task 7 — Allowlist external URL schemes
   - Depends on: none
   - Verify: window URL tests, node typecheck
 - [ ] Task 8 — Make IPC registration lifecycle-safe

@@ -110,17 +110,27 @@ describe('window.ts', () => {
         expect(mocks.mockShow).toHaveBeenCalled()
     })
 
-    it('denies window open and opens external shell instead', () => {
+    it.each([
+        ['https://example.com', true],
+        ['http://example.com', false],
+        ['file:///tmp/file.txt', false],
+        ['javascript:alert(1)', false],
+        ['data:text/html,test', false],
+        ['custom://example', false],
+        ['', false],
+        ['not a url', false]
+    ])('allows only HTTPS external URLs: %s', (url, allowed) => {
         createWindow()
 
-        expect(mocks.mockSetWindowOpenHandler).toHaveBeenCalled()
-
-        // Trigger the handler
         const handler = mocks.mockSetWindowOpenHandler.mock.calls[0][0]
-        const result = handler({ url: 'https://example.com' })
+        const result = handler({ url })
 
-        expect(shell.openExternal).toHaveBeenCalledWith('https://example.com')
         expect(result).toEqual({ action: 'deny' })
+        if (allowed) {
+            expect(shell.openExternal).toHaveBeenCalledWith(url)
+        } else {
+            expect(shell.openExternal).not.toHaveBeenCalled()
+        }
     })
 
     it('loads dev server URL when in dev mode', async () => {
