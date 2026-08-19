@@ -59,7 +59,7 @@
 - [x] Task 9 — Remove preload fallback and inline renderer handlers
   - Depends on: Task 5
   - Verify: renderer/preload tests, full typecheck, build
-- [ ] Task 10 — Add strict CSP and remove renderer CDN dependency
+- [x] Task 10 — Add strict CSP and remove renderer CDN dependency
   - Depends on: Task 9
   - Verify: build, Playwright console check, no CSP violations
 

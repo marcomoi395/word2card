@@ -3,11 +3,11 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Word2Card</title>
-        <link
-            rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        <meta
+            http-equiv="Content-Security-Policy"
+            content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'none'"
         />
+        <title>Word2Card</title>
         <link rel="stylesheet" href="styles.css" />
     </head>
     <body>
@@ -15,13 +15,13 @@
         <header>
             <div class="window-controls">
                 <button class="btn" id="tab-settings-btn" title="Settings">
-                    <i class="fa-solid fa-gear settings-icon"></i>
+                    <span class="settings-icon" aria-hidden="true">Settings</span>
                 </button>
                 <button class="btn" id="minimize-btn" title="Minimize">
-                    <i class="fa-solid fa-minus minus-icon"></i>
+                    <span class="minus-icon" aria-hidden="true">−</span>
                 </button>
                 <button class="btn" id="close-btn" title="Close">
-                    <i class="fa-solid fa-xmark mark-icon"></i>
+                    <span class="mark-icon" aria-hidden="true">×</span>
                 </button>
             </div>
         </header>
@@ -68,7 +68,7 @@
                 </form>
             </section>
 
-            <section id="section-notion" style="display: none">
+            <section id="section-notion">
                 <form id="form-notion">
                     <div class="form-group">
                         <input
@@ -112,7 +112,7 @@
                 </form>
             </section>
 
-            <section id="section-settings" style="display: none">
+            <section id="section-settings">
                 <form id="form-settings">
                     <div class="form-group">
                         <input

@@ -614,3 +614,14 @@ describe('renderer security boundaries', () => {
         expect(preload).not.toContain('else {')
     })
 })
+
+describe('renderer CSP', () => {
+    it('declares a strict self-hosted content security policy', () => {
+        const html = readFileSync(resolve(__dirname, '../../index.html'), 'utf-8')
+
+        expect(html).toContain('Content-Security-Policy')
+        expect(html).toContain("default-src 'self'")
+        expect(html).not.toContain('cdnjs.cloudflare.com')
+        expect(html).not.toContain('fonts.googleapis.com')
+    })
+})
