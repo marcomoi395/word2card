@@ -94,6 +94,24 @@ describe('persistent state store', () => {
         expect(state.clearRuntimeSetting('openaiApiKey')).toBe(false)
         expect(state.getRuntimeSettings()).toEqual({ openaiApiKey: 'openai-key' })
     })
+
+    it('rejects updates when persistence throws', () => {
+        const state = createStateStore(
+            { openaiApiKey: 'old-key' },
+            {
+                load: () => ({}),
+                save: () => {
+                    throw new Error('save failed')
+                },
+                delete: () => {
+                    throw new Error('delete failed')
+                }
+            }
+        )
+
+        expect(state.updateRuntimeSettings({ azureApiKey: 'azure-key' })).toBe(false)
+        expect(state.clearRuntimeSetting('openaiApiKey')).toBe(false)
+    })
 })
 
 describe('runtime state bootstrap', () => {

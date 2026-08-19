@@ -51,4 +51,14 @@ describe('registerWindowHandlers', () => {
         expect(() => handlers[IPC_CHANNELS.windowMinimize]({ sender: {} })).not.toThrow()
         expect(() => handlers[IPC_CHANNELS.windowClose]({ sender: {} })).not.toThrow()
     })
+
+    it('ignores sender lookup exceptions', () => {
+        vi.mocked(BrowserWindow.fromWebContents).mockImplementation(() => {
+            throw new Error('stale sender')
+        })
+        registerWindowHandlers()
+
+        expect(() => handlers[IPC_CHANNELS.windowMinimize]({ sender: {} })).not.toThrow()
+        expect(() => handlers[IPC_CHANNELS.windowClose]({ sender: {} })).not.toThrow()
+    })
 })

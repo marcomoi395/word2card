@@ -206,4 +206,20 @@ describe('typed state persistence adapter', () => {
         ).toBe(false)
         expect(values.openaiApiKey).toBe('old-key')
     })
+
+    it('deletes newly written keys during rollback when no prior value exists', () => {
+        const manager = {
+            getSecret: vi.fn(() => null),
+            saveSecret: vi.fn((key: string) => key !== 'azureApiKey'),
+            deleteSecret: vi.fn()
+        }
+
+        expect(
+            createSecretPersistence(manager).save({
+                openaiApiKey: 'new-key',
+                azureApiKey: 'azure-key'
+            })
+        ).toBe(false)
+        expect(manager.deleteSecret).toHaveBeenCalledWith('openaiApiKey')
+    })
 })

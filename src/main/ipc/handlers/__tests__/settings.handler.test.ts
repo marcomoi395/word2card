@@ -107,4 +107,29 @@ describe('registerSettingsHandlers', () => {
 
         expect(result).toEqual({ status: 'error', message: 'Invalid settings payload' })
     })
+
+    it('returns a safe error when status projection throws', async () => {
+        vi.mocked(getRuntimeState().getRendererSnapshot).mockImplementation(() => {
+            throw new Error('state projection failed')
+        })
+        registerSettingsHandlers()
+
+        const result = await handlers[IPC_CHANNELS.getSettingsStatus]()
+
+        expect(result).toEqual({ status: 'error', message: 'state projection failed' })
+    })
+
+    it('returns generic error for non-Error status failures', async () => {
+        vi.mocked(getRuntimeState().getRendererSnapshot).mockImplementation(() => {
+            throw 'status failed'
+        })
+        registerSettingsHandlers()
+
+        const result = await handlers[IPC_CHANNELS.getSettingsStatus]()
+
+        expect(result).toEqual({
+            status: 'error',
+            message: 'Failed to retrieve settings status'
+        })
+    })
 })
