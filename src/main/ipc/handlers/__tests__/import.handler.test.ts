@@ -8,16 +8,18 @@ vi.mock('../../../utils/validators', () => ({
     parseImportRequest: vi.fn()
 }))
 
-// Mock ImportService
+vi.mock('../../../helper/readFile', () => ({
+    validateTextFilePath: vi.fn(() => true)
+}))
 vi.mock('../../../services/import.service', () => ({
     ImportService: {
         handleImportRequest: vi.fn()
     }
 }))
 
+import { validateTextFilePath } from '../../../helper/readFile'
 import { parseImportRequest } from '../../../utils/validators'
 import { ImportService } from '../../../services/import.service'
-
 describe('registerImportHandlers', () => {
     let handlers: Record<string, (...args: any[]) => Promise<any>>
 
@@ -136,5 +138,22 @@ describe('registerImportHandlers', () => {
             status: 'error',
             message: 'Invalid import request payload'
         })
+    })
+    it('rejects a forged invalid file path before service execution', async () => {
+        registerImportHandlers()
+        vi.mocked(parseImportRequest).mockReturnValue({
+            type: 'FILE_IMPORT',
+            payload: {
+                filePath: '/tmp/file.pdf',
+                deck: 'TestDeck',
+                options: { quiz: false, flashcard: true }
+            }
+        })
+        vi.mocked(validateTextFilePath).mockResolvedValue(false)
+
+        const result = await handlers[IPC_CHANNELS.sendImport](null, {})
+
+        expect(result).toEqual({ status: 'error', message: 'Invalid text file path' })
+        expect(ImportService.handleImportRequest).not.toHaveBeenCalled()
     })
 })

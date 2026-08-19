@@ -1,8 +1,22 @@
 import fs from 'fs'
+import path from 'path'
 
-export const readFileContent = async (path: string) => {
+export const validateTextFilePath = async (filePath: string): Promise<boolean> => {
+    if (!path.isAbsolute(filePath) || path.extname(filePath).toLowerCase() !== '.txt') {
+        return false
+    }
+
     try {
-        const res = await fs.promises.readFile(path, 'utf-8')
+        const stats = await fs.promises.stat(filePath)
+        return stats.isFile()
+    } catch {
+        return false
+    }
+}
+
+export const readFileContent = async (filePath: string) => {
+    try {
+        const res = await fs.promises.readFile(filePath, 'utf-8')
         return res
             .split('\n')
             .map((line) => line.trim())

@@ -1,12 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { readFileContent } from '../readFile'
+import { readFileContent, validateTextFilePath } from '../readFile'
 import fs from 'fs'
 
 // Mock fs module
 vi.mock('fs', () => ({
     default: {
         promises: {
-            readFile: vi.fn()
+            readFile: vi.fn(),
+            stat: vi.fn()
         }
     }
 }))
@@ -89,5 +90,31 @@ describe('readFile', () => {
 
             expect(result).toBeNull()
         })
+    })
+})
+
+describe('validateTextFilePath', () => {
+    it('accepts a readable absolute txt file', async () => {
+        vi.spyOn(fs.promises, 'stat').mockResolvedValue({
+            isFile: () => true
+        } as never)
+
+        await expect(validateTextFilePath('/path/to/file.txt')).resolves.toBe(true)
+    })
+
+    it('rejects unsupported, missing, directory, and malformed paths', async () => {
+        vi.mocked(fs.promises.stat).mockRejectedValue(new Error('missing'))
+
+        await expect(validateTextFilePath('/path/to/file.pdf')).resolves.toBe(false)
+        await expect(validateTextFilePath('')).resolves.toBe(false)
+        await expect(validateTextFilePath('relative.txt')).resolves.toBe(false)
+
+        vi.spyOn(fs.promises, 'stat').mockResolvedValue({
+            isFile: () => false
+        } as never)
+        await expect(validateTextFilePath('/path/to/directory.txt')).resolves.toBe(false)
+
+        vi.mocked(fs.promises.stat).mockRejectedValue(new Error('missing'))
+        await expect(validateTextFilePath('/path/to/missing.txt')).resolves.toBe(false)
     })
 })

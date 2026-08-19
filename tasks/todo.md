@@ -37,7 +37,7 @@
 
 ## Phase 2: Trust boundaries
 
-- [ ] Task 6 — Validate file import paths in main
+- [x] Task 6 — Validate file import paths in main
   - Depends on: Task 1
   - Verify: path rejection/acceptance tests, import tests, node typecheck
 - [ ] Task 7 — Allowlist external URL schemes
