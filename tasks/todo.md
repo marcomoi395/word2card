@@ -77,6 +77,6 @@
 - [x] All acceptance criteria pass
 - [x] No raw secrets in renderer/artifacts/logs
 - [x] No unapproved dependency additions
-- [ ] Security review complete
+- [x] Security review complete
 - [x] SPEC.md and implementation remain aligned
 - [ ] Human approves release readiness
