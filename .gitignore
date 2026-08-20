@@ -12,6 +12,7 @@ test-results/
 # production
 dist/
 out/
+tasks
 
 # misc
 .DS_Store
