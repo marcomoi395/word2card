@@ -2,12 +2,12 @@ name: CI
 
 on:
     pull_request:
-        branches: [main]
+        branches: [main, develop]
         paths-ignore:
             - '**/*.md'
             - 'docs/**'
     push:
-        branches: [main]
+        branches: [main, develop]
         paths-ignore:
             - '**/*.md'
             - 'docs/**'
@@ -64,22 +64,15 @@ jobs:
         permissions:
             contents: read
         steps:
-            - name: Checkout code
-              uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
+            - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
               with:
                   persist-credentials: false
-
-            - name: Setup Node.js
-              uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v4
+            - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v4
               with:
                   node-version: '22'
-                  cache: 'npm'
-
-            - name: Install dependencies
-              run: npm ci
-
-            - name: Check formatting
-              run: npx prettier --check .
+                  cache: npm
+            - run: npm ci
+            - run: npx prettier --check .
 
     lint:
         name: Lint
@@ -88,22 +81,15 @@ jobs:
         permissions:
             contents: read
         steps:
-            - name: Checkout code
-              uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
+            - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
               with:
                   persist-credentials: false
-
-            - name: Setup Node.js
-              uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v4
+            - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v4
               with:
                   node-version: '22'
-                  cache: 'npm'
-
-            - name: Install dependencies
-              run: npm ci
-
-            - name: Run linter
-              run: npm run lint
+                  cache: npm
+            - run: npm ci
+            - run: npm run lint
 
     typecheck:
         name: Type check
@@ -112,93 +98,62 @@ jobs:
         permissions:
             contents: read
         steps:
-            - name: Checkout code
-              uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
+            - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
               with:
                   persist-credentials: false
-
-            - name: Setup Node.js
-              uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v4
+            - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v4
               with:
                   node-version: '22'
-                  cache: 'npm'
-
-            - name: Install dependencies
-              run: npm ci
-
-            - name: Run type check
-              run: npm run typecheck
+                  cache: npm
+            - run: npm ci
+            - run: npm run typecheck
 
     unit-test:
         name: Unit tests
         runs-on: ubuntu-latest
         timeout-minutes: 15
+        needs: [format, lint, typecheck]
         permissions:
             contents: read
-        needs: [lint, typecheck, format]
-        if: ${{ !cancelled() && !failure() }}
         steps:
-            - name: Checkout code
-              uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
+            - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
               with:
                   persist-credentials: false
-
-            - name: Setup Node.js
-              uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v4
+            - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v4
               with:
                   node-version: '22'
-                  cache: 'npm'
-
-            - name: Install dependencies
-              run: npm ci
-
-            - name: Run unit tests
-              run: npm run test
+                  cache: npm
+            - run: npm ci
+            - run: npm run test
 
     e2e-test:
         name: E2E tests
         runs-on: ubuntu-latest
         timeout-minutes: 30
+        needs: unit-test
         permissions:
             contents: read
-        needs: [unit-test]
-        if: ${{ !cancelled() && !failure() }}
         steps:
-            - name: Checkout code
-              uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
+            - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
               with:
                   persist-credentials: false
-
-            - name: Setup Node.js
-              uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v4
+            - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v4
               with:
                   node-version: '22'
-                  cache: 'npm'
-
-            - name: Install dependencies
-              run: npm ci
-
+                  cache: npm
+            - run: npm ci
             - name: Build application
               run: npm run build
-
             - name: Install Playwright browsers
               run: npx playwright install --with-deps chromium
-
             - name: Run E2E tests
               run: npx playwright test
-
-            - name: Upload Playwright report
+            - name: Upload Playwright artifacts
               if: failure()
               uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
               with:
-                  name: playwright-report
-                  path: playwright-report/
-                  retention-days: 7
-
-            - name: Upload test results
-              if: failure()
-              uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
-              with:
-                  name: test-results
-                  path: test-results/
+                  name: playwright-debug
+                  path: |
+                      playwright-report/
+                      test-results/
                   retention-days: 7
