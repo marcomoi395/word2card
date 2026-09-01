@@ -1,3 +1,10 @@
+@font-face {
+    font-family: 'Nunito';
+    font-style: normal;
+    font-weight: 200 1000;
+    font-display: swap;
+    src: url('./assets/fonts/nunito-var.woff2') format('woff2');
+}
 * {
     box-sizing: border-box;
     margin: 0;
@@ -44,14 +51,8 @@ header {
         inset 0px 0px 16px rgba(0, 0, 0, 0.25);
 }
 
-.btn i {
+.btn svg {
     color: #384230;
-    font-size: 20px;
-}
-
-.minus-icon {
-    position: relative;
-    top: 5px;
 }
 
 @keyframes bounce-cute {
@@ -67,7 +68,7 @@ header {
     }
 }
 
-.btn:hover i {
+.btn:hover svg {
     animation: bounce-cute 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
     color: #000;
 }
@@ -84,7 +85,7 @@ header {
         inset 0px 0px 16px rgba(0, 0, 0, 0.25);
 }
 
-.btn:active i {
+.btn:active svg {
     animation: bounce-cute 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
