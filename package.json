@@ -27,6 +27,7 @@
     "test:e2e:clean": "rm -rf playwright-report test-results",
     "start": "electron-vite preview",
     "dev": "electron-vite dev",
+    "prepare": "git config core.hooksPath .githooks",
     "build": "bun run typecheck && electron-vite build",
     "postinstall": "electron-builder install-app-deps",
     "build:unpack": "bun run build && electron-builder --dir",
