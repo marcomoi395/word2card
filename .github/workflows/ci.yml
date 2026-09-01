@@ -21,7 +21,7 @@ jobs:
             - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
               with:
                   persist-credentials: false
-            - uses: oven-sh/setup-bun@735343b7e2f0f6ecb1e7ea3b0c0b9d3c1f7c6b4e # v2
+            - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
               with:
                   bun-version-file: package.json
             - run: bun install --frozen-lockfile
@@ -40,7 +40,7 @@ jobs:
             - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
               with:
                   persist-credentials: false
-            - uses: oven-sh/setup-bun@735343b7e2f0f6ecb1e7ea3b0c0b9d3c1f7c6b4e # v2
+            - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
               with:
                   bun-version-file: package.json
             - run: bun install --frozen-lockfile
