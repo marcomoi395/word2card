@@ -3,171 +3,50 @@ name: CI
 on:
     pull_request:
         branches: [main, develop]
-        paths-ignore:
-            - '**/*.md'
-            - 'docs/**'
+        paths-ignore: ['**/*.md', 'docs/**']
     push:
         branches: [main, develop]
-        paths-ignore:
-            - '**/*.md'
-            - 'docs/**'
+        paths-ignore: ['**/*.md', 'docs/**']
     workflow_dispatch:
 
 permissions:
     contents: read
 
 jobs:
-    check-lockfile-registry:
-        name: Check lockfile registry
+    quality:
+        name: Quality checks
         runs-on: ubuntu-latest
-        timeout-minutes: 5
-        if: github.event_name == 'pull_request' || github.event_name == 'push'
-        permissions:
-            contents: read
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
-              with:
-                  persist-credentials: false
-
-            - name: Verify package-lock.json uses official npm registry
-              run: |
-                  echo "Checking for non-official registries in package-lock.json..."
-                  node <<'NODE'
-                  const fs = require('node:fs');
-                  const lockfile = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
-                  for (const pkg of Object.values(lockfile.packages ?? {})) {
-                    const resolved = pkg.resolved;
-                    if (resolved && !resolved.startsWith('https://registry.npmjs.org/')) {
-                      throw new Error(`Non-official registry URL: ${resolved}`);
-                    }
-                  }
-                  NODE
-                  echo "All resolved URLs use official npm registry"
-                  echo "✅ All resolved URLs use official npm registry"
-
-    dependency-vulnerability-review:
-        name: Dependency vulnerability review
-        runs-on: ubuntu-latest
-        timeout-minutes: 10
-        if: github.event_name == 'pull_request'
-        permissions:
-            contents: read
-            pull-requests: read
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
-              with:
-                  persist-credentials: false
-
-            - name: Review dependencies
-              uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4
-
-    security-audit:
-        name: Dependency security audit
-        runs-on: ubuntu-latest
-        timeout-minutes: 10
-        if: github.event_name == 'push'
-        permissions:
-            contents: read
+        timeout-minutes: 20
         steps:
             - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
               with:
                   persist-credentials: false
-            - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v4
+            - uses: oven-sh/setup-bun@735343b7e2f0f6ecb1e7ea3b0c0b9d3c1f7c6b4e # v2
               with:
-                  node-version-file: .nvmrc
-                  cache: npm
-            - run: npm ci
-            - run: npm audit --audit-level=high
-
-    format:
-        name: Format check
-        runs-on: ubuntu-latest
-        timeout-minutes: 10
-        permissions:
-            contents: read
-        steps:
-            - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
-              with:
-                  persist-credentials: false
-            - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v4
-              with:
-                  node-version-file: .nvmrc
-                  cache: npm
-            - run: npm ci
-            - run: npx prettier --check .
-
-    lint:
-        name: Lint
-        runs-on: ubuntu-latest
-        timeout-minutes: 10
-        permissions:
-            contents: read
-        steps:
-            - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
-              with:
-                  persist-credentials: false
-            - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v4
-              with:
-                  node-version-file: .nvmrc
-            - run: npm ci
-            - run: npm run lint
-
-    typecheck:
-        name: Type check
-        runs-on: ubuntu-latest
-        timeout-minutes: 10
-        permissions:
-            contents: read
-        steps:
-            - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
-              with:
-                  persist-credentials: false
-            - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v4
-              with:
-                  node-version-file: .nvmrc
-            - run: npm ci
-            - run: npm run typecheck
-
-    unit-test:
-        name: Unit tests
-        runs-on: ubuntu-latest
-        timeout-minutes: 15
-        needs: [format, lint, typecheck]
-        permissions:
-            contents: read
-        steps:
-            - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
-              with:
-                  persist-credentials: false
-            - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v4
-              with:
-                  node-version-file: .nvmrc
-            - run: npm ci
-            - run: npm run test
+                  bun-version-file: package.json
+            - run: bun install --frozen-lockfile
+            - run: bun x prettier --check .
+            - run: bun run lint
+            - run: bun run typecheck
+            - run: bun run test
+            - run: bun audit --severity high
 
     e2e-test:
         name: E2E tests
         runs-on: ubuntu-latest
         timeout-minutes: 30
-        needs: unit-test
-        permissions:
-            contents: read
+        needs: quality
         steps:
             - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
               with:
                   persist-credentials: false
-            - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v4
+            - uses: oven-sh/setup-bun@735343b7e2f0f6ecb1e7ea3b0c0b9d3c1f7c6b4e # v2
               with:
-                  node-version-file: .nvmrc
-            - run: npm ci
-            - name: Build application
-              run: npm run build
-            - name: Install Playwright browsers
-              run: npx playwright install --with-deps chromium
-            - name: Run E2E tests
-              run: npx playwright test
+                  bun-version-file: package.json
+            - run: bun install --frozen-lockfile
+            - run: bun run build
+            - run: bun x playwright install --with-deps chromium
+            - run: bun x playwright test
             - name: Upload Playwright artifacts
               if: failure()
               uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4

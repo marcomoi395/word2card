@@ -17,18 +17,21 @@ Không kiểm tra các luồng phụ thuộc API bên thứ ba hoặc ứng dụ
 ## Running Tests
 
 ```bash
-npm run test:e2e
+bun run test:e2e
 ```
 
 ```bash
-npm run test:e2e:ui
+bun run test:e2e:ui
 ```
 
 ```bash
-npm run test:e2e:debug
+bun run test:e2e:debug
 ```
 
 ## Test Structure
+
+Always build before E2E runs. `bun run test:e2e` handles this automatically.
+
 
 ```text
 e2e/
@@ -47,4 +50,4 @@ e2e/
 └── form-validation.spec.ts
 ```
 
-Always build before E2E runs. `npm run test:e2e` handles this automatically.
+Always build before E2E runs. `bun run test:e2e` handles this automatically.
