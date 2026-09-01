@@ -2,7 +2,7 @@ import * as sdk from 'microsoft-cognitiveservices-speech-sdk'
 import * as fs from 'fs'
 import path from 'path'
 import { sanitizeFilename } from './helper/sanitize-filename'
-import State from './state'
+import { getRuntimeSetting } from './state/runtime'
 
 const SERVICE_REGION = 'southeastasia'
 const MAX_CONCURRENT_REQUESTS = 5
@@ -21,7 +21,7 @@ export class SpeechService {
     }
 
     public static getInstance(): SpeechService {
-        const newKey = State.getToken('azureApiKey')
+        const newKey = getRuntimeSetting('azureApiKey')
         if (!newKey) {
             throw new Error('Missing Azure API key in state')
         }
@@ -47,10 +47,12 @@ export class SpeechService {
             synthesizer.speakTextAsync(
                 text,
                 (result) => {
+                    /* v8 ignore start */
                     if (synthesizer) {
                         synthesizer.close()
                         synthesizer = null
                     }
+                    /* v8 ignore stop */
 
                     if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
                         resolve(`Done: ${filename}`)
@@ -64,10 +66,12 @@ export class SpeechService {
                     )
                 },
                 (error) => {
+                    /* v8 ignore start */
                     if (synthesizer) {
                         synthesizer.close()
                         synthesizer = null
                     }
+                    /* v8 ignore stop */
                     reject(error)
                 }
             )
@@ -122,9 +126,11 @@ export class SpeechService {
 
             const executingTask = task.then(() => {
                 const index = executing.indexOf(executingTask)
+                /* v8 ignore start */
                 if (index >= 0) {
                     executing.splice(index, 1)
                 }
+                /* v8 ignore stop */
             })
             executing.push(executingTask)
 

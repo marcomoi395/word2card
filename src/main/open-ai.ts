@@ -1,12 +1,13 @@
 import OpenAI from 'openai'
-import State from './state'
+import { getRuntimeSetting } from './state/runtime'
 
 export interface FlashcardResponse {
     word: string
     pos: string
     vietnamese: string
-    ipa: string
-    example: string
+    ipa?: string
+    example?: string
+    audio_word?: string
 }
 
 export class OpenAIService {
@@ -18,7 +19,7 @@ export class OpenAIService {
     }
 
     public static getInstance(): OpenAI {
-        const newKey = State.getToken('openaiApiKey')
+        const newKey = getRuntimeSetting('openaiApiKey')
 
         if (!newKey) {
             throw new Error('Missing OpenAI API key in state')

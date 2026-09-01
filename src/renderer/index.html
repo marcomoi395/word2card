@@ -3,40 +3,70 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Word2Card</title>
-        <link
-            rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        <meta
+            http-equiv="Content-Security-Policy"
+            content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'none'"
         />
+        <title>Word2Card</title>
         <link rel="stylesheet" href="styles.css" />
     </head>
     <body>
         <div id="bg-mascot"></div>
         <header>
             <div class="window-controls">
-                <button
-                    class="btn"
-                    id="tab-settings-btn"
-                    title="Settings"
-                    onclick="switchTab('settings')"
-                >
-                    <i class="fa-solid fa-gear settings-icon"></i>
+                <button class="btn" id="tab-settings-btn" title="Settings">
+                    <span class="settings-icon" aria-hidden="true"
+                        ><svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <circle cx="12" cy="12" r="3" />
+                            <path
+                                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+                            /></svg
+                    ></span>
                 </button>
                 <button class="btn" id="minimize-btn" title="Minimize">
-                    <i class="fa-solid fa-minus minus-icon"></i>
+                    <span class="minus-icon" aria-hidden="true"
+                        ><svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                        >
+                            <path d="M5 12h14" /></svg
+                    ></span>
                 </button>
                 <button class="btn" id="close-btn" title="Close">
-                    <i class="fa-solid fa-xmark mark-icon"></i>
+                    <span class="mark-icon" aria-hidden="true"
+                        ><svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                        >
+                            <path d="M18 6 6 18M6 6l12 12" /></svg
+                    ></span>
                 </button>
             </div>
         </header>
         <main>
             <div class="app-title">Word2Card</div>
             <nav>
-                <button id="tab-import-btn" class="active-btn" onclick="switchTab('import')">
-                    File Import
-                </button>
-                <button id="tab-notion-btn" onclick="switchTab('notion')">Notion Sync</button>
+                <button id="tab-import-btn" class="active-btn">File Import</button>
+                <button id="tab-notion-btn">Notion Sync</button>
             </nav>
             <section class="active-section" id="section-import">
                 <form id="form-import">
@@ -75,7 +105,7 @@
                 </form>
             </section>
 
-            <section id="section-notion" style="display: none">
+            <section id="section-notion">
                 <form id="form-notion">
                     <div class="form-group">
                         <input
@@ -119,35 +149,38 @@
                 </form>
             </section>
 
-            <section id="section-settings" style="display: none">
+            <section id="section-settings">
                 <form id="form-settings">
                     <div class="form-group">
                         <input
-                            type="text"
+                            type="password"
                             id="openai-key-global"
                             name="openaiKeyGlobal"
                             placeholder="OpenAI API Key (e.g., sk-...)"
                         />
+                        <span id="openai-key-status" class="settings-status"></span>
                     </div>
                     <br />
 
                     <div class="form-group">
                         <input
-                            type="text"
+                            type="password"
                             id="azure-key-global"
                             name="azureKeyGlobal"
                             placeholder="Azure Speech Key"
                         />
+                        <span id="azure-key-status" class="settings-status"></span>
                     </div>
                     <br />
 
                     <div class="form-group">
                         <input
-                            type="text"
+                            type="password"
                             id="pexels-token-global"
                             name="pexelsTokenGlobal"
                             placeholder="Pexels API Key"
                         />
+                        <span id="pexels-token-status" class="settings-status"></span>
                     </div>
                     <br />
                     <button class="submit-btn" type="button" id="btn-save-settings">
@@ -157,67 +190,5 @@
             </section>
         </main>
         <script type="module" src="./src/renderer.ts"></script>
-        <script>
-            const platform = window.api.platform
-            const minimizeBtn = document.getElementById('minimize-btn')
-            if (minimizeBtn) {
-                minimizeBtn.addEventListener('click', () => {
-                    window.api.minimize()
-                })
-            }
-
-            if (platform === 'linux') {
-                if (minimizeBtn) {
-                    minimizeBtn.style.display = 'none'
-                }
-            }
-
-            const closeBtn = document.getElementById('close-btn')
-            if (closeBtn) {
-                closeBtn.addEventListener('click', () => {
-                    window.api.close()
-                })
-            }
-
-            function switchTab(tabName) {
-                const importSection = document.getElementById('section-import')
-                const notionSection = document.getElementById('section-notion')
-                const settingsSection = document.getElementById('section-settings')
-
-                ;[importSection, notionSection, settingsSection].forEach((section) => {
-                    if (section) section.classList.remove('active-section')
-                })
-
-                if (tabName === 'import') importSection.classList.add('active-section')
-                else if (tabName === 'notion') notionSection.classList.add('active-section')
-                else if (tabName === 'settings') settingsSection.classList.add('active-section')
-
-                const btnImport = document.getElementById('tab-import-btn')
-                const btnNotion = document.getElementById('tab-notion-btn')
-                const btnSettings = document.getElementById('tab-settings-btn')
-
-                ;[btnImport, btnNotion, btnSettings].forEach((btn) => {
-                    if (btn) btn.classList.remove('active-btn')
-                })
-
-                if (tabName === 'import') btnImport.classList.add('active-btn')
-                else if (tabName === 'notion') btnNotion.classList.add('active-btn')
-                else if (tabName === 'settings') btnSettings.classList.add('active-btn')
-
-                const mascot = document.getElementById('bg-mascot')
-
-                mascot.classList.remove('bg-import', 'bg-notion', 'bg-settings')
-
-                if (tabName === 'import') {
-                    mascot.classList.add('bg-import')
-                } else if (tabName === 'notion') {
-                    mascot.classList.add('bg-notion')
-                } else if (tabName === 'settings') {
-                    mascot.classList.add('bg-settings')
-                }
-            }
-
-            switchTab('import')
-        </script>
     </body>
 </html>

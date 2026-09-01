@@ -1,0 +1,17 @@
+#!/usr/bin/env sh
+set -eu
+
+expected=$(sed -n 's/.*"packageManager": "bun@\([^"]*\)".*/\1/p' package.json)
+actual=$(bun --version)
+if [ "$actual" != "$expected" ]; then
+    printf 'Bun version mismatch: expected %s, found %s\n' "$expected" "$actual" >&2
+    exit 1
+fi
+
+bun install --frozen-lockfile
+bun x prettier --check .
+bun run lint
+bun run typecheck
+bun run test
+bun run build
+bun audit --severity high

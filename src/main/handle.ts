@@ -1,11 +1,15 @@
 import pLimit from 'p-limit'
 import { v4 as uuidv4 } from 'uuid'
-import { createNotionTargetQueueMap, shiftNotionTarget, type NotionSyncTarget } from './helper/notion-sync'
+import {
+    createNotionTargetQueueMap,
+    shiftNotionTarget,
+    type NotionSyncTarget
+} from './helper/notion-sync'
 import { sanitizeFilename } from './helper/sanitize-filename'
 import { NotionService } from './notion'
 import { OpenAIService } from './open-ai'
 import { searchImagePexels } from './pexels'
-import State from './state'
+import { getRuntimeSetting } from './state/runtime'
 
 interface Flashcard {
     id: string
@@ -51,7 +55,9 @@ export const createFlashcards = async (
     notionTargets?: NotionSyncTarget[]
 ): Promise<QuizNote[]> => {
     const dataFromOpenAI = await OpenAIService.generateFlashcardData(words)
-    const notionTargetsByWord = notionTargets ? createNotionTargetQueueMap(notionTargets) : undefined
+    const notionTargetsByWord = notionTargets
+        ? createNotionTargetQueueMap(notionTargets)
+        : undefined
 
     if (notionTargetsByWord) {
         const limit = pLimit(2)
@@ -68,7 +74,7 @@ export const createFlashcards = async (
         )
     }
 
-    const pexelsToken = State.getToken('pexelsToken')
+    const pexelsToken = getRuntimeSetting('pexelsToken')
     const noteTargetsByWord = notionTargets ? createNotionTargetQueueMap(notionTargets) : undefined
 
     const notes = await Promise.all(
@@ -78,7 +84,9 @@ export const createFlashcards = async (
                 image = (await searchImagePexels(pexelsToken, item.word)) || ''
             }
 
-            const target = noteTargetsByWord ? shiftNotionTarget(noteTargetsByWord, item.word) : undefined
+            const target = noteTargetsByWord
+                ? shiftNotionTarget(noteTargetsByWord, item.word)
+                : undefined
 
             return {
                 deckName: target?.deckName ?? deckName,

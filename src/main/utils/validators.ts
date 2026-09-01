@@ -1,11 +1,13 @@
 import type { ImportOptions, ImportRequest, SaveSettingsPayload } from '../../shared/ipc'
 
 export const isRecord = (value: unknown): value is Record<string, unknown> => {
-    return typeof value === 'object' && value !== null
+    return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 export const isImportOptions = (value: unknown): value is ImportOptions => {
-    return isRecord(value) && typeof value.quiz === 'boolean' && typeof value.flashcard === 'boolean'
+    return (
+        isRecord(value) && typeof value.quiz === 'boolean' && typeof value.flashcard === 'boolean'
+    )
 }
 
 export const parseSaveSettingsPayload = (value: unknown): SaveSettingsPayload | null => {

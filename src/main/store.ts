@@ -2,6 +2,72 @@ import { safeStorage } from 'electron'
 import Store from 'electron-store'
 import type { SecretKey } from '../shared/ipc'
 
+import type { StatePersistence } from './state/persistence'
+
+export interface SecretPersistenceManager {
+    getSecret(key: SecretKey): string | null
+    saveSecret(key: SecretKey, value: string): boolean
+    deleteSecret(key: SecretKey): void
+}
+
+const SECRET_KEYS: SecretKey[] = [
+    'openaiApiKey',
+    'azureApiKey',
+    'pexelsToken',
+    'notionToken',
+    'notionDatabaseId'
+]
+
+export const createSecretPersistence = (manager: SecretPersistenceManager): StatePersistence => ({
+    load: () =>
+        Object.fromEntries(
+            SECRET_KEYS.flatMap((key) => {
+                const value = manager.getSecret(key)
+                return value ? [[key, value]] : []
+            })
+        ) as Partial<Record<SecretKey, string>>,
+    save: (settings) => {
+        const previous = Object.fromEntries(
+            SECRET_KEYS.flatMap((key) => {
+                const value = manager.getSecret(key)
+                return value ? [[key, value]] : []
+            })
+        ) as Partial<Record<SecretKey, string>>
+        const applied: SecretKey[] = []
+
+        for (const key of SECRET_KEYS) {
+            const value = settings[key]
+            const succeeded = value
+                ? manager.saveSecret(key, value)
+                : (manager.deleteSecret(key), true)
+
+            if (!succeeded) {
+                for (const appliedKey of applied) {
+                    const previousValue = previous[appliedKey]
+                    if (previousValue) {
+                        manager.saveSecret(appliedKey, previousValue)
+                    } else {
+                        manager.deleteSecret(appliedKey)
+                    }
+                }
+                return false
+            }
+
+            applied.push(key)
+        }
+
+        return true
+    },
+    delete: (key) => {
+        try {
+            manager.deleteSecret(key)
+            return true
+        } catch {
+            return false
+        }
+    }
+})
+
 interface SecretItem {
     value: string
     encrypted: boolean

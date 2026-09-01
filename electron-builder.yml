@@ -8,7 +8,7 @@ files:
     - '!src/*'
     - '!electron.vite.config.{js,ts,mjs,cjs}'
     - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
-    - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
+    - '!{.env,.env.*,.npmrc,.yarnrc,.yarnrc.yml,pnpm-lock.yaml,bun.lock}'
     - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
 asarUnpack:
     - resources/**

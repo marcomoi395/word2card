@@ -1,0 +1,58 @@
+name: CI
+
+on:
+    pull_request:
+        branches: [main, develop]
+        paths-ignore: ['**/*.md', 'docs/**']
+    push:
+        branches: [main, develop]
+        paths-ignore: ['**/*.md', 'docs/**']
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+jobs:
+    quality:
+        name: Quality checks
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        steps:
+            - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
+              with:
+                  persist-credentials: false
+            - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+              with:
+                  bun-version-file: package.json
+            - run: bun install --frozen-lockfile
+            - run: bun x prettier --check .
+            - run: bun run lint
+            - run: bun run typecheck
+            - run: bun run test
+            - run: bun audit --severity high
+
+    e2e-test:
+        name: E2E tests
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        needs: quality
+        steps:
+            - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
+              with:
+                  persist-credentials: false
+            - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+              with:
+                  bun-version-file: package.json
+            - run: bun install --frozen-lockfile
+            - run: bun run build
+            - run: bun x playwright install --with-deps chromium
+            - run: xvfb-run -a bun x playwright test
+            - name: Upload Playwright artifacts
+              if: failure()
+              uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
+              with:
+                  name: playwright-debug
+                  path: |
+                      playwright-report/
+                      test-results/
+                  retention-days: 7

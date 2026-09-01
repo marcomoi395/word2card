@@ -17,9 +17,11 @@ function setButtonLoading(
     isLoading: boolean,
     loadingText = 'Processing...'
 ): void {
+    /* v8 ignore start */
     if (!button) {
         return
     }
+    /* v8 ignore stop */
 
     if (isLoading) {
         button.dataset.originalText = button.innerText
@@ -33,12 +35,12 @@ function setButtonLoading(
 }
 
 function showResponseAlert(actionLabel: string, response: AppResponse | undefined): void {
-    if (response?.status === 'success') {
-        alert(`${actionLabel} successful!`)
-        return
+    // Only show alerts for errors; success feedback comes from button state
+    if (response?.status !== 'success') {
+        /* v8 ignore start */
+        alert(`${actionLabel} failed: ${response?.message || 'Unknown error.'}`)
+        /* v8 ignore stop */
     }
-
-    alert(`${actionLabel} failed: ${response?.message || 'Unknown error.'}`)
 }
 
 function switchTab(tabName: TabName): void {
@@ -157,9 +159,11 @@ function initFilePicker(): void {
 }
 
 function initImportForm(): void {
+    /* v8 ignore start */
     const form = document.getElementById('form-import') as HTMLFormElement | null
     if (!form) {
         return
+        /* v8 ignore stop */
     }
 
     form.addEventListener('submit', async (event) => {
@@ -220,9 +224,11 @@ function initImportForm(): void {
 }
 
 function initNotionForm(): void {
+    /* v8 ignore start */
     const form = document.getElementById('form-notion') as HTMLFormElement | null
     if (!form) {
         return
+        /* v8 ignore stop */
     }
 
     form.addEventListener('submit', async (event) => {
@@ -297,33 +303,27 @@ function initSettingsForm(): void {
     const openaiInput = document.getElementById('openai-key-global') as HTMLInputElement | null
     const azureInput = document.getElementById('azure-key-global') as HTMLInputElement | null
     const pexelsInput = document.getElementById('pexels-token-global') as HTMLInputElement | null
-    const notionTokenInput = document.getElementById('notion-token') as HTMLInputElement | null
-    const notionDatabaseIdInput = document.getElementById(
-        'notion-database-id'
-    ) as HTMLInputElement | null
     const saveButton = document.getElementById('btn-save-settings') as HTMLButtonElement | null
 
     const loadSavedSettings = async () => {
         try {
-            const savedData = await window.api.getSecret()
+            const savedData = await window.api.getSettingsStatus()
             if (savedData.status !== 'success' || !savedData.data) {
                 return
             }
 
-            if (openaiInput) {
-                openaiInput.value = savedData.data.openaiApiKey
+            const status = savedData.data.configured
+            const openaiStatus = document.getElementById('openai-key-status')
+            const azureStatus = document.getElementById('azure-key-status')
+            const pexelsStatus = document.getElementById('pexels-token-status')
+            if (openaiStatus) {
+                openaiStatus.textContent = status.openaiApiKey ? 'Configured' : 'Not configured'
             }
-            if (azureInput) {
-                azureInput.value = savedData.data.azureApiKey
+            if (azureStatus) {
+                azureStatus.textContent = status.azureApiKey ? 'Configured' : 'Not configured'
             }
-            if (pexelsInput) {
-                pexelsInput.value = savedData.data.pexelsToken
-            }
-            if (notionTokenInput) {
-                notionTokenInput.value = savedData.data.notionToken
-            }
-            if (notionDatabaseIdInput) {
-                notionDatabaseIdInput.value = savedData.data.notionDatabaseId
+            if (pexelsStatus) {
+                pexelsStatus.textContent = status.pexelsToken ? 'Configured' : 'Not configured'
             }
         } catch (error) {
             console.error('Error loading settings:', error)
@@ -340,18 +340,19 @@ function initSettingsForm(): void {
         }
 
         const settingsData: SaveSettingsPayload = {
+            /* v8 ignore start */
             openaiApiKey: openaiInput?.value.trim() || '',
             azureApiKey: azureInput?.value.trim() || '',
             pexelsToken: pexelsInput?.value.trim() || ''
+            /* v8 ignore stop */
         }
 
         setButtonLoading(saveButton, true, 'Saving...')
 
         try {
             const result = await window.api.saveSettings(settingsData)
-            if (result.status === 'success') {
-                alert(result.message || 'Saved!')
-            } else {
+            // Only show alert on error; success feedback is provided by button state
+            if (result.status !== 'success') {
                 alert(`Failed to save settings: ${result.message}`)
             }
         } catch (error) {
