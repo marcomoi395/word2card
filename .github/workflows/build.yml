@@ -12,10 +12,11 @@ permissions:
     contents: read
 
 jobs:
-    build-linux:
-        name: Build Linux assets
+    release-quality:
+        name: Release quality gate
         runs-on: ubuntu-latest
         timeout-minutes: 30
+        if: startsWith(github.ref, 'refs/tags/v')
         steps:
             - name: Checkout code
               uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
@@ -25,18 +26,83 @@ jobs:
             - name: Setup Node.js
               uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v4
               with:
-                  node-version: '22'
-                  cache: 'npm'
+                  node-version-file: .nvmrc
+                  cache: npm
 
             - name: Install dependencies
               run: npm ci
 
+            - name: Run quality checks
+              run: |
+                  npm run lint
+                  npm run typecheck
+                  npm run test
+                  npm run build
+                  npm audit --audit-level=high
+
+            - name: Validate release version
+              env:
+                  RELEASE_TAG: ${{ github.ref_name }}
+              run: |
+                  node <<'NODE'
+                  const fs = require('node:fs');
+                  const tag = process.env.RELEASE_TAG;
+                  const semver = /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/;
+                  if (!semver.test(tag)) throw new Error(`Invalid release tag: ${tag}`);
+                  const expected = tag.slice(1);
+                  const actual = JSON.parse(fs.readFileSync('package.json', 'utf8')).version;
+                  if (actual !== expected) throw new Error(`Tag ${tag} does not match package.json version ${actual}`);
+                  NODE
+
+    build-linux:
+        name: Build Linux assets
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        needs: release-quality
+        permissions:
+            contents: read
+            id-token: write
+            attestations: write
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
+              with:
+                  persist-credentials: false
+            - name: Setup Node.js
+              uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v4
+              with:
+                  node-version-file: .nvmrc
+                  cache: npm
+            - name: Install dependencies
+              run: npm ci
             - name: Build application
               run: npm run build
-
             - name: Build Linux packages
               run: npx electron-builder --linux AppImage deb --publish never
-
+            - name: Validate Linux artifacts
+              env:
+                  RELEASE_TAG: ${{ github.ref_name }}
+              run: |
+                  VERSION="${RELEASE_TAG#v}"
+                  test -f "dist/word2card-${VERSION}.AppImage"
+                  test -f "dist/word2card_${VERSION}_amd64.deb"
+            - name: Packaged Linux smoke test
+              run: |
+                  chmod +x dist/*.AppImage
+                  xvfb-run -a timeout 20s dist/*.AppImage --appimage-extract-and-run --no-sandbox >/tmp/word2card.log 2>&1 &
+                  pid=$!
+                  sleep 8
+                  if ! kill -0 "$pid" 2>/dev/null; then
+                    if wait "$pid"; then status=0; else status=$?; fi
+                    cat /tmp/word2card.log
+                    echo "Packaged application exited before smoke-test window: $status"
+                    exit 1
+                  fi
+                  kill "$pid" 2>/dev/null || true
+                  wait "$pid" || true
+            - name: Generate Linux checksums
+              working-directory: dist
+              run: sha256sum *.AppImage *.deb > SHA256SUMS-linux.txt
             - name: Upload Linux artifacts
               uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
               with:
@@ -44,33 +110,53 @@ jobs:
                   path: |
                       dist/*.AppImage
                       dist/*.deb
+                      dist/SHA256SUMS-linux.txt
+                  if-no-files-found: error
                   retention-days: 1
+            - name: Attest Linux artifacts
+              uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2
+              with:
+                  subject-path: |
+                      dist/*.AppImage
+                      dist/*.deb
 
     build-windows:
         name: Build Windows assets
         runs-on: windows-latest
         timeout-minutes: 30
+        needs: release-quality
+        permissions:
+            contents: read
+            id-token: write
+            attestations: write
         steps:
             - name: Checkout code
               uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
               with:
                   persist-credentials: false
-
             - name: Setup Node.js
               uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v4
               with:
-                  node-version: '22'
-                  cache: 'npm'
-
+                  node-version-file: .nvmrc
+                  cache: npm
             - name: Install dependencies
               run: npm ci
-
             - name: Build application
               run: npm run build
-
             - name: Build Windows installer
               run: npx electron-builder --windows nsis --publish never
-
+            - name: Validate Windows artifacts
+              shell: bash
+              env:
+                  RELEASE_TAG: ${{ github.ref_name }}
+              run: |
+                  VERSION="${RELEASE_TAG#v}"
+                  test -f "dist/word2card-${VERSION}-setup.exe"
+                  test -f dist/latest.yml
+            - name: Generate Windows checksums
+              shell: bash
+              working-directory: dist
+              run: sha256sum *.exe *.blockmap latest.yml > SHA256SUMS-windows.txt
             - name: Upload Windows artifacts
               uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
               with:
@@ -79,54 +165,75 @@ jobs:
                       dist/*.exe
                       dist/*.blockmap
                       dist/latest.yml
+                      dist/SHA256SUMS-windows.txt
+                  if-no-files-found: error
                   retention-days: 1
+            - name: Attest Windows artifacts
+              uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2
+              with:
+                  subject-path: |
+                      dist/*.exe
+                      dist/*.blockmap
+                      dist/latest.yml
 
     create-release:
         name: Create GitHub release
         runs-on: ubuntu-latest
         timeout-minutes: 10
-        needs: [build-linux, build-windows]
+        needs: [release-quality, build-linux, build-windows]
         if: startsWith(github.ref, 'refs/tags/v')
         permissions:
             contents: write
+            id-token: write
+            attestations: write
         steps:
             - name: Download Linux artifacts
               uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
               with:
                   name: linux-packages
                   path: dist
-
             - name: Download Windows artifacts
               uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
               with:
                   name: windows-installer
                   path: dist
-
+            - name: Validate release artifacts
+              shell: bash
+              env:
+                  RELEASE_TAG: ${{ github.ref_name }}
+              run: |
+                  VERSION="${RELEASE_TAG#v}"
+                  test -f "dist/word2card-${VERSION}.AppImage"
+                  test -f "dist/word2card_${VERSION}_amd64.deb"
+                  test -f "dist/word2card-${VERSION}-setup.exe"
+                  test -f dist/latest.yml
+                  test -f dist/SHA256SUMS-linux.txt
+                  test -f dist/SHA256SUMS-windows.txt
+                  (cd dist && sha256sum -c SHA256SUMS-linux.txt && sha256sum -c SHA256SUMS-windows.txt)
             - name: Generate release body
               shell: bash
+              env:
+                  RELEASE_TAG: ${{ github.ref_name }}
+                  REPOSITORY: ${{ github.repository }}
               run: |
-                  VERSION="${{ github.ref_name }}"
-                  cat > /tmp/release-body.md << EOF
-                  ## Word2Card $VERSION
+                  cat > /tmp/release-body.md <<EOF
+                  ## Word2Card ${RELEASE_TAG}
 
                   ### Installation
 
                   **Linux:**
-                  - **AppImage**: Download \`Word2Card-$VERSION.AppImage\`, make it executable, and run
-                  - **Debian/Ubuntu**: Download and install \`word2card_$VERSION_amd64.deb\`
+                  - **AppImage**: Download \`word2card-${RELEASE_TAG#v}.AppImage\`
+                  - **Debian/Ubuntu**: Download \`word2card_${RELEASE_TAG#v}_amd64.deb\`
 
                   **Windows:**
-                  - Download and run \`Word2Card-Setup-$VERSION.exe\`
+                  - Download \`word2card-${RELEASE_TAG#v}-setup.exe\`
 
-                  ### Changes
+                  ### Integrity
+                  See \`SHA256SUMS-linux.txt\` and \`SHA256SUMS-windows.txt\`.
 
-                  See the [full changelog](https://github.com/${{ github.repository }}/compare/v2.3.0...$VERSION)
-
-                  ---
-
+                  See the [full changelog](https://github.com/${REPOSITORY}/compare/${RELEASE_TAG}^...${RELEASE_TAG}).
                   **Note:** This is a draft release. Review the assets and publish when ready.
                   EOF
-
             - name: Create draft release and upload assets
               uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
               with:
@@ -134,11 +241,6 @@ jobs:
                   draft: true
                   prerelease: ${{ contains(github.ref, 'RC') || contains(github.ref, 'beta') || contains(github.ref, 'alpha') }}
                   body_path: /tmp/release-body.md
-                  files: |
-                      dist/*.AppImage
-                      dist/*.deb
-                      dist/*.exe
-                      dist/*.blockmap
-                      dist/latest.yml
+                  files: dist/*
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

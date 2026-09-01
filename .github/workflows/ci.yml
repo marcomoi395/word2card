@@ -21,7 +21,7 @@ jobs:
         name: Check lockfile registry
         runs-on: ubuntu-latest
         timeout-minutes: 5
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' || github.event_name == 'push'
         permissions:
             contents: read
         steps:
@@ -33,11 +33,17 @@ jobs:
             - name: Verify package-lock.json uses official npm registry
               run: |
                   echo "Checking for non-official registries in package-lock.json..."
-                  if grep -E '"resolved":\s*"https?://(?!registry\.npmjs\.org)' package-lock.json; then
-                    echo "❌ Error: package-lock.json contains non-official registry URLs"
-                    echo "Only registry.npmjs.org is allowed"
-                    exit 1
-                  fi
+                  node <<'NODE'
+                  const fs = require('node:fs');
+                  const lockfile = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
+                  for (const pkg of Object.values(lockfile.packages ?? {})) {
+                    const resolved = pkg.resolved;
+                    if (resolved && !resolved.startsWith('https://registry.npmjs.org/')) {
+                      throw new Error(`Non-official registry URL: ${resolved}`);
+                    }
+                  }
+                  NODE
+                  echo "All resolved URLs use official npm registry"
                   echo "✅ All resolved URLs use official npm registry"
 
     dependency-vulnerability-review:
@@ -57,6 +63,24 @@ jobs:
             - name: Review dependencies
               uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4
 
+    security-audit:
+        name: Dependency security audit
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        if: github.event_name == 'push'
+        permissions:
+            contents: read
+        steps:
+            - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
+              with:
+                  persist-credentials: false
+            - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v4
+              with:
+                  node-version-file: .nvmrc
+                  cache: npm
+            - run: npm ci
+            - run: npm audit --audit-level=high
+
     format:
         name: Format check
         runs-on: ubuntu-latest
@@ -69,7 +93,7 @@ jobs:
                   persist-credentials: false
             - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v4
               with:
-                  node-version: '22'
+                  node-version-file: .nvmrc
                   cache: npm
             - run: npm ci
             - run: npx prettier --check .
@@ -86,8 +110,7 @@ jobs:
                   persist-credentials: false
             - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v4
               with:
-                  node-version: '22'
-                  cache: npm
+                  node-version-file: .nvmrc
             - run: npm ci
             - run: npm run lint
 
@@ -103,8 +126,7 @@ jobs:
                   persist-credentials: false
             - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v4
               with:
-                  node-version: '22'
-                  cache: npm
+                  node-version-file: .nvmrc
             - run: npm ci
             - run: npm run typecheck
 
@@ -121,8 +143,7 @@ jobs:
                   persist-credentials: false
             - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v4
               with:
-                  node-version: '22'
-                  cache: npm
+                  node-version-file: .nvmrc
             - run: npm ci
             - run: npm run test
 
@@ -139,8 +160,7 @@ jobs:
                   persist-credentials: false
             - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v4
               with:
-                  node-version: '22'
-                  cache: npm
+                  node-version-file: .nvmrc
             - run: npm ci
             - name: Build application
               run: npm run build
