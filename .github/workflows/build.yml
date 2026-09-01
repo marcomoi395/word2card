@@ -1,0 +1,144 @@
+name: Build and Release
+
+on:
+    push:
+        branches:
+            - main
+            - develop
+        tags:
+            - 'v*'
+
+permissions:
+    contents: read
+
+jobs:
+    build-linux:
+        name: Build Linux assets
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
+              with:
+                  persist-credentials: false
+
+            - name: Setup Node.js
+              uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v4
+              with:
+                  node-version: '22'
+                  cache: 'npm'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Build application
+              run: npm run build
+
+            - name: Build Linux packages
+              run: npx electron-builder --linux AppImage deb --publish never
+
+            - name: Upload Linux artifacts
+              uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
+              with:
+                  name: linux-packages
+                  path: |
+                      dist/*.AppImage
+                      dist/*.deb
+                  retention-days: 1
+
+    build-windows:
+        name: Build Windows assets
+        runs-on: windows-latest
+        timeout-minutes: 30
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
+              with:
+                  persist-credentials: false
+
+            - name: Setup Node.js
+              uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v4
+              with:
+                  node-version: '22'
+                  cache: 'npm'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Build application
+              run: npm run build
+
+            - name: Build Windows installer
+              run: npx electron-builder --windows nsis --publish never
+
+            - name: Upload Windows artifacts
+              uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
+              with:
+                  name: windows-installer
+                  path: |
+                      dist/*.exe
+                      dist/*.blockmap
+                      dist/latest.yml
+                  retention-days: 1
+
+    create-release:
+        name: Create GitHub release
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        needs: [build-linux, build-windows]
+        if: startsWith(github.ref, 'refs/tags/v')
+        permissions:
+            contents: write
+        steps:
+            - name: Download Linux artifacts
+              uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+              with:
+                  name: linux-packages
+                  path: dist
+
+            - name: Download Windows artifacts
+              uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+              with:
+                  name: windows-installer
+                  path: dist
+
+            - name: Generate release body
+              shell: bash
+              run: |
+                  VERSION="${{ github.ref_name }}"
+                  cat > /tmp/release-body.md << EOF
+                  ## Word2Card $VERSION
+
+                  ### Installation
+
+                  **Linux:**
+                  - **AppImage**: Download \`Word2Card-$VERSION.AppImage\`, make it executable, and run
+                  - **Debian/Ubuntu**: Download and install \`word2card_$VERSION_amd64.deb\`
+
+                  **Windows:**
+                  - Download and run \`Word2Card-Setup-$VERSION.exe\`
+
+                  ### Changes
+
+                  See the [full changelog](https://github.com/${{ github.repository }}/compare/v2.3.0...$VERSION)
+
+                  ---
+
+                  **Note:** This is a draft release. Review the assets and publish when ready.
+                  EOF
+
+            - name: Create draft release and upload assets
+              uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
+              with:
+                  tag_name: ${{ github.ref_name }}
+                  draft: true
+                  prerelease: ${{ contains(github.ref, 'RC') || contains(github.ref, 'beta') || contains(github.ref, 'alpha') }}
+                  body_path: /tmp/release-body.md
+                  files: |
+                      dist/*.AppImage
+                      dist/*.deb
+                      dist/*.exe
+                      dist/*.blockmap
+                      dist/latest.yml
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
