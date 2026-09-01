@@ -14,7 +14,6 @@ export default defineConfig({
     // Global timeout for entire test run
     globalTimeout: 10 * 60 * 1000, // 10 minutes
 
-
     expect: {
         timeout: 5000
     },

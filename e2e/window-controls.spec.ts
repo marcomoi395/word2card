@@ -29,7 +29,9 @@ test.describe('Window Controls', () => {
         await expect(closeButton).toBeVisible()
     })
 
-    test('should trigger minimize action when minimize button clicked (non-Linux)', async ({ sharedApp }) => {
+    test('should trigger minimize action when minimize button clicked (non-Linux)', async ({
+        sharedApp
+    }) => {
         const { window } = sharedApp
 
         const platform = await window.evaluate(() => window.api.platform)

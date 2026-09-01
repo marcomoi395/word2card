@@ -19,7 +19,9 @@ test.describe('Drag & Drop File Support', () => {
         expect(title).toBeTruthy()
     })
 
-    test('should populate file input when txt file is dropped on Import tab', async ({ sharedApp }) => {
+    test('should populate file input when txt file is dropped on Import tab', async ({
+        sharedApp
+    }) => {
         const { window } = sharedApp
 
         // Ensure we're on Import tab
@@ -58,7 +60,6 @@ test.describe('Drag & Drop File Support', () => {
         const value = await fileInput.inputValue()
         expect(value).toBe(testFilePath)
     })
-
 
     test('should prevent default dragover behavior', async ({ sharedApp }) => {
         const { window } = sharedApp

@@ -8,11 +8,7 @@ export const IPC_CHANNELS = {
 } as const
 
 export type SecretKey =
-    | 'openaiApiKey'
-    | 'azureApiKey'
-    | 'pexelsToken'
-    | 'notionToken'
-    | 'notionDatabaseId'
+    'openaiApiKey' | 'azureApiKey' | 'pexelsToken' | 'notionToken' | 'notionDatabaseId'
 
 export interface ImportOptions {
     quiz: boolean

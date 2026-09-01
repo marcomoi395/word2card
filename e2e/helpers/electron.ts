@@ -50,7 +50,6 @@ export async function resetAppState(window: Page): Promise<void> {
         }
     }
 
-
     await window.click('#tab-settings-btn')
     await window.waitForSelector('#section-settings', { state: 'visible' })
 

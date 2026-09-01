@@ -5,8 +5,14 @@ test.describe('Tab Navigation', () => {
         const { window } = sharedApp
         const importSection = window.locator('#section-import')
         await expect(importSection).toBeVisible()
-        expect(await importSection.evaluate((el) => el.classList.contains('active-section'))).toBe(true)
-        expect(await window.locator('#tab-import-btn').evaluate((el) => el.classList.contains('active-btn'))).toBe(true)
+        expect(await importSection.evaluate((el) => el.classList.contains('active-section'))).toBe(
+            true
+        )
+        expect(
+            await window
+                .locator('#tab-import-btn')
+                .evaluate((el) => el.classList.contains('active-btn'))
+        ).toBe(true)
     })
 
     test('should switch to Settings tab when clicked', async ({ sharedApp }) => {
@@ -14,8 +20,16 @@ test.describe('Tab Navigation', () => {
         await window.click('#tab-settings-btn')
         await window.waitForSelector('#section-settings', { state: 'visible' })
         await expect(window.locator('#section-settings')).toBeVisible()
-        expect(await window.locator('#section-settings').evaluate((el) => el.classList.contains('active-section'))).toBe(true)
-        expect(await window.locator('#section-import').evaluate((el) => el.classList.contains('active-section'))).toBe(false)
+        expect(
+            await window
+                .locator('#section-settings')
+                .evaluate((el) => el.classList.contains('active-section'))
+        ).toBe(true)
+        expect(
+            await window
+                .locator('#section-import')
+                .evaluate((el) => el.classList.contains('active-section'))
+        ).toBe(false)
     })
 
     test('should switch back to Import tab from Settings', async ({ sharedApp }) => {
@@ -24,17 +38,37 @@ test.describe('Tab Navigation', () => {
         await window.waitForSelector('#section-settings', { state: 'visible' })
         await window.click('#tab-import-btn')
         await window.waitForSelector('#section-import', { state: 'visible' })
-        expect(await window.locator('#section-import').evaluate((el) => el.classList.contains('active-section'))).toBe(true)
-        expect(await window.locator('#section-settings').evaluate((el) => el.classList.contains('active-section'))).toBe(false)
+        expect(
+            await window
+                .locator('#section-import')
+                .evaluate((el) => el.classList.contains('active-section'))
+        ).toBe(true)
+        expect(
+            await window
+                .locator('#section-settings')
+                .evaluate((el) => el.classList.contains('active-section'))
+        ).toBe(false)
     })
 
     test('should show active button styling on current tab', async ({ sharedApp }) => {
         const { window } = sharedApp
-        expect(await window.locator('#tab-import-btn').evaluate((el) => el.classList.contains('active-btn'))).toBe(true)
+        expect(
+            await window
+                .locator('#tab-import-btn')
+                .evaluate((el) => el.classList.contains('active-btn'))
+        ).toBe(true)
         await window.click('#tab-settings-btn')
         await window.waitForSelector('#section-settings', { state: 'visible' })
-        expect(await window.locator('#tab-settings-btn').evaluate((el) => el.classList.contains('active-btn'))).toBe(true)
-        expect(await window.locator('#tab-import-btn').evaluate((el) => el.classList.contains('active-btn'))).toBe(false)
+        expect(
+            await window
+                .locator('#tab-settings-btn')
+                .evaluate((el) => el.classList.contains('active-btn'))
+        ).toBe(true)
+        expect(
+            await window
+                .locator('#tab-import-btn')
+                .evaluate((el) => el.classList.contains('active-btn'))
+        ).toBe(false)
     })
 
     test('should change mascot background when switching tabs', async ({ sharedApp }) => {
@@ -63,9 +97,17 @@ test.describe('Tab Navigation', () => {
         const { window } = sharedApp
         await window.click('#tab-settings-btn')
         await window.waitForSelector('#section-settings', { state: 'visible' })
-        expect(await window.locator('#section-settings').evaluate((el) => el.classList.contains('active-section'))).toBe(true)
+        expect(
+            await window
+                .locator('#section-settings')
+                .evaluate((el) => el.classList.contains('active-section'))
+        ).toBe(true)
         await window.click('#tab-import-btn')
         await window.waitForSelector('#section-import', { state: 'visible' })
-        expect(await window.locator('#section-import').evaluate((el) => el.classList.contains('active-section'))).toBe(true)
+        expect(
+            await window
+                .locator('#section-import')
+                .evaluate((el) => el.classList.contains('active-section'))
+        ).toBe(true)
     })
 })
