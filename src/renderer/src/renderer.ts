@@ -550,6 +550,8 @@ function initNotionForm(): void {
 
 function initSettingsForm(): void {
     const openaiInput = document.getElementById('openai-key-global') as HTMLInputElement | null
+    const openaiBaseUrlInput = document.getElementById('openai-base-url') as HTMLInputElement | null
+    const openaiModelInput = document.getElementById('openai-model') as HTMLInputElement | null
     const azureInput = document.getElementById('azure-key-global') as HTMLInputElement | null
     const pexelsInput = document.getElementById('pexels-token-global') as HTMLInputElement | null
     const saveButton = document.getElementById('btn-save-settings') as HTMLButtonElement | null
@@ -571,6 +573,12 @@ function initSettingsForm(): void {
             if (azureStatus) {
                 azureStatus.textContent = status.azureApiKey ? 'Configured' : 'Not configured'
             }
+            if (openaiBaseUrlInput && savedData.data.openaiBaseUrl) {
+                openaiBaseUrlInput.value = savedData.data.openaiBaseUrl
+            }
+            if (openaiModelInput && savedData.data.openaiModel) {
+                openaiModelInput.value = savedData.data.openaiModel
+            }
             if (pexelsStatus) {
                 pexelsStatus.textContent = status.pexelsToken ? 'Configured' : 'Not configured'
             }
@@ -587,12 +595,13 @@ function initSettingsForm(): void {
         if (saveButton.disabled) {
             return
         }
-
         const settingsData: SaveSettingsPayload = {
             /* v8 ignore start */
             openaiApiKey: openaiInput?.value.trim() || '',
             azureApiKey: azureInput?.value.trim() || '',
-            pexelsToken: pexelsInput?.value.trim() || ''
+            pexelsToken: pexelsInput?.value.trim() || '',
+            openaiBaseUrl: openaiBaseUrlInput?.value.trim() || '',
+            openaiModel: openaiModelInput?.value.trim() || ''
             /* v8 ignore stop */
         }
 

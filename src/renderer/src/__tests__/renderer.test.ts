@@ -121,6 +121,27 @@ describe('Renderer UI', () => {
             )
         })
     })
+    it('loads and saves OpenAI base URL and model settings', async () => {
+        vi.mocked(window.api.getSettingsStatus).mockResolvedValueOnce({
+            status: 'success',
+            data: {
+                configured: { openaiApiKey: true, openaiBaseUrl: true, openaiModel: true, azureApiKey: false, pexelsToken: false, notionToken: false, notionDatabaseId: false },
+                openaiBaseUrl: 'https://custom.example/v1',
+                openaiModel: 'custom-model'
+            }
+        })
+        window.dispatchEvent(new Event('DOMContentLoaded'))
+        await new Promise((resolve) => setTimeout(resolve, 0))
+        expect((document.getElementById('openai-base-url') as HTMLInputElement).value).toBe('https://custom.example/v1')
+        expect((document.getElementById('openai-model') as HTMLInputElement).value).toBe('custom-model')
+
+        ;(document.getElementById('openai-base-url') as HTMLInputElement).value = 'https://another.example/v1'
+        ;(document.getElementById('openai-model') as HTMLInputElement).value = 'another-model'
+        vi.mocked(window.api.saveSettings).mockResolvedValue({ status: 'success' })
+        document.getElementById('btn-save-settings')?.dispatchEvent(new MouseEvent('click'))
+        await new Promise((resolve) => setTimeout(resolve, 0))
+        expect(window.api.saveSettings).toHaveBeenCalledWith(expect.objectContaining({ openaiBaseUrl: 'https://another.example/v1', openaiModel: 'another-model' }))
+    })
 
     describe('Settings Form', () => {
         it('does not show alert when saveSettings returns success', async () => {
@@ -171,7 +192,9 @@ describe('Renderer UI', () => {
             expect(window.api.saveSettings).toHaveBeenCalledWith({
                 openaiApiKey: 'new-openai-key',
                 azureApiKey: 'new-azure-key',
-                pexelsToken: 'new-pexels-token'
+                pexelsToken: 'new-pexels-token',
+                openaiBaseUrl: '',
+                openaiModel: ''
             })
         })
 
