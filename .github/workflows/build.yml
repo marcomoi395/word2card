@@ -1,13 +1,12 @@
 name: Build and Release
 
 on:
-    push:
+    pull_request:
         branches:
             - main
-            - develop
+    push:
         tags:
             - 'v*'
-
 permissions:
     contents: read
 
@@ -16,7 +15,7 @@ jobs:
         name: Release quality gate
         runs-on: ubuntu-latest
         timeout-minutes: 30
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: github.event_name == 'pull_request' || startsWith(github.ref, 'refs/tags/v')
         steps:
             - name: Checkout code
               uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
@@ -40,6 +39,7 @@ jobs:
                   bun audit --severity high
 
             - name: Validate release version
+              if: startsWith(github.ref, 'refs/tags/v')
               env:
                   RELEASE_TAG: ${{ github.ref_name }}
               run: |
@@ -58,6 +58,7 @@ jobs:
         runs-on: ubuntu-latest
         timeout-minutes: 30
         needs: release-quality
+        if: (github.event_name == 'pull_request' && github.base_ref == 'main') || startsWith(github.ref, 'refs/tags/v')
         permissions:
             contents: read
             id-token: write
@@ -78,10 +79,9 @@ jobs:
             - name: Build Linux packages
               run: bun x electron-builder --linux AppImage deb --publish never
             - name: Validate Linux artifacts
-              env:
-                  RELEASE_TAG: ${{ github.ref_name }}
+              shell: bash
               run: |
-                  VERSION="${RELEASE_TAG#v}"
+                  VERSION=$(node -p "require('./package.json').version")
                   test -f "dist/word2card-${VERSION}.AppImage"
                   test -f "dist/word2card_${VERSION}_amd64.deb"
             - name: Packaged Linux smoke test
@@ -123,6 +123,7 @@ jobs:
         runs-on: windows-latest
         timeout-minutes: 30
         needs: release-quality
+        if: (github.event_name == 'pull_request' && github.base_ref == 'main') || startsWith(github.ref, 'refs/tags/v')
         permissions:
             contents: read
             id-token: write
@@ -144,10 +145,8 @@ jobs:
               run: bun x electron-builder --windows nsis --publish never
             - name: Validate Windows artifacts
               shell: bash
-              env:
-                  RELEASE_TAG: ${{ github.ref_name }}
               run: |
-                  VERSION="${RELEASE_TAG#v}"
+                  VERSION=$(node -p "require('./package.json').version")
                   test -f "dist/word2card-${VERSION}-setup.exe"
                   test -f dist/latest.yml
             - name: Generate Windows checksums
