@@ -4,11 +4,66 @@ export const IPC_CHANNELS = {
     openFileDialog: 'open-file-dialog',
     saveSettings: 'save-settings',
     getSettingsStatus: 'get-settings-status',
-    sendImport: 'send-import'
+    sendImport: 'send-import',
+    listVocabulary: 'list-vocabulary',
+    updateVocabulary: 'update-vocabulary',
+    generateMissingData: 'generate-missing-data',
+    getProviderHealth: 'get-provider-health',
+    submitToAnki: 'submit-to-anki'
 } as const
 
 export type SecretKey =
-    'openaiApiKey' | 'azureApiKey' | 'pexelsToken' | 'notionToken' | 'notionDatabaseId'
+    | 'openaiApiKey'
+    | 'azureApiKey'
+    | 'pexelsToken'
+    | 'notionToken'
+    | 'notionDatabaseId'
+
+export type SourceType = 'file' | 'notion'
+export type GenerationStatus = 'pending' | 'generating' | 'ready' | 'failed'
+export type AnkiStatus = 'not_submitted' | 'submitted' | 'failed'
+
+export interface VocabularyRecord {
+    id: string
+    word: string
+    normalizedWord: string
+    source: SourceType
+    sourceReference: string | null
+    partOfSpeech: string | null
+    cloze: string | null
+    example: string | null
+    vietnamese: string | null
+    ipa: string | null
+    meaning: string | null
+    imageUrl: string | null
+    imageProvider: string | null
+    audio: string | null
+    generationStatus: GenerationStatus
+    generationError: string | null
+    ankiStatus: AnkiStatus
+    ankiError: string | null
+    createdAt: string
+    updatedAt: string
+}
+
+export type VocabularyEditableField =
+    | 'word'
+    | 'partOfSpeech'
+    | 'cloze'
+    | 'example'
+    | 'vietnamese'
+    | 'ipa'
+    | 'meaning'
+    | 'imageUrl'
+    | 'imageProvider'
+    | 'audio'
+
+export type VocabularyEdit = Partial<Pick<VocabularyRecord, VocabularyEditableField>>
+
+export interface UpdateVocabularyPayload {
+    id: string
+    changes: VocabularyEdit
+}
 
 export interface ImportOptions {
     quiz: boolean
@@ -40,30 +95,85 @@ export interface NotionSyncRequest {
 
 export type ImportRequest = FileImportRequest | NotionSyncRequest
 
+export interface ImportSummary {
+    inserted: number
+    skipped: number
+    failed: number
+}
+
 export interface SaveSettingsPayload {
     openaiApiKey: string
     azureApiKey: string
     pexelsToken: string
+    openaiBaseUrl?: string
+    openaiModel?: string
+}
+
+export interface MaskedSecretStatus {
+    configured: boolean
+    masked: string | null
 }
 
 export interface SettingsStatus {
     configured: Record<SecretKey, boolean>
+    secrets?: Record<SecretKey, MaskedSecretStatus>
+    openaiBaseUrl?: string
+    openaiModel?: string
+}
+
+export type ProviderName = 'openai' | 'notion' | 'pexels' | 'anki'
+export type ProviderHealthState =
+    | 'checking'
+    | 'connected'
+    | 'not_configured'
+    | 'invalid'
+    | 'unreachable'
+
+export interface ProviderHealthStatus {
+    provider: ProviderName
+    state: ProviderHealthState
+    message?: string
+}
+
+export interface ProviderHealthSnapshot {
+    providers: Record<ProviderName, ProviderHealthStatus>
+}
+
+export interface GenerateMissingDataPayload {
+    recordIds?: string[]
+}
+
+export interface GenerationSummary {
+    processed: number
+    succeeded: number
+    failed: number
+}
+
+export interface SubmitToAnkiPayload {
+    recordIds?: string[]
+}
+
+export interface AnkiSubmissionSummary {
+    processed: number
+    submitted: number
+    failed: number
 }
 
 export interface OpenFileDialogData {
     filePath: string | null
 }
 
+export type AppErrorCode =
+    | 'VALIDATION_ERROR'
+    | 'NOT_FOUND'
+    | 'NOT_CONFIGURED'
+    | 'PROVIDER_UNAVAILABLE'
+    | 'PERSISTENCE_ERROR'
+    | 'INTERNAL_ERROR'
+
 export type AppResponse<T = undefined> =
-    | {
-          status: 'success'
-          data?: T
-          message?: string
-      }
-    | {
-          status: 'error'
-          message: string
-      }
+    | { status: 'success'; data?: T; message?: string }
+    | { status: 'error'; code?: AppErrorCode; message: string }
 
 export interface RendererApi {
     minimize: () => void
@@ -71,7 +181,14 @@ export interface RendererApi {
     platform: NodeJS.Platform
     getFilePath: (file: File) => string
     openFileDialog: () => Promise<AppResponse<OpenFileDialogData>>
-    sendImport: (importData: ImportRequest) => Promise<AppResponse>
+    sendImport: (importData: ImportRequest) => Promise<AppResponse<ImportSummary>>
+    listVocabulary: () => Promise<AppResponse<VocabularyRecord[]>>
+    updateVocabulary: (payload: UpdateVocabularyPayload) => Promise<AppResponse<VocabularyRecord>>
+    generateMissingData: (
+        payload?: GenerateMissingDataPayload
+    ) => Promise<AppResponse<GenerationSummary>>
+    submitToAnki: (payload?: SubmitToAnkiPayload) => Promise<AppResponse<AnkiSubmissionSummary>>
     saveSettings: (payload: SaveSettingsPayload) => Promise<AppResponse>
     getSettingsStatus: () => Promise<AppResponse<SettingsStatus>>
+    getProviderHealth: () => Promise<AppResponse<ProviderHealthSnapshot>>
 }
