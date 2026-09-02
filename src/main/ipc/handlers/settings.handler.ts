@@ -17,7 +17,13 @@ export function registerSettingsHandlers(): void {
             const patch = {
                 openaiApiKey: parsed.openaiApiKey.trim(),
                 azureApiKey: parsed.azureApiKey.trim(),
-                pexelsToken: parsed.pexelsToken.trim()
+                pexelsToken: parsed.pexelsToken.trim(),
+                ...(parsed.openaiBaseUrl === undefined
+                    ? {}
+                    : { openaiBaseUrl: parsed.openaiBaseUrl.trim() }),
+                ...(parsed.openaiModel === undefined
+                    ? {}
+                    : { openaiModel: parsed.openaiModel.trim() })
             }
 
             if (getRuntimeState().updateRuntimeSettings(patch)) {

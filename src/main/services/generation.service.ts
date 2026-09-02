@@ -1,4 +1,4 @@
-import type { DatabaseRepositories, VocabularyRecord } from '../database'
+import type { DatabaseRepositories } from '../database'
 import { OpenAIService, type FlashcardResponse } from '../open-ai'
 import type { GenerationSummary } from '../../shared/ipc'
 
@@ -36,14 +36,20 @@ export class GenerationService {
         const pending = records.filter((record) => record.generationStatus !== 'ready')
         if (pending.length === 0) return { processed: 0, succeeded: 0, failed: 0, results: [] }
 
-        const byWord = new Map(pending.map((record) => [record.normalizedWord, record]))
         let generated: FlashcardResponse[]
         try {
-            generated = await OpenAIService.generateFlashcardData(pending.map((record) => record.word))
+            generated = await OpenAIService.generateFlashcardData(
+                pending.map((record) => record.word)
+            )
         } catch (error) {
             const message = failureMessage(error)
             const results = pending.map((record) => {
-                database.transaction(() => database.vocabulary.update(record.id, { generationStatus: 'failed', generationError: message }))
+                database.transaction(() =>
+                    database.vocabulary.update(record.id, {
+                        generationStatus: 'failed',
+                        generationError: message
+                    })
+                )
                 return { id: record.id, status: 'failed' as const, error: message }
             })
             return { processed: pending.length, succeeded: 0, failed: pending.length, results }
@@ -52,16 +58,34 @@ export class GenerationService {
         const seen = new Set<string>()
         const results: GenerationResult['results'] = []
         for (const record of pending) {
-            const item = generated.find((candidate) => candidate.word?.trim().toLocaleLowerCase() === record.normalizedWord)
-            const error = item ? validateGenerated(item) : 'No generated data returned for this word'
+            const item = generated.find(
+                (candidate) => candidate.word?.trim().toLocaleLowerCase() === record.normalizedWord
+            )
+            const error = item
+                ? validateGenerated(item)
+                : 'No generated data returned for this word'
             if (error || !item) {
-                database.transaction(() => database.vocabulary.update(record.id, { generationStatus: 'failed', generationError: error }))
-                results.push({ id: record.id, status: 'failed', error: error ?? 'Generation failed' })
+                database.transaction(() =>
+                    database.vocabulary.update(record.id, {
+                        generationStatus: 'failed',
+                        generationError: error
+                    })
+                )
+                results.push({
+                    id: record.id,
+                    status: 'failed',
+                    error: error ?? 'Generation failed'
+                })
                 continue
             }
             if (seen.has(record.normalizedWord)) {
                 const duplicateError = 'Duplicate generated data returned for this word'
-                database.transaction(() => database.vocabulary.update(record.id, { generationStatus: 'failed', generationError: duplicateError }))
+                database.transaction(() =>
+                    database.vocabulary.update(record.id, {
+                        generationStatus: 'failed',
+                        generationError: duplicateError
+                    })
+                )
                 results.push({ id: record.id, status: 'failed', error: duplicateError })
                 continue
             }
@@ -73,7 +97,11 @@ export class GenerationService {
                         vietnamese: item.vietnamese,
                         ipa: item.ipa ?? null,
                         example: item.example ?? null,
-                        cloze: record.cloze ?? (record.word.length <= 2 ? '_'.repeat(record.word.length) : `${record.word[0]}${'_'.repeat(record.word.length - 2)}${record.word.at(-1)}`),
+                        cloze:
+                            record.cloze ??
+                            (record.word.length <= 2
+                                ? '_'.repeat(record.word.length)
+                                : `${record.word[0]}${'_'.repeat(record.word.length - 2)}${record.word.at(-1)}`),
                         generationStatus: 'ready',
                         generationError: null
                     })
@@ -81,7 +109,12 @@ export class GenerationService {
                 results.push({ id: record.id, status: 'ready' })
             } catch (error) {
                 const message = failureMessage(error)
-                database.transaction(() => database.vocabulary.update(record.id, { generationStatus: 'failed', generationError: message }))
+                database.transaction(() =>
+                    database.vocabulary.update(record.id, {
+                        generationStatus: 'failed',
+                        generationError: message
+                    })
+                )
                 results.push({ id: record.id, status: 'failed', error: message })
             }
         }

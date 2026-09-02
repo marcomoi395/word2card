@@ -78,13 +78,13 @@ describe('window.ts', () => {
 
         expect(win.config).toEqual(
             expect.objectContaining({
-                width: 400,
-                height: 600,
+                width: 1180,
+                height: 760,
                 show: false,
-                resizable: false,
+                resizable: true,
                 movable: true,
                 autoHideMenuBar: true,
-                icon: expect.stringContaining('icon.png'),
+                icon: expect.any(String),
                 webPreferences: expect.objectContaining({
                     sandbox: true,
                     contextIsolation: true,

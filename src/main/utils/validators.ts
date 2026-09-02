@@ -18,20 +18,17 @@ export const isImportOptions = (value: unknown): value is ImportOptions => {
 }
 
 export const parseSaveSettingsPayload = (value: unknown): SaveSettingsPayload | null => {
-    if (!isRecord(value)) {
-        return null
-    }
-
-    const { openaiApiKey, azureApiKey, pexelsToken } = value
+    if (!isRecord(value)) return null
+    const { openaiApiKey, azureApiKey, pexelsToken, openaiBaseUrl, openaiModel } = value
     if (
         typeof openaiApiKey !== 'string' ||
         typeof azureApiKey !== 'string' ||
         typeof pexelsToken !== 'string'
-    ) {
+    )
         return null
-    }
-
-    return { openaiApiKey, azureApiKey, pexelsToken }
+    if (openaiBaseUrl !== undefined && typeof openaiBaseUrl !== 'string') return null
+    if (openaiModel !== undefined && typeof openaiModel !== 'string') return null
+    return { openaiApiKey, azureApiKey, pexelsToken, openaiBaseUrl, openaiModel }
 }
 
 export const parseImportRequest = (value: unknown): ImportRequest | null => {
@@ -96,11 +93,10 @@ const EDITABLE_FIELDS = [
 ] as const
 
 const isStringArray = (value: unknown): value is string[] =>
-    Array.isArray(value) && value.every((item) => typeof item === 'string' && item.trim().length > 0)
+    Array.isArray(value) &&
+    value.every((item) => typeof item === 'string' && item.trim().length > 0)
 
-export const parseUpdateVocabularyPayload = (
-    value: unknown
-): UpdateVocabularyPayload | null => {
+export const parseUpdateVocabularyPayload = (value: unknown): UpdateVocabularyPayload | null => {
     if (
         !isRecord(value) ||
         typeof value.id !== 'string' ||
@@ -130,3 +126,4 @@ export const parseRecordIdsPayload = (
     }
     return value.recordIds ? { recordIds: value.recordIds } : {}
 }
+export const parseEditVocabularyPayload = parseUpdateVocabularyPayload

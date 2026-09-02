@@ -12,7 +12,9 @@ describe('shared IPC contracts', () => {
     })
 
     it('accepts a validated vocabulary edit payload', () => {
-        expect(parseUpdateVocabularyPayload({ id: 'word-1', changes: { meaning: 'definition' } })).toEqual({
+        expect(
+            parseUpdateVocabularyPayload({ id: 'word-1', changes: { meaning: 'definition' } })
+        ).toEqual({
             id: 'word-1',
             changes: { meaning: 'definition' }
         })
@@ -20,7 +22,9 @@ describe('shared IPC contracts', () => {
 
     it('rejects unknown or empty vocabulary edits', () => {
         expect(parseUpdateVocabularyPayload({ id: 'word-1', changes: {} })).toBeNull()
-        expect(parseUpdateVocabularyPayload({ id: 'word-1', changes: { generationStatus: 'ready' } })).toBeNull()
+        expect(
+            parseUpdateVocabularyPayload({ id: 'word-1', changes: { generationStatus: 'ready' } })
+        ).toBeNull()
     })
 
     it('accepts optional record ID selections and rejects malformed values', () => {

@@ -1,12 +1,9 @@
 import type {
     AppResponse,
-    GenerateMissingDataPayload,
     ImportRequest,
     NotionSyncRequest,
     ProviderHealthSnapshot,
     SaveSettingsPayload,
-    SubmitToAnkiPayload,
-    UpdateVocabularyPayload,
     VocabularyRecord
 } from '../../shared/ipc'
 
@@ -48,10 +45,19 @@ function recordRow(record: VocabularyRecord, editable: boolean, index: number): 
 function renderRecords(): void {
     const previewBody = document.querySelector('#section-import .data-grid tbody')
     const collectionBody = document.querySelector('#section-collection .data-grid tbody')
-    const empty = '<tr><td colspan="10" role="status">No vocabulary saved yet. Import words to get started.</td></tr>'
-    if (previewBody) previewBody.innerHTML = vocabularyRecords.length ? vocabularyRecords.map((record, i) => recordRow(record, true, i)).join('') : empty
-    if (collectionBody) collectionBody.innerHTML = vocabularyRecords.length ? vocabularyRecords.map((record, i) => recordRow(record, false, i)).join('') : empty
-    document.querySelectorAll<HTMLElement>('.table-count').forEach((el) => (el.textContent = `${vocabularyRecords.length} words saved`))
+    const empty =
+        '<tr><td colspan="10" role="status">No vocabulary saved yet. Import words to get started.</td></tr>'
+    if (previewBody)
+        previewBody.innerHTML = vocabularyRecords.length
+            ? vocabularyRecords.map((record, i) => recordRow(record, true, i)).join('')
+            : empty
+    if (collectionBody)
+        collectionBody.innerHTML = vocabularyRecords.length
+            ? vocabularyRecords.map((record, i) => recordRow(record, false, i)).join('')
+            : empty
+    document
+        .querySelectorAll<HTMLElement>('.table-count')
+        .forEach((el) => (el.textContent = `${vocabularyRecords.length} words saved`))
     const stat = document.querySelector<HTMLElement>('.heading-stat strong')
     if (stat) stat.textContent = String(vocabularyRecords.length)
     initAudioPreview()
@@ -59,16 +65,20 @@ function renderRecords(): void {
 
 async function loadVocabulary(): Promise<void> {
     const previewBody = document.querySelector('#section-import .data-grid tbody')
-    if (previewBody) previewBody.innerHTML = '<tr><td colspan="10" role="status" aria-busy="true">Loading vocabulary…</td></tr>'
+    if (previewBody)
+        previewBody.innerHTML =
+            '<tr><td colspan="10" role="status" aria-busy="true">Loading vocabulary…</td></tr>'
     try {
         const response = await window.api.listVocabulary()
-        if (response.status !== 'success' || !response.data) throw new Error(response.message || 'Failed to load vocabulary')
+        if (response.status !== 'success' || !response.data)
+            throw new Error(response.message || 'Failed to load vocabulary')
         vocabularyRecords = response.data
         renderRecords()
     } catch (error) {
         console.error(error)
         const message = error instanceof Error ? error.message : 'Failed to load vocabulary'
-        if (previewBody) previewBody.innerHTML = `<tr><td colspan="10" role="alert">${escapeHtml(message)}</td></tr>`
+        if (previewBody)
+            previewBody.innerHTML = `<tr><td colspan="10" role="alert">${escapeHtml(message)}</td></tr>`
     }
 }
 
@@ -81,7 +91,9 @@ function initVocabularyActions(): void {
         const button = event.currentTarget as HTMLButtonElement
         setButtonLoading(button, true, 'Generating...')
         try {
-            const response = await window.api.generateMissingData({ recordIds: vocabularyRecords.map((record) => record.id) })
+            const response = await window.api.generateMissingData({
+                recordIds: vocabularyRecords.map((record) => record.id)
+            })
             showResponseAlert('Generate data', response)
             if (response.status === 'success') await refreshVocabulary()
         } catch (error) {
@@ -96,7 +108,9 @@ function initVocabularyActions(): void {
         const button = event.currentTarget as HTMLButtonElement
         setButtonLoading(button, true, 'Submitting...')
         try {
-            const response = await window.api.submitToAnki({ recordIds: vocabularyRecords.map((record) => record.id) })
+            const response = await window.api.submitToAnki({
+                recordIds: vocabularyRecords.map((record) => record.id)
+            })
             showResponseAlert('Submit to Anki', response)
             if (response.status === 'success') await refreshVocabulary()
         } catch (error) {
@@ -107,30 +121,55 @@ function initVocabularyActions(): void {
         }
     })
 
-    document.addEventListener('blur', (event) => {
-        const cell = event.target
-        if (!(cell instanceof HTMLElement) || !cell.classList.contains('editable-cell')) return
-        const id = cell.dataset.id
-        const field = cell.dataset.field
-        const record = vocabularyRecords.find((item) => item.id === id)
-        if (!id || !field || !record || (record as Record<string, unknown>)[field] === cell.innerText) return
-        void window.api.updateVocabulary({ id, changes: { [field]: cell.innerText } }).then(async (response) => {
-            if (response.status !== 'success') throw new Error(response.message)
-            await refreshVocabulary()
-        }).catch(async (error) => {
-            console.error(error)
-            alert(`Failed to save edit: ${error instanceof Error ? error.message : 'Unknown error'}`)
-            await refreshVocabulary()
-        })
-    }, true)
+    document.addEventListener(
+        'blur',
+        (event) => {
+            const cell = event.target
+            if (!(cell instanceof HTMLElement) || !cell.classList.contains('editable-cell')) return
+            const id = cell.dataset.id
+            const field = cell.dataset.field
+            const record = vocabularyRecords.find((item) => item.id === id)
+            if (
+                !id ||
+                !field ||
+                !record ||
+                (record as unknown as Record<string, unknown>)[field] === cell.innerText
+            )
+                return
+            void window.api
+                .updateVocabulary({ id, changes: { [field]: cell.innerText } })
+                .then(async (response) => {
+                    if (response.status !== 'success') throw new Error(response.message)
+                    await refreshVocabulary()
+                })
+                .catch(async (error) => {
+                    console.error(error)
+                    alert(
+                        `Failed to save edit: ${error instanceof Error ? error.message : 'Unknown error'}`
+                    )
+                    await refreshVocabulary()
+                })
+        },
+        true
+    )
 }
 
 function renderHealth(snapshot: ProviderHealthSnapshot): void {
     const status = document.querySelector<HTMLElement>('.step-two-status')
     const list = status?.querySelector('.connection-list')
     if (!list) return
-    const labels: Record<string, string> = { openai: 'AI', anki: 'AnkiConnect', notion: 'Notion', pexels: 'Pexels' }
-    list.innerHTML = Object.entries(snapshot.providers).map(([key, value]) => `<span class="connection-item"><span class="status-dot"></span>${labels[key] || key}: ${value.state}</span>`).join('')
+    const labels: Record<string, string> = {
+        openai: 'AI',
+        anki: 'AnkiConnect',
+        notion: 'Notion',
+        pexels: 'Pexels'
+    }
+    list.innerHTML = Object.entries(snapshot.providers)
+        .map(
+            ([key, value]) =>
+                `<span class="connection-item"><span class="status-dot"></span>${labels[key] || key}: ${value.state}</span>`
+        )
+        .join('')
 }
 
 async function loadHealth(): Promise<void> {
@@ -169,12 +208,10 @@ function setButtonLoading(
     button.disabled = false
 }
 
-function showResponseAlert(actionLabel: string, response: AppResponse | undefined): void {
+function showResponseAlert(actionLabel: string, response: AppResponse<unknown> | undefined): void {
     // Only show alerts for errors; success feedback comes from button state
     if (response?.status !== 'success') {
-        /* v8 ignore start */
         alert(`${actionLabel} failed: ${response?.message || 'Unknown error.'}`)
-        /* v8 ignore stop */
     }
 }
 

@@ -34,7 +34,10 @@ describe('OpenAIService', () => {
     describe('getInstance', () => {
         it('returns OpenAI instance when key is set', () => {
             const instance = OpenAIService.getInstance()
-            expect(OpenAI).toHaveBeenCalledWith({ apiKey: 'test-api-key' })
+            expect(OpenAI).toHaveBeenCalledWith({
+                apiKey: 'test-api-key',
+                baseURL: 'https://api.openai.com/v1'
+            })
             expect(instance).toBeDefined()
         })
 
@@ -55,8 +58,14 @@ describe('OpenAIService', () => {
             vi.mocked(State.getToken).mockReturnValue('key-2')
             OpenAIService.getInstance()
             expect(OpenAI).toHaveBeenCalledTimes(2)
-            expect(OpenAI).toHaveBeenNthCalledWith(1, { apiKey: 'key-1' })
-            expect(OpenAI).toHaveBeenNthCalledWith(2, { apiKey: 'key-2' })
+            expect(OpenAI).toHaveBeenNthCalledWith(1, {
+                apiKey: 'key-1',
+                baseURL: 'https://api.openai.com/v1'
+            })
+            expect(OpenAI).toHaveBeenNthCalledWith(2, {
+                apiKey: 'key-2',
+                baseURL: 'https://api.openai.com/v1'
+            })
         })
     })
 
@@ -95,7 +104,7 @@ describe('OpenAIService', () => {
             expect(OpenAI.prototype.chat.completions.create).toHaveBeenCalled()
 
             const call = vi.mocked(OpenAI.prototype.chat.completions.create).mock.calls[0][0]
-            expect(call.model).toBe('gpt-5-nano')
+            expect(call.model).toBe('gpt-4o-mini')
             expect(call.messages[0].content).toContain('English learning flashcards')
             expect(call.messages[1].content).toContain('["bank","run"]')
             expect(call.response_format).toEqual({ type: 'json_object' })

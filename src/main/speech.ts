@@ -20,10 +20,7 @@ export class SpeechService {
         return Promise.resolve(`Audio disabled: ${filename}`)
     }
 
-    public static async createSpeechFiles(
-        _words: string[],
-        _outputDir: string
-    ): Promise<string[]> {
+    public static async createSpeechFiles(_words: string[], _outputDir: string): Promise<string[]> {
         return []
     }
 }

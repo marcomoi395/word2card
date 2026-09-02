@@ -9,12 +9,15 @@ vi.mock('../anki-connect', () => ({ checkAnkiConnect: vi.fn() }))
 describe('provider health', () => {
     beforeEach(() => {
         vi.clearAllMocks()
-        vi.mocked(getRuntimeSetting).mockImplementation((key) => ({
-            openaiApiKey: 'openai-key',
-            notionToken: 'notion-token',
-            notionDatabaseId: 'database-id',
-            pexelsToken: 'pexels-key'
-        })[key])
+        vi.mocked(getRuntimeSetting).mockImplementation(
+            (key) =>
+                ({
+                    openaiApiKey: 'openai-key',
+                    notionToken: 'notion-token',
+                    notionDatabaseId: 'database-id',
+                    pexelsToken: 'pexels-key'
+                })[key]
+        )
         vi.mocked(checkAnkiConnect).mockResolvedValue(true)
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 200 })))
     })
@@ -29,7 +32,13 @@ describe('provider health', () => {
 
     it('distinguishes missing configuration from invalid credentials', async () => {
         vi.mocked(getRuntimeSetting).mockImplementation((key) =>
-            key === 'openaiApiKey' ? undefined : key === 'notionToken' ? 'token' : key === 'notionDatabaseId' ? 'db' : undefined
+            key === 'openaiApiKey'
+                ? undefined
+                : key === 'notionToken'
+                  ? 'token'
+                  : key === 'notionDatabaseId'
+                    ? 'db'
+                    : undefined
         )
         vi.mocked(fetch).mockResolvedValue(new Response('{}', { status: 401 }))
         const health = await checkProviderHealth()

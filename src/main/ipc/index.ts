@@ -4,17 +4,21 @@ import { registerFileHandlers } from './handlers/file.handler'
 import { registerSettingsHandlers } from './handlers/settings.handler'
 import { registerImportHandlers } from './handlers/import.handler'
 import { registerProviderHealthHandlers } from './handlers/provider-health.handler'
-let registered = false
+import { registerCollectionHandlers } from './handlers/collection.handler'
+import { registerGenerationHandlers } from './handlers/generation.handler'
+import { registerAnkiHandlers } from './handlers/anki.handler'
+import type { DatabaseRepositories } from '../database'
 
-export function registerAllIpcHandlers(_mainWindow: BrowserWindow): void {
-    if (registered) {
-        return
-    }
-
-    registered = true
+export function registerAllIpcHandlers(
+    _mainWindow: BrowserWindow,
+    database: DatabaseRepositories
+): void {
     registerWindowHandlers()
     registerFileHandlers()
     registerSettingsHandlers()
     registerProviderHealthHandlers()
-    registerImportHandlers()
+    registerImportHandlers(database)
+    registerCollectionHandlers(database)
+    registerGenerationHandlers(database)
+    registerAnkiHandlers(database)
 }

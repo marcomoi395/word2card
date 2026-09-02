@@ -13,9 +13,13 @@ describe('SQLite database', () => {
         const duplicate = db.vocabulary.create({ word: 'hello' })
 
         expect(first.inserted).toBe(true)
+        expect(first.record).toMatchObject({
+            id: expect.any(String),
+            word: 'Hello',
+            normalizedWord: 'hello'
+        })
         expect(duplicate.inserted).toBe(false)
         expect(db.vocabulary.list()).toHaveLength(1)
-        expect(db.vocabulary.list()[0].word).toBe('Hello')
     })
 
     it('rolls back repository writes when a transaction throws', () => {

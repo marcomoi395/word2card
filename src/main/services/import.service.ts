@@ -1,12 +1,7 @@
-import { app } from 'electron'
-import path from 'path'
-import { checkAnkiConnect } from '../anki-connect'
-import { createFlashcards, type QuizNote } from '../handle'
 import { NotionService } from '../notion'
-import { getMissingRuntimeSettings, getRuntimeState } from '../state/runtime'
+import { getRuntimeState } from '../state/runtime'
 import type { ImportRequest, AppResponse, SecretKey } from '../../shared/ipc'
 import { success, failure } from '../utils/response'
-import { filterExistingWords } from '../helper/filter-existing-words'
 import { readFileContent } from '../helper/readFile'
 import { getWordEntriesFromResponse } from '../helper/get-words-from-notion-response'
 import {
@@ -14,179 +9,92 @@ import {
     resolveNotionDeckName,
     type NotionSyncTarget
 } from '../helper/notion-sync'
-import { DeckService } from './deck.service'
-import { existsSync, mkdirSync } from 'fs'
+import type { DatabaseRepositories } from '../database'
 
+let database: DatabaseRepositories | null = null
+export interface ImportSummary {
+    inserted: number
+    skipped: number
+    failed: number
+}
 const syncRuntimeSecret = (key: SecretKey, value: string): boolean => {
-    const trimmedValue = value.trim()
-    if (!trimmedValue) {
-        return false
-    }
-
-    return getRuntimeState().updateRuntimeSettings({ [key]: trimmedValue })
+    const trimmed = value.trim()
+    return Boolean(trimmed) && getRuntimeState().updateRuntimeSettings({ [key]: trimmed })
 }
-
-const ensureAudioDirectory = (audioDir: string): void => {
-    if (!existsSync(audioDir)) {
-        mkdirSync(audioDir, { recursive: true })
-    }
+export function setImportDatabase(repositories: DatabaseRepositories): void {
+    database = repositories
 }
-
-const resolveDeckName = (deckName: string): string => {
-    const trimmedDeck = deckName.trim()
-    if (trimmedDeck) {
-        return trimmedDeck
-    }
-    return `Vocabulary::Imported::${new Date().toISOString().split('T')[0]}`
+const persistWords = (words: string[], source: 'file' | 'notion') => {
+    if (!database) throw new Error('Import database is not initialized')
+    return database.transaction(() => {
+        const imported: string[] = []
+        let skipped = 0
+        for (const word of words) {
+            const result = database!.vocabulary.create({ word, source })
+            if (result.inserted) imported.push(word)
+            else skipped++
+        }
+        return { words: imported, summary: { inserted: imported.length, skipped, failed: 0 } }
+    })
 }
-
 export class ImportService {
-    private static async init(audioDir: string): Promise<AppResponse> {
-        try {
-            ensureAudioDirectory(audioDir)
-            return success()
-        } catch (error) {
-            const message = error instanceof Error ? error.message : 'Unknown initialization error'
-            return failure(message)
-        }
-    }
-
+    private static lastSummary: ImportSummary = { inserted: 0, skipped: 0, failed: 0 }
     private static async loadWords(
-        importRequest: ImportRequest
-    ): Promise<AppResponse<{ notionTargets?: NotionSyncTarget[]; words: string[] }>> {
-        if (importRequest.type === 'FILE_IMPORT') {
-            const rawData = await readFileContent(importRequest.payload.filePath)
-            if (rawData === null) {
-                return failure('Failed to read words from the source.')
-            }
-
-            return success({
-                words: await filterExistingWords(rawData)
-            })
+        request: ImportRequest
+    ): Promise<AppResponse<{ words: string[]; notionTargets?: NotionSyncTarget[] }>> {
+        if (request.type === 'FILE_IMPORT') {
+            const raw = await readFileContent(request.payload.filePath)
+            if (raw === null) return failure('Failed to read words from the source.')
+            const persisted = persistWords(raw, 'file')
+            this.lastSummary = persisted.summary
+            return success({ words: persisted.words })
         }
-
         try {
-            const savedNotionToken = syncRuntimeSecret('notionToken', importRequest.payload.token)
-            const savedNotionDatabaseId = syncRuntimeSecret(
-                'notionDatabaseId',
-                importRequest.payload.notionDatabaseId
+            if (
+                !syncRuntimeSecret('notionToken', request.payload.token) ||
+                !syncRuntimeSecret('notionDatabaseId', request.payload.notionDatabaseId)
             )
-
-            if (!savedNotionToken || !savedNotionDatabaseId) {
                 return failure('Failed to save Notion settings.')
-            }
-
-            const dataSources = await NotionService.getPages(importRequest.payload.notionDatabaseId)
-            if (!dataSources || dataSources.length === 0) {
-                return failure('No pages found in the Notion database.')
-            }
-
-            const notionTargets = dataSources.flatMap((dataSource) =>
-                /* v8 ignore next */
-                getWordEntriesFromResponse(dataSource.pages).map((entry) => ({
+            const sources = await NotionService.getPages(request.payload.notionDatabaseId)
+            if (!sources?.length) return failure('No pages found in the Notion database.')
+            const targets = sources.flatMap((source) =>
+                getWordEntriesFromResponse(source.pages).map((entry) => ({
                     pageId: entry.pageId,
                     word: entry.word,
-                    deckName: resolveNotionDeckName(
-                        importRequest.payload.deck,
-                        dataSource.dataSourceName
-                    )
+                    deckName: resolveNotionDeckName(request.payload.deck, source.dataSourceName)
                 }))
             )
-            const words = await filterExistingWords(notionTargets.map((target) => target.word))
-
+            const persisted = persistWords(
+                targets.map((target) => target.word),
+                'notion'
+            )
+            this.lastSummary = persisted.summary
             return success({
-                notionTargets: filterNotionTargetsByWords(notionTargets, words),
-                words
+                words: persisted.words,
+                notionTargets: filterNotionTargetsByWords(targets, persisted.words)
             })
         } catch (error) {
-            const message =
+            return failure(
                 error instanceof Error
                     ? error.message
                     : 'Error retrieving data from Notion, please check your token and database ID.'
-            return failure(message)
-        }
-    }
-
-    private static async createNotes(
-        importRequest: ImportRequest,
-        words: string[],
-        audioDir: string,
-        notionTargets?: NotionSyncTarget[]
-    ): Promise<AppResponse<QuizNote[]>> {
-        const isAudioEnabled = false
-
-        const deckNames =
-            importRequest.type === 'NOTION_SYNC' && notionTargets
-                ? /* v8 ignore start */
-                  notionTargets.map((target) => target.deckName)
-                : [resolveDeckName(importRequest.payload.deck)]
-        /* v8 ignore stop */
-        const deckResult = await DeckService.createDecksIfNotExist(deckNames)
-        if (deckResult.status === 'error') {
-            return deckResult
-        }
-
-        const notes: QuizNote[] = []
-        if (importRequest.payload.options.flashcard) {
-            const newNotes = await createFlashcards(
-                words,
-                audioDir,
-                deckNames[0] || resolveDeckName(importRequest.payload.deck),
-                isAudioEnabled,
-                notionTargets
-            )
-            notes.push(...newNotes)
-        }
-
-        if (notes.length === 0) {
-            return failure('No cards to add.')
-        }
-
-        return success(notes)
-    }
-
-    public static async handleImportRequest(importRequest: ImportRequest): Promise<AppResponse> {
-        const missingTokens = getMissingRuntimeSettings(['openaiApiKey'])
-        if (missingTokens.includes('openaiApiKey')) {
-            return failure('OpenAI API key is missing. Please set it in the settings.')
-        }
-
-        if ((await checkAnkiConnect()) === false) {
-            return failure(
-                'AnkiConnect is not running. Please start Anki and ensure AnkiConnect is installed.'
             )
         }
-
-        const audioDir = path.join(app.getPath('userData'), 'audio')
-        const initResult = await ImportService.init(audioDir)
-        if (initResult.status === 'error') {
-            return initResult
+    }
+    public static async handleImportRequest(
+        request: ImportRequest
+    ): Promise<AppResponse<ImportSummary>> {
+        try {
+            const loaded = await this.loadWords(request)
+            if (loaded.status === 'error') return failure(loaded.message)
+            return success(
+                this.lastSummary,
+                this.lastSummary.inserted === 0
+                    ? 'No new words to import.'
+                    : 'Words imported successfully.'
+            )
+        } catch (error) {
+            return failure(error instanceof Error ? error.message : 'Failed to import words')
         }
-
-        const loadedWordsResult = await ImportService.loadWords(importRequest)
-        if (loadedWordsResult.status === 'error') {
-            return loadedWordsResult
-        }
-
-        if (!loadedWordsResult.data) {
-            return failure('Failed to load words from the source.')
-        }
-
-        const { words, notionTargets } = loadedWordsResult.data
-        const notesResult = await ImportService.createNotes(
-            importRequest,
-            words,
-            audioDir,
-            notionTargets
-        )
-        if (notesResult.status === 'error') {
-            return notesResult
-        }
-
-        if (!notesResult.data) {
-            return failure('Failed to create notes.')
-        }
-
-        return DeckService.addNotesToAnki(notesResult.data)
     }
 }

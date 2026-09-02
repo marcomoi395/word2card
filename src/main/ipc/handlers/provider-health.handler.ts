@@ -11,7 +11,9 @@ export function registerProviderHealthHandlers(): void {
             try {
                 return success(await checkProviderHealth())
             } catch (error) {
-                return failure(error instanceof Error ? error.message : 'Failed to check provider health')
+                return failure(
+                    error instanceof Error ? error.message : 'Failed to check provider health'
+                )
             }
         }
     )

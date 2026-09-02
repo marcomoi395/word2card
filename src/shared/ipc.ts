@@ -14,6 +14,8 @@ export const IPC_CHANNELS = {
 
 export type SecretKey =
     | 'openaiApiKey'
+    | 'openaiBaseUrl'
+    | 'openaiModel'
     | 'azureApiKey'
     | 'pexelsToken'
     | 'notionToken'
@@ -57,7 +59,6 @@ export type VocabularyEditableField =
     | 'imageUrl'
     | 'imageProvider'
     | 'audio'
-
 export type VocabularyEdit = Partial<Pick<VocabularyRecord, VocabularyEditableField>>
 
 export interface UpdateVocabularyPayload {
@@ -65,6 +66,7 @@ export interface UpdateVocabularyPayload {
     changes: VocabularyEdit
 }
 
+export type EditVocabularyPayload = UpdateVocabularyPayload
 export interface ImportOptions {
     quiz: boolean
     flashcard: boolean
@@ -123,11 +125,7 @@ export interface SettingsStatus {
 
 export type ProviderName = 'openai' | 'notion' | 'pexels' | 'anki'
 export type ProviderHealthState =
-    | 'checking'
-    | 'connected'
-    | 'not_configured'
-    | 'invalid'
-    | 'unreachable'
+    'checking' | 'connected' | 'not_configured' | 'invalid' | 'unreachable'
 
 export interface ProviderHealthStatus {
     provider: ProviderName
