@@ -276,6 +276,33 @@ describe('validators', () => {
                 }
                 expect(parseImportRequest(input)).toBeNull()
             })
+            it('returns null when token is blank', () => {
+                expect(
+                    parseImportRequest({
+                        type: 'NOTION_SYNC',
+                        payload: {
+                            token: '   ',
+                            notionDatabaseId: 'db-123',
+                            deck: 'NotionDeck',
+                            options: { quiz: false, flashcard: true }
+                        }
+                    })
+                ).toBeNull()
+            })
+
+            it('returns null when notionDatabaseId is blank', () => {
+                expect(
+                    parseImportRequest({
+                        type: 'NOTION_SYNC',
+                        payload: {
+                            token: 'secret_token',
+                            notionDatabaseId: '   ',
+                            deck: 'NotionDeck',
+                            options: { quiz: false, flashcard: true }
+                        }
+                    })
+                ).toBeNull()
+            })
 
             it('returns null when notionDatabaseId is missing', () => {
                 const input = {

@@ -58,7 +58,9 @@ export const parseImportRequest = (value: unknown): ImportRequest | null => {
         const { token, notionDatabaseId, deck, options } = payload
         if (
             typeof token !== 'string' ||
+            !token.trim() ||
             typeof notionDatabaseId !== 'string' ||
+            !notionDatabaseId.trim() ||
             typeof deck !== 'string' ||
             !isImportOptions(options)
         ) {
