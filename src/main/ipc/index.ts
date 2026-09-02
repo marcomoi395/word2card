@@ -3,7 +3,7 @@ import { registerWindowHandlers } from './handlers/window.handler'
 import { registerFileHandlers } from './handlers/file.handler'
 import { registerSettingsHandlers } from './handlers/settings.handler'
 import { registerImportHandlers } from './handlers/import.handler'
-
+import { registerProviderHealthHandlers } from './handlers/provider-health.handler'
 let registered = false
 
 export function registerAllIpcHandlers(_mainWindow: BrowserWindow): void {
@@ -15,5 +15,6 @@ export function registerAllIpcHandlers(_mainWindow: BrowserWindow): void {
     registerWindowHandlers()
     registerFileHandlers()
     registerSettingsHandlers()
+    registerProviderHealthHandlers()
     registerImportHandlers()
 }
