@@ -200,14 +200,12 @@ describe('ImportService', () => {
             expect(result.message).toContain('No cards to add')
         })
 
-        it('creates speech files when Azure key is present', async () => {
+        it('does not create speech files when Azure key is present', async () => {
             vi.mocked(State.getMissingTokens).mockReturnValue([])
             vi.mocked(State.getToken).mockReturnValue('azure-key-123')
             vi.mocked(ankiConnect.checkAnkiConnect).mockResolvedValue(true)
             vi.mocked(readFile.readFileContent).mockResolvedValue(['word1', 'word2'])
             vi.mocked(filterExistingWords.filterExistingWords).mockResolvedValue(['word1', 'word2'])
-
-            vi.mocked(SpeechService.createSpeechFiles).mockResolvedValue(['file1.mp3', 'file2.mp3'])
             vi.mocked(DeckService.createDecksIfNotExist).mockResolvedValue({
                 status: 'success',
                 message: 'Decks created'
@@ -217,7 +215,8 @@ describe('ImportService', () => {
                     deckName: 'TestDeck',
                     modelName: 'Word2Card',
                     fields: { id: '1', word: 'word1', vietnamese: 'từ 1' },
-                    options: { allowDuplicate: false }
+                    options: { allowDuplicate: false },
+                    audio: []
                 }
             ])
             vi.mocked(DeckService.addNotesToAnki).mockResolvedValue({
@@ -235,31 +234,14 @@ describe('ImportService', () => {
             })
 
             expect(result.status).toBe('success')
-            expect(SpeechService.createSpeechFiles).toHaveBeenCalledWith(
+            expect(SpeechService.createSpeechFiles).not.toHaveBeenCalled()
+            expect(createFlashcards.createFlashcards).toHaveBeenCalledWith(
                 ['word1', 'word2'],
-                '/mock/userdata/audio'
+                '/mock/userdata/audio',
+                'TestDeck',
+                false,
+                undefined
             )
-        })
-
-        it('returns failure when audio files fail to create', async () => {
-            vi.mocked(State.getMissingTokens).mockReturnValue([])
-            vi.mocked(State.getToken).mockReturnValue('azure-key-123')
-            vi.mocked(ankiConnect.checkAnkiConnect).mockResolvedValue(true)
-            vi.mocked(readFile.readFileContent).mockResolvedValue(['word1', 'word2'])
-            vi.mocked(filterExistingWords.filterExistingWords).mockResolvedValue(['word1', 'word2'])
-            vi.mocked(SpeechService.createSpeechFiles).mockResolvedValue(['file1.mp3'])
-
-            const result = await ImportService.handleImportRequest({
-                type: 'FILE_IMPORT',
-                payload: {
-                    filePath: '/path/to/file.txt',
-                    deck: 'TestDeck',
-                    options: { flashcard: true, quiz: false }
-                }
-            })
-
-            expect(result.status).toBe('error')
-            expect(result.message).toContain("Some audio files couldn't be created")
         })
     })
 

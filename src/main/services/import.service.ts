@@ -3,8 +3,7 @@ import path from 'path'
 import { checkAnkiConnect } from '../anki-connect'
 import { createFlashcards, type QuizNote } from '../handle'
 import { NotionService } from '../notion'
-import { SpeechService } from '../speech'
-import { getMissingRuntimeSettings, getRuntimeSetting, getRuntimeState } from '../state/runtime'
+import { getMissingRuntimeSettings, getRuntimeState } from '../state/runtime'
 import type { ImportRequest, AppResponse, SecretKey } from '../../shared/ipc'
 import { success, failure } from '../utils/response'
 import { filterExistingWords } from '../helper/filter-existing-words'
@@ -114,13 +113,7 @@ export class ImportService {
         audioDir: string,
         notionTargets?: NotionSyncTarget[]
     ): Promise<AppResponse<QuizNote[]>> {
-        const isAudioEnabled = Boolean(getRuntimeSetting('azureApiKey'))
-        if (isAudioEnabled) {
-            const speechFiles = await SpeechService.createSpeechFiles(words, audioDir)
-            if (speechFiles.length !== words.length) {
-                return failure("Some audio files couldn't be created, please try again.")
-            }
-        }
+        const isAudioEnabled = false
 
         const deckNames =
             importRequest.type === 'NOTION_SYNC' && notionTargets

@@ -443,19 +443,8 @@ function initSettingsForm(): void {
 function initAudioPreview(): void {
     document.querySelectorAll<HTMLButtonElement>('.audio-preview').forEach((button) => {
         button.addEventListener('click', () => {
-            const audioUrl = button.dataset.audioUrl
-            if (audioUrl) {
-                void new Audio(audioUrl).play()
-                return
-            }
-
-            const word = button.dataset.word
-            if ('speechSynthesis' in window && word) {
-                window.speechSynthesis.cancel()
-                const utterance = new SpeechSynthesisUtterance(word)
-                utterance.lang = 'en-US'
-                window.speechSynthesis.speak(utterance)
-            }
+            // Audio is intentionally unavailable; retain the button as a harmless placeholder.
+            button.blur()
         })
     })
 }

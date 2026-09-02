@@ -613,6 +613,13 @@ describe('renderer security boundaries', () => {
         expect(preload).not.toContain('window.api = api')
         expect(preload).not.toContain('else {')
     })
+    it('does not invoke remote or browser speech services', () => {
+        const renderer = readFileSync(resolve(__dirname, '../renderer.ts'), 'utf8')
+
+        expect(renderer).not.toContain('speechSynthesis')
+        expect(renderer).not.toContain('SpeechSynthesisUtterance')
+        expect(renderer).not.toContain('new Audio(')
+    })
 })
 
 describe('renderer CSP', () => {
