@@ -1,11 +1,146 @@
 import type {
     AppResponse,
+    GenerateMissingDataPayload,
     ImportRequest,
     NotionSyncRequest,
-    SaveSettingsPayload
+    ProviderHealthSnapshot,
+    SaveSettingsPayload,
+    SubmitToAnkiPayload,
+    UpdateVocabularyPayload,
+    VocabularyRecord
 } from '../../shared/ipc'
 
 type TabName = 'import' | 'collection' | 'notion' | 'settings'
+
+let vocabularyRecords: VocabularyRecord[] = []
+
+function escapeHtml(value: string | null | undefined): string {
+    return (value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;')
+}
+
+function statusLabel(record: VocabularyRecord): string {
+    if (record.ankiStatus === 'submitted') return 'Submitted'
+    if (record.generationStatus === 'ready') return 'Ready'
+    if (record.generationStatus === 'failed') return 'Generation failed'
+    return 'Needs data'
+}
+
+function recordRow(record: VocabularyRecord, editable: boolean, index: number): string {
+    const fields = ['partOfSpeech', 'cloze', 'vietnamese', 'ipa', 'meaning'] as const
+    const values = fields.map((field) => escapeHtml(record[field]))
+    const editableCells = values
+        .map(
+            (value, fieldIndex) =>
+                `<td class="${editable ? 'editable-cell' : ''}" ${editable ? `contenteditable="true" data-field="${fields[fieldIndex]}" data-id="${record.id}"` : ''}>${value}</td>`
+        )
+        .join('')
+    const image = record.imageUrl
+        ? `<a class="image-link" href="${escapeHtml(record.imageUrl)}" target="_blank" rel="noreferrer"><img src="${escapeHtml(record.imageUrl)}" alt="Preview for ${escapeHtml(record.word)}" /></a>`
+        : '<span aria-label="No image">—</span>'
+    return `<tr data-id="${record.id}"><td class="index-col">${String(index + 1).padStart(2, '0')}</td><td class="word-cell">${escapeHtml(record.word)}</td>${editableCells}<td class="asset-cell">${image}</td><td class="asset-cell"><button class="audio-preview" type="button" data-audio-url="" data-word="${escapeHtml(record.word)}">Play</button></td><td><span class="status-pill ${record.generationStatus === 'ready' ? 'ready' : 'pending'}">${statusLabel(record)}</span></td></tr>`
+}
+
+function renderRecords(): void {
+    const previewBody = document.querySelector('#section-import .data-grid tbody')
+    const collectionBody = document.querySelector('#section-collection .data-grid tbody')
+    const empty = '<tr><td colspan="10" role="status">No vocabulary saved yet. Import words to get started.</td></tr>'
+    if (previewBody) previewBody.innerHTML = vocabularyRecords.length ? vocabularyRecords.map((record, i) => recordRow(record, true, i)).join('') : empty
+    if (collectionBody) collectionBody.innerHTML = vocabularyRecords.length ? vocabularyRecords.map((record, i) => recordRow(record, false, i)).join('') : empty
+    document.querySelectorAll<HTMLElement>('.table-count').forEach((el) => (el.textContent = `${vocabularyRecords.length} words saved`))
+    const stat = document.querySelector<HTMLElement>('.heading-stat strong')
+    if (stat) stat.textContent = String(vocabularyRecords.length)
+    initAudioPreview()
+}
+
+async function loadVocabulary(): Promise<void> {
+    const previewBody = document.querySelector('#section-import .data-grid tbody')
+    if (previewBody) previewBody.innerHTML = '<tr><td colspan="10" role="status" aria-busy="true">Loading vocabulary…</td></tr>'
+    try {
+        const response = await window.api.listVocabulary()
+        if (response.status !== 'success' || !response.data) throw new Error(response.message || 'Failed to load vocabulary')
+        vocabularyRecords = response.data
+        renderRecords()
+    } catch (error) {
+        console.error(error)
+        const message = error instanceof Error ? error.message : 'Failed to load vocabulary'
+        if (previewBody) previewBody.innerHTML = `<tr><td colspan="10" role="alert">${escapeHtml(message)}</td></tr>`
+    }
+}
+
+async function refreshVocabulary(): Promise<void> {
+    await loadVocabulary()
+}
+
+function initVocabularyActions(): void {
+    document.getElementById('btn-generate-data')?.addEventListener('click', async (event) => {
+        const button = event.currentTarget as HTMLButtonElement
+        setButtonLoading(button, true, 'Generating...')
+        try {
+            const response = await window.api.generateMissingData({ recordIds: vocabularyRecords.map((record) => record.id) })
+            showResponseAlert('Generate data', response)
+            if (response.status === 'success') await refreshVocabulary()
+        } catch (error) {
+            console.error(error)
+            alert('An error occurred while generating data.')
+        } finally {
+            setButtonLoading(button, false)
+        }
+    })
+
+    document.getElementById('btn-submit-anki')?.addEventListener('click', async (event) => {
+        const button = event.currentTarget as HTMLButtonElement
+        setButtonLoading(button, true, 'Submitting...')
+        try {
+            const response = await window.api.submitToAnki({ recordIds: vocabularyRecords.map((record) => record.id) })
+            showResponseAlert('Submit to Anki', response)
+            if (response.status === 'success') await refreshVocabulary()
+        } catch (error) {
+            console.error(error)
+            alert('An error occurred while submitting to Anki.')
+        } finally {
+            setButtonLoading(button, false)
+        }
+    })
+
+    document.addEventListener('blur', (event) => {
+        const cell = event.target
+        if (!(cell instanceof HTMLElement) || !cell.classList.contains('editable-cell')) return
+        const id = cell.dataset.id
+        const field = cell.dataset.field
+        const record = vocabularyRecords.find((item) => item.id === id)
+        if (!id || !field || !record || (record as Record<string, unknown>)[field] === cell.innerText) return
+        void window.api.updateVocabulary({ id, changes: { [field]: cell.innerText } }).then(async (response) => {
+            if (response.status !== 'success') throw new Error(response.message)
+            await refreshVocabulary()
+        }).catch(async (error) => {
+            console.error(error)
+            alert(`Failed to save edit: ${error instanceof Error ? error.message : 'Unknown error'}`)
+            await refreshVocabulary()
+        })
+    }, true)
+}
+
+function renderHealth(snapshot: ProviderHealthSnapshot): void {
+    const status = document.querySelector<HTMLElement>('.step-two-status')
+    const list = status?.querySelector('.connection-list')
+    if (!list) return
+    const labels: Record<string, string> = { openai: 'AI', anki: 'AnkiConnect', notion: 'Notion', pexels: 'Pexels' }
+    list.innerHTML = Object.entries(snapshot.providers).map(([key, value]) => `<span class="connection-item"><span class="status-dot"></span>${labels[key] || key}: ${value.state}</span>`).join('')
+}
+
+async function loadHealth(): Promise<void> {
+    try {
+        const response = await window.api.getProviderHealth()
+        if (response.status === 'success' && response.data) renderHealth(response.data)
+    } catch (error) {
+        console.error(error)
+    }
+}
 
 function getInputByName(form: HTMLFormElement, name: string): HTMLInputElement | null {
     const field = form.elements.namedItem(name)
@@ -366,6 +501,7 @@ function initNotionForm(): void {
 
             const result = await window.api.sendImport(notionData)
             showResponseAlert('Import', result)
+            if (result.status === 'success') await refreshVocabulary()
         } catch (error) {
             console.error(error)
             alert('An error occurred during sync.')
@@ -458,6 +594,9 @@ function init(): void {
         initNotionForm()
         initSettingsForm()
         initAudioPreview()
+        initVocabularyActions()
+        void loadVocabulary()
+        void loadHealth()
         switchTab('import')
     })
 }
