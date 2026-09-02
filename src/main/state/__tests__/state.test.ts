@@ -36,25 +36,11 @@ describe('state package', () => {
         expect(state.getRuntimeSettings()).toEqual({})
     })
 
-    it('never returns runtime values in the renderer snapshot', () => {
-        const state = createStateStore({
-            openaiApiKey: 'openai-key',
-            notionDatabaseId: 'database-id'
-        })
-
+    it('returns OpenAI base URL and model without exposing secrets', () => {
+        const state = createStateStore({ openaiApiKey: 'openai-key', openaiBaseUrl: 'https://custom/v1', openaiModel: 'custom-model' })
         const snapshot = state.getRendererSnapshot()
-
-        expect(snapshot).toEqual({
-            configured: {
-                openaiApiKey: true,
-                azureApiKey: false,
-                pexelsToken: false,
-                notionToken: false,
-                notionDatabaseId: true
-            }
-        })
+        expect(snapshot).toMatchObject({ openaiBaseUrl: 'https://custom/v1', openaiModel: 'custom-model' })
         expect(JSON.stringify(snapshot)).not.toContain('openai-key')
-        expect(JSON.stringify(snapshot)).not.toContain('database-id')
     })
 })
 

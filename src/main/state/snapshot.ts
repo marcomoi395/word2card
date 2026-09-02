@@ -12,5 +12,7 @@ const SECRET_KEYS: SecretKey[] = [
 export const createRendererSnapshot = (settings: RuntimeSettings): StateSnapshot => ({
     configured: Object.fromEntries(
         SECRET_KEYS.map((key) => [key, Boolean(settings[key])])
-    ) as Record<SecretKey, boolean>
+    ) as Record<SecretKey, boolean>,
+    ...(settings.openaiBaseUrl ? { openaiBaseUrl: settings.openaiBaseUrl } : {}),
+    ...(settings.openaiModel ? { openaiModel: settings.openaiModel } : {})
 })
