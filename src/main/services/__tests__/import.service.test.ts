@@ -390,6 +390,7 @@ describe('ImportService', () => {
 
             expect(result.status).toBe('success')
             expect(NotionService.getPages).toHaveBeenCalledWith('db-id')
+            expect(NotionService.update).not.toHaveBeenCalled()
             expect(getRuntimeState().updateRuntimeSettings).toHaveBeenCalledWith({
                 notionToken: 'notion-token'
             })
