@@ -1,4 +1,3 @@
-import pLimit from 'p-limit'
 import { v4 as uuidv4 } from 'uuid'
 import {
     createNotionTargetQueueMap,
@@ -6,7 +5,6 @@ import {
     type NotionSyncTarget
 } from './helper/notion-sync'
 import { sanitizeFilename } from './helper/sanitize-filename'
-import { NotionService } from './notion'
 import { OpenAIService } from './open-ai'
 import { searchImagePexels } from './pexels'
 import { getRuntimeSetting } from './state/runtime'
@@ -55,24 +53,7 @@ export const createFlashcards = async (
     notionTargets?: NotionSyncTarget[]
 ): Promise<QuizNote[]> => {
     const dataFromOpenAI = await OpenAIService.generateFlashcardData(words)
-    const notionTargetsByWord = notionTargets
-        ? createNotionTargetQueueMap(notionTargets)
-        : undefined
 
-    if (notionTargetsByWord) {
-        const limit = pLimit(2)
-        await Promise.allSettled(
-            dataFromOpenAI.map((item) => {
-                const target = shiftNotionTarget(notionTargetsByWord, item.word)
-                if (!target) {
-                    console.log(`Not found: ${item.word}`)
-                    return Promise.resolve()
-                }
-
-                return limit(() => NotionService.update(target.pageId, item))
-            })
-        )
-    }
 
     const pexelsToken = getRuntimeSetting('pexelsToken')
     const noteTargetsByWord = notionTargets ? createNotionTargetQueueMap(notionTargets) : undefined
