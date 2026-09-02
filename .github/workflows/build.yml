@@ -144,11 +144,13 @@ jobs:
             - name: Build application
               run: bun run build
             - name: Build Windows installer
+              env:
+                  CSC_IDENTITY_AUTO_DISCOVERY: 'false'
               run: bun x electron-builder --windows nsis --publish never
             - name: Validate Windows artifacts
               shell: bash
               run: |
-                  VERSION=$(node -p "require('./package.json').version")
+                  VERSION=$(bun -e "console.log(require('./package.json').version)")
                   test -f "dist/word2card-${VERSION}-setup.exe"
                   test -f dist/latest.yml
             - name: Generate Windows checksums
