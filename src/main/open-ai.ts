@@ -1,6 +1,6 @@
 import OpenAI from 'openai'
 import { getRuntimeSetting } from './state/runtime'
-
+import { OPENAI_DEFAULT_BASE_URL, OPENAI_DEFAULT_MODEL } from './database'
 export interface FlashcardResponse {
     word: string
     pos: string
@@ -12,32 +12,34 @@ export interface FlashcardResponse {
 
 export class OpenAIService {
     private static instance: OpenAI | null = null
-    private static currentKey: string | null = null
+    private static currentConfig: string | null = null
 
     private constructor() {
         // Prevent direct instantiation
     }
 
     public static getInstance(): OpenAI {
-        const newKey = getRuntimeSetting('openaiApiKey')
-
-        if (!newKey) {
+        const apiKey = getRuntimeSetting('openaiApiKey')
+        const configuredBaseUrl = getRuntimeSetting('openaiBaseUrl')
+        const configuredModel = getRuntimeSetting('openaiModel')
+        const baseURL = configuredBaseUrl?.startsWith('http')
+            ? configuredBaseUrl
+            : OPENAI_DEFAULT_BASE_URL
+        const model = configuredModel && configuredModel !== apiKey ? configuredModel : OPENAI_DEFAULT_MODEL
+        if (!apiKey) {
             throw new Error('Missing OpenAI API key in state')
         }
 
-        if (!OpenAIService.instance || OpenAIService.currentKey !== newKey) {
-            OpenAIService.instance = new OpenAI({
-                apiKey: newKey
-            })
-
-            OpenAIService.currentKey = newKey
+        const configKey = `${apiKey}\u0000${baseURL}\u0000${model}`
+        if (!OpenAIService.instance || OpenAIService.currentConfig !== configKey) {
+            OpenAIService.instance = new OpenAI({ apiKey, baseURL })
+            OpenAIService.currentConfig = configKey
         }
-
         return OpenAIService.instance
     }
 
     public static async generateFlashcardData(words: string[]) {
-        const MODEL_NAME = 'gpt-5-nano'
+        const model = getRuntimeSetting('openaiModel') || OPENAI_DEFAULT_MODEL
         const systemPrompt = `
             You are a high-performance dictionary data generator specialized in creating English learning flashcards.
             Your task is to generate accurate, concise flashcard data for a list of English words.
@@ -95,7 +97,7 @@ export class OpenAIService {
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: userPrompt }
             ],
-            model: MODEL_NAME,
+            model,
             reasoning_effort: 'minimal',
             response_format: { type: 'json_object' }
         })

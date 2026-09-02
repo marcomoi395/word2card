@@ -31,9 +31,9 @@ export interface VocabularyUpdate {
     ipa?: string | null
     meaning?: string | null
     imageUrl?: string | null
-    imageProvider?: string | null
     audio?: string | null
-    generationStatus?: GenerationStatus
+    ankiStatus?: AnkiStatus
+    ankiError?: string | null
     generationError?: string | null
     ankiStatus?: AnkiStatus
     ankiError?: string | null

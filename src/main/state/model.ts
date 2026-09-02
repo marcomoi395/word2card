@@ -1,6 +1,9 @@
 import type { SecretKey } from '../../shared/ipc'
 
-export type RuntimeSettings = Partial<Record<SecretKey, string>>
+export interface RuntimeSettings extends Partial<Record<SecretKey, string>> {
+    openaiBaseUrl?: string
+    openaiModel?: string
+}
 
 export interface StateSnapshot {
     configured: Record<SecretKey, boolean>
