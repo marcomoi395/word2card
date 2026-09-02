@@ -5,7 +5,7 @@ import type {
     SaveSettingsPayload
 } from '../../shared/ipc'
 
-type TabName = 'import' | 'notion' | 'settings'
+type TabName = 'import' | 'collection' | 'notion' | 'settings'
 
 function getInputByName(form: HTMLFormElement, name: string): HTMLInputElement | null {
     const field = form.elements.namedItem(name)
@@ -45,15 +45,18 @@ function showResponseAlert(actionLabel: string, response: AppResponse | undefine
 
 function switchTab(tabName: TabName): void {
     const importSection = document.getElementById('section-import')
+    const collectionSection = document.getElementById('section-collection')
     const notionSection = document.getElementById('section-notion')
     const settingsSection = document.getElementById('section-settings')
 
-    ;[importSection, notionSection, settingsSection].forEach((section) => {
+    ;[importSection, collectionSection, notionSection, settingsSection].forEach((section) => {
         section?.classList.remove('active-section')
     })
 
     if (tabName === 'import') {
         importSection?.classList.add('active-section')
+    } else if (tabName === 'collection') {
+        collectionSection?.classList.add('active-section')
     } else if (tabName === 'notion') {
         notionSection?.classList.add('active-section')
     } else {
@@ -61,17 +64,30 @@ function switchTab(tabName: TabName): void {
     }
 
     const btnImport = document.getElementById('tab-import-btn')
+    const btnCollection = document.getElementById('tab-collection-btn')
     const btnNotion = document.getElementById('tab-notion-btn')
     const btnSettings = document.getElementById('tab-settings-btn')
+    const sourceFileBtn = document.getElementById('source-file-btn')
+    const sourceNotionBtn = document.getElementById('tab-notion-btn')
 
-    ;[btnImport, btnNotion, btnSettings].forEach((button) => {
-        button?.classList.remove('active-btn')
+    ;[btnImport, btnCollection, btnNotion, btnSettings, sourceFileBtn, sourceNotionBtn].forEach(
+        (button) => {
+            button?.classList.remove('active-btn')
+        }
+    )
+
+    ;[sourceFileBtn, sourceNotionBtn].forEach((button) => {
+        button?.classList.remove('active-source')
     })
 
     if (tabName === 'import') {
         btnImport?.classList.add('active-btn')
+        sourceFileBtn?.classList.add('active-source')
+    } else if (tabName === 'collection') {
+        btnCollection?.classList.add('active-btn')
     } else if (tabName === 'notion') {
         btnNotion?.classList.add('active-btn')
+        sourceNotionBtn?.classList.add('active-source')
     } else {
         btnSettings?.classList.add('active-btn')
     }
@@ -79,7 +95,30 @@ function switchTab(tabName: TabName): void {
     const mascot = document.getElementById('bg-mascot')
     mascot?.classList.remove('bg-import', 'bg-notion', 'bg-settings')
 
-    if (tabName === 'import') {
+    const pageEyebrow = document.querySelector<HTMLElement>('.page-heading .eyebrow')
+    const pageTitle = document.querySelector<HTMLElement>('.page-heading h1')
+    const pageCopy = document.querySelector<HTMLElement>('.page-heading .heading-copy')
+    const pageStat = document.querySelector<HTMLElement>('.heading-stat strong')
+    const pageStatLabel = document.querySelector<HTMLElement>('.heading-stat span:last-child')
+
+    if (tabName === 'collection') {
+        if (pageEyebrow) pageEyebrow.textContent = 'WORD LIBRARY'
+        if (pageTitle) pageTitle.textContent = 'Collection.'
+        if (pageCopy)
+            pageCopy.textContent = 'Browse and review the words collected from your sources.'
+        if (pageStat) pageStat.textContent = '4'
+        if (pageStatLabel) pageStatLabel.textContent = 'words saved'
+    } else if (tabName === 'import') {
+        if (pageEyebrow) pageEyebrow.textContent = 'IMPORT CENTER'
+        if (pageTitle) pageTitle.textContent = 'Turn words into cards.'
+        if (pageCopy)
+            pageCopy.textContent =
+                'Choose a source, set your destination, and review the vocabulary before creating your deck.'
+        if (pageStat) pageStat.textContent = '0'
+        if (pageStatLabel) pageStatLabel.textContent = 'words ready'
+    }
+
+    if (tabName === 'import' || tabName === 'collection') {
         mascot?.classList.add('bg-import')
     } else if (tabName === 'notion') {
         mascot?.classList.add('bg-notion')
@@ -88,12 +127,33 @@ function switchTab(tabName: TabName): void {
     }
 }
 
+function selectImportSource(source: 'file' | 'notion'): void {
+    const fileFields = document.getElementById('source-file-fields')
+    const notionFields = document.getElementById('source-notion-fields')
+    const fileButton = document.getElementById('source-file-btn')
+    const notionButton = document.getElementById('tab-notion-btn')
+    const notionSection = document.getElementById('section-notion')
+
+    fileFields?.classList.toggle('source-fields-hidden', source !== 'file')
+    notionFields?.classList.toggle('source-fields-hidden', source !== 'notion')
+    fileButton?.classList.toggle('active-source', source === 'file')
+    notionButton?.classList.toggle('active-source', source === 'notion')
+
+    // Keep the legacy section state for existing navigation integrations.
+    notionSection?.classList.toggle('active-section', source === 'notion')
+}
+
 function initWindowControls(): void {
     const minimizeBtn = document.getElementById('minimize-btn') as HTMLButtonElement | null
     const closeBtn = document.getElementById('close-btn') as HTMLButtonElement | null
     const settingsBtn = document.getElementById('tab-settings-btn') as HTMLButtonElement | null
     const importBtn = document.getElementById('tab-import-btn') as HTMLButtonElement | null
+    const collectionBtn = document.getElementById('tab-collection-btn') as HTMLButtonElement | null
     const notionBtn = document.getElementById('tab-notion-btn') as HTMLButtonElement | null
+    const sourceFileBtn = document.getElementById('source-file-btn') as HTMLButtonElement | null
+    const notionSourceFileBtn = document.getElementById(
+        'source-file-btn-notion'
+    ) as HTMLButtonElement | null
 
     minimizeBtn?.addEventListener('click', () => {
         window.api.minimize()
@@ -111,8 +171,24 @@ function initWindowControls(): void {
         switchTab('import')
     })
 
+    collectionBtn?.addEventListener('click', () => {
+        switchTab('collection')
+    })
+
+    document.getElementById('btn-open-import')?.addEventListener('click', () => {
+        switchTab('import')
+    })
+
     notionBtn?.addEventListener('click', () => {
-        switchTab('notion')
+        selectImportSource('notion')
+    })
+
+    sourceFileBtn?.addEventListener('click', () => {
+        selectImportSource('file')
+    })
+
+    notionSourceFileBtn?.addEventListener('click', () => {
+        selectImportSource('file')
     })
 
     if (window.api.platform === 'linux' && minimizeBtn) {
@@ -364,6 +440,26 @@ function initSettingsForm(): void {
     })
 }
 
+function initAudioPreview(): void {
+    document.querySelectorAll<HTMLButtonElement>('.audio-preview').forEach((button) => {
+        button.addEventListener('click', () => {
+            const audioUrl = button.dataset.audioUrl
+            if (audioUrl) {
+                void new Audio(audioUrl).play()
+                return
+            }
+
+            const word = button.dataset.word
+            if ('speechSynthesis' in window && word) {
+                window.speechSynthesis.cancel()
+                const utterance = new SpeechSynthesisUtterance(word)
+                utterance.lang = 'en-US'
+                window.speechSynthesis.speak(utterance)
+            }
+        })
+    })
+}
+
 function init(): void {
     window.addEventListener('DOMContentLoaded', () => {
         initWindowControls()
@@ -372,6 +468,7 @@ function init(): void {
         initImportForm()
         initNotionForm()
         initSettingsForm()
+        initAudioPreview()
         switchTab('import')
     })
 }
