@@ -178,7 +178,7 @@ function renderHealth(snapshot: ProviderHealthSnapshot): void {
     list.innerHTML = Object.entries(snapshot.providers)
         .map(
             ([key, value]) =>
-                `<span class="connection-item"><span class="status-dot"></span>${labels[key] || key}: ${value.state}</span>`
+                `<span class="connection-item" data-provider="${key}"><span class="status-dot"></span>${labels[key] || key}: ${value.state}</span>`
         )
         .join('')
 }
@@ -190,6 +190,18 @@ async function loadHealth(): Promise<void> {
     } catch (error) {
         logger.error('provider_health_load_failed', {
             error: error instanceof Error ? error : new Error('Unknown provider health load failure')
+        })
+    }
+}
+async function refreshAnkiHealth(): Promise<void> {
+    try {
+        const response = await window.api.getAnkiHealth()
+        const anki = response.status === 'success' ? response.data : undefined
+        const item = document.querySelector<HTMLElement>('.connection-item[data-provider="anki"]')
+        if (item && anki) item.innerHTML = `<span class="status-dot"></span>AnkiConnect: ${anki.state}`
+    } catch (error) {
+        logger.error('anki_health_load_failed', {
+            error: error instanceof Error ? error : new Error('Unknown Anki health load failure')
         })
     }
 }
@@ -631,6 +643,8 @@ function initSettingsForm(): void {
             // Only show alert on error; success feedback is provided by button state
             if (result.status !== 'success') {
                 alert(`Failed to save settings: ${result.message}`)
+            } else {
+                await loadHealth()
             }
         } catch (error) {
             logger.error('settings_save_failed', {
@@ -662,9 +676,9 @@ function init(): void {
         initSettingsForm()
         initAudioPreview()
         initVocabularyActions()
-        void loadVocabulary()
         void loadHealth()
-        switchTab('import')
+        void refreshAnkiHealth()
+        window.setInterval(() => void refreshAnkiHealth(), 10_000)
     })
 }
 
