@@ -604,24 +604,13 @@ function initImportForm(): void {
 
         const sourceFileInput = document.getElementById('source-file') as HTMLInputElement | null
         const deckInput = getInputByName(form, 'deck')
-        const quizCheckbox = document.getElementById('chk-quiz-import') as HTMLInputElement | null
-        const flashcardCheckbox = document.getElementById(
-            'chk-flashcard-import'
-        ) as HTMLInputElement | null
 
         const sourceFile = sourceFileInput?.value.trim() || ''
         const deck = deckInput?.value.trim() || ''
-        const isQuiz = Boolean(quizCheckbox?.checked)
-        const isFlashcard = Boolean(flashcardCheckbox?.checked)
 
         if (!sourceFile) {
             alert('Please provide a source file path.')
             sourceFileInput?.focus()
-            return
-        }
-
-        if (!isQuiz && !isFlashcard) {
-            alert('Please select at least one import option (Quiz or Flashcard).')
             return
         }
 
@@ -634,8 +623,8 @@ function initImportForm(): void {
                     filePath: sourceFile,
                     deck,
                     options: {
-                        quiz: isQuiz,
-                        flashcard: isFlashcard
+                        quiz: false,
+                        flashcard: true
                     }
                 }
             }
@@ -678,16 +667,10 @@ function initNotionForm(): void {
             'notion-database-id'
         ) as HTMLInputElement | null
         const deckInput = getInputByName(form, 'deck')
-        const quizCheckbox = document.getElementById('chk-quiz-notion') as HTMLInputElement | null
-        const flashcardCheckbox = document.getElementById(
-            'chk-flashcard-notion'
-        ) as HTMLInputElement | null
 
         const notionToken = notionTokenInput?.value.trim() || ''
         const notionDatabaseId = notionDatabaseIdInput?.value.trim() || ''
         const deck = deckInput?.value.trim() || ''
-        const isQuiz = Boolean(quizCheckbox?.checked)
-        const isFlashcard = Boolean(flashcardCheckbox?.checked)
 
         if (!notionToken) {
             alert('Please provide a Notion token.')
@@ -701,11 +684,6 @@ function initNotionForm(): void {
             return
         }
 
-        if (!isQuiz && !isFlashcard) {
-            alert('Please select at least one import option (Quiz or Flashcard).')
-            return
-        }
-
         setButtonLoading(submitButton, true, 'Syncing...')
 
         try {
@@ -716,8 +694,8 @@ function initNotionForm(): void {
                     notionDatabaseId,
                     deck,
                     options: {
-                        quiz: isQuiz,
-                        flashcard: isFlashcard
+                        quiz: false,
+                        flashcard: true
                     }
                 }
             }

@@ -398,11 +398,9 @@ describe('Renderer UI', () => {
             const form = document.getElementById('form-import') as HTMLFormElement
             const fileInput = document.getElementById('source-file') as HTMLInputElement
             const deckInput = form.elements.namedItem('deck') as HTMLInputElement
-            const quizCheckbox = document.getElementById('chk-quiz-import') as HTMLInputElement
 
             fileInput.value = '/path/to/file.txt'
             deckInput.value = 'TestDeck'
-            quizCheckbox.checked = true
 
             vi.mocked(window.api.sendImport).mockResolvedValue({
                 status: 'success',
@@ -421,8 +419,8 @@ describe('Renderer UI', () => {
                     filePath: '/path/to/file.txt',
                     deck: 'TestDeck',
                     options: {
-                        quiz: true,
-                        flashcard: false
+                        quiz: false,
+                        flashcard: true
                     }
                 }
             })
@@ -444,19 +442,13 @@ describe('Renderer UI', () => {
             expect(window.alert).toHaveBeenCalledWith(expect.stringContaining('source file'))
         })
 
-        it('does not call sendImport when both options are unchecked', async () => {
+        it('uses flashcard format without a format selection', async () => {
             const form = document.getElementById('form-import') as HTMLFormElement
             const fileInput = document.getElementById('source-file') as HTMLInputElement
             const deckInput = form.elements.namedItem('deck') as HTMLInputElement
-            const quizCheckbox = document.getElementById('chk-quiz-import') as HTMLInputElement
-            const flashcardCheckbox = document.getElementById(
-                'chk-flashcard-import'
-            ) as HTMLInputElement
 
             fileInput.value = '/path/to/file.txt'
             deckInput.value = 'TestDeck'
-            quizCheckbox.checked = false
-            flashcardCheckbox.checked = false
 
             form.dispatchEvent(new Event('submit'))
 
@@ -464,19 +456,24 @@ describe('Renderer UI', () => {
             setTimeout(res, 0)
             await promise
 
-            expect(window.api.sendImport).not.toHaveBeenCalled()
-            expect(window.alert).toHaveBeenCalledWith(
-                expect.stringContaining('Please select at least one import option')
-            )
+            expect(window.api.sendImport).toHaveBeenCalledWith({
+                type: 'FILE_IMPORT',
+                payload: {
+                    filePath: '/path/to/file.txt',
+                    deck: 'TestDeck',
+                    options: {
+                        quiz: false,
+                        flashcard: true
+                    }
+                }
+            })
         })
 
         it('shows error alert when sendImport throws error', async () => {
             const form = document.getElementById('form-import') as HTMLFormElement
             const fileInput = document.getElementById('source-file') as HTMLInputElement
-            const quizCheckbox = document.getElementById('chk-quiz-import') as HTMLInputElement
 
             fileInput.value = '/path/to/file.txt'
-            quizCheckbox.checked = true
 
             vi.mocked(window.api.sendImport).mockRejectedValue(new Error('Network error'))
             const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
@@ -501,14 +498,10 @@ describe('Renderer UI', () => {
             const tokenInput = document.getElementById('notion-token') as HTMLInputElement
             const dbInput = document.getElementById('notion-database-id') as HTMLInputElement
             const deckInput = form.elements.namedItem('deck') as HTMLInputElement
-            const flashcardCheckbox = document.getElementById(
-                'chk-flashcard-notion'
-            ) as HTMLInputElement
 
             tokenInput.value = 'notion-token-123'
             dbInput.value = 'db-id-456'
             deckInput.value = 'NotionDeck'
-            flashcardCheckbox.checked = true
 
             vi.mocked(window.api.sendImport).mockResolvedValue({
                 status: 'success',
@@ -571,19 +564,13 @@ describe('Renderer UI', () => {
             expect(window.alert).toHaveBeenCalledWith(expect.stringContaining('database ID'))
         })
 
-        it('does not call sendImport when both options are unchecked', async () => {
+        it('uses flashcard format without a format selection', async () => {
             const form = document.getElementById('form-notion') as HTMLFormElement
             const tokenInput = document.getElementById('notion-token') as HTMLInputElement
             const dbInput = document.getElementById('notion-database-id') as HTMLInputElement
-            const quizCheckbox = document.getElementById('chk-quiz-notion') as HTMLInputElement
-            const flashcardCheckbox = document.getElementById(
-                'chk-flashcard-notion'
-            ) as HTMLInputElement
 
             tokenInput.value = 'token'
             dbInput.value = 'db-id'
-            quizCheckbox.checked = false
-            flashcardCheckbox.checked = false
 
             form.dispatchEvent(new Event('submit'))
 
@@ -591,23 +578,27 @@ describe('Renderer UI', () => {
             setTimeout(res, 0)
             await promise
 
-            expect(window.api.sendImport).not.toHaveBeenCalled()
-            expect(window.alert).toHaveBeenCalledWith(
-                expect.stringContaining('Please select at least one import option')
-            )
+            expect(window.api.sendImport).toHaveBeenCalledWith({
+                type: 'NOTION_SYNC',
+                payload: {
+                    token: 'token',
+                    notionDatabaseId: 'db-id',
+                    deck: '',
+                    options: {
+                        quiz: false,
+                        flashcard: true
+                    }
+                }
+            })
         })
 
         it('shows error alert when sendImport throws error', async () => {
             const form = document.getElementById('form-notion') as HTMLFormElement
             const tokenInput = document.getElementById('notion-token') as HTMLInputElement
             const dbInput = document.getElementById('notion-database-id') as HTMLInputElement
-            const flashcardCheckbox = document.getElementById(
-                'chk-flashcard-notion'
-            ) as HTMLInputElement
 
             tokenInput.value = 'token'
             dbInput.value = 'db-id'
-            flashcardCheckbox.checked = true
 
             vi.mocked(window.api.sendImport).mockRejectedValue(new Error('Network error'))
             const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})

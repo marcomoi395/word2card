@@ -43,13 +43,6 @@ export async function resetAppState(window: Page): Promise<void> {
     const deckInput = window.locator('#section-import input[name="deck"]')
     if ((await deckInput.count()) > 0) await deckInput.fill('')
 
-    for (const selector of ['#chk-flashcard-import', '#chk-quiz-import']) {
-        const checkbox = window.locator(selector)
-        if ((await checkbox.count()) > 0 && (await checkbox.isChecked())) {
-            await checkbox.uncheck()
-        }
-    }
-
     await window.click('#tab-settings-btn')
     await window.waitForSelector('#section-settings', { state: 'visible' })
 
