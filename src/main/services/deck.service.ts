@@ -102,7 +102,7 @@ export class DeckService {
         }
     }
 
-    public static async addNotesToAnki(notes: QuizNote[]): Promise<AppResponse> {
+    public static async addNotesToAnki(notes: QuizNote[]): Promise<AppResponse<(number | null)[]>> {
         const modelResult = await DeckService.ensureModelExists()
         if (modelResult.status === 'error') {
             return modelResult
@@ -125,7 +125,14 @@ export class DeckService {
                 return failure(`Anki error: ${response.error}`)
             }
 
-            return success()
+            if (
+                !Array.isArray(response.result) ||
+                response.result.length !== notes.length ||
+                response.result.some((id) => id !== null && typeof id !== 'number')
+            ) {
+                return failure('Invalid response from AnkiConnect while adding notes')
+            }
+            return success(response.result as (number | null)[])
         } catch (error) {
             /* v8 ignore start */
             logger.error('anki_notes_add_failed', { count: notes.length, error })

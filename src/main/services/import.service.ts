@@ -56,8 +56,10 @@ const createDraftRecords = (words: string[], source: 'file' | 'notion'): ImportD
     })
 }
 
-export function setImportDatabase(_repositories?: DatabaseRepositories): void {
-    void _repositories
+let importDatabase: DatabaseRepositories | undefined
+
+export function setImportDatabase(repositories?: DatabaseRepositories): void {
+    importDatabase = repositories
 }
 
 export class ImportService {
@@ -75,8 +77,20 @@ export class ImportService {
             if (raw === null) {
                 return failure('Failed to read words from the source.')
             }
-            const records = createDraftRecords(raw, 'file')
-            this.lastSummary = { inserted: records.length, skipped: 0, failed: 0, records }
+            const nonEmptyWords = raw.filter((word) => word.trim()).length
+            const drafts = createDraftRecords(raw, 'file')
+            const existingWords = new Set(
+                importDatabase?.vocabulary.list().map((record) => record.normalizedWord) ?? []
+            )
+            const records = drafts.filter(
+                (record) => !existingWords.has(record.word.toLocaleLowerCase())
+            )
+            this.lastSummary = {
+                inserted: records.length,
+                skipped: nonEmptyWords - records.length,
+                failed: 0,
+                records
+            }
             return success({ words: records.map((record) => record.word), records })
         }
         try {
@@ -97,11 +111,23 @@ export class ImportService {
                     deckName: resolveNotionDeckName(request.payload.deck, source.dataSourceName)
                 }))
             )
-            const records = createDraftRecords(
+            const sourceWords = targets.filter((target) => target.word.trim()).length
+            const drafts = createDraftRecords(
                 targets.map((target) => target.word),
                 'notion'
             )
-            this.lastSummary = { inserted: records.length, skipped: 0, failed: 0, records }
+            const existingWords = new Set(
+                importDatabase?.vocabulary.list().map((record) => record.normalizedWord) ?? []
+            )
+            const records = drafts.filter(
+                (record) => !existingWords.has(record.word.toLocaleLowerCase())
+            )
+            this.lastSummary = {
+                inserted: records.length,
+                skipped: sourceWords - records.length,
+                failed: 0,
+                records
+            }
             return success({
                 words: records.map((record) => record.word),
                 records,

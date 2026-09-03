@@ -4,10 +4,7 @@ import type { QuizNote } from '../handle'
 import { normalizeIpa } from '../handle'
 import type { AnkiSubmissionSummary, AppResponse } from '../../shared/ipc'
 import { DeckService } from './deck.service'
-import { failure, success } from '../utils/response'
-import { createLogger } from '../../shared/logger'
-
-const logger = createLogger('main.anki')
+import { success } from '../utils/response'
 const REQUIRED_FIELDS: (keyof VocabularyRecord)[] = ['word', 'partOfSpeech', 'vietnamese']
 const missingFields = (record: VocabularyRecord): string[] =>
     REQUIRED_FIELDS.filter((field) => {
@@ -36,16 +33,43 @@ export class AnkiService {
         repositories: DatabaseRepositories,
         records: ImportDraftRecord[]
     ): Promise<AppResponse<AnkiSubmissionSummary>> {
+        let duplicates = 0
         const persisted = repositories.transaction(() =>
-            records
-                .map((record) => repositories.vocabulary.create(record))
-                .map((result) => result.record)
-                .filter((record): record is VocabularyRecord => record !== null)
+            records.flatMap((record) => {
+                const result = repositories.vocabulary.create(record)
+                if (result.inserted && result.record) {
+                    return [result.record]
+                }
+                const existing = repositories.vocabulary
+                    .list()
+                    .find((item) => item.normalizedWord === record.word.trim().toLocaleLowerCase())
+                if (existing?.ankiStatus === 'failed') {
+                    return [existing]
+                }
+                duplicates++
+                return []
+            })
         )
-        return this.submitPersistedCards(
+        if (persisted.length === 0) {
+            return success({
+                processed: duplicates,
+                submitted: 0,
+                duplicates,
+                failed: 0
+            })
+        }
+        const response = await this.submitPersistedCards(
             repositories,
             persisted.map((record) => record.id)
         )
+        if (response.status === 'error') {
+            return response
+        }
+        return success({
+            ...response.data!,
+            processed: response.data!.processed + duplicates,
+            duplicates: response.data!.duplicates + duplicates
+        })
     }
 
     public static async submitPersistedCards(
@@ -60,6 +84,7 @@ export class AnkiService {
         const summary: AnkiSubmissionSummary = {
             processed: records.length,
             submitted: 0,
+            duplicates: 0,
             failed: 0
         }
         const valid: VocabularyRecord[] = []
@@ -70,35 +95,38 @@ export class AnkiService {
                     ankiStatus: 'failed',
                     ankiError: `Missing required fields: ${missing.join(', ')}`
                 })
-                logger.warn('anki_card_validation_failed', {
-                    id: record.id,
-                    missingFieldCount: missing.length
-                })
                 summary.failed++
             } else {
                 valid.push(record)
             }
         }
         if (!valid.length) {
-            if (summary.failed) {
-                logger.warn('anki_submission_validation_failed', { failedCount: summary.failed })
-            }
-            return summary.failed
-                ? failure(`No cards submitted. ${summary.failed} card(s) failed validation.`)
-                : success(summary)
+            return success(summary)
         }
         const result = await DeckService.addNotesToAnki(valid.map(toNote))
         if (result.status === 'error') {
-            logger.error('anki_submission_rejected', {
-                error: new Error(result.message),
-                recordCount: valid.length
-            })
-            return failure(result.message)
+            for (const record of valid) {
+                repositories.vocabulary.update(record.id, {
+                    ankiStatus: 'failed',
+                    ankiError: result.message
+                })
+            }
+            summary.failed += valid.length
+            return success(summary, result.message)
         }
-        for (const record of valid) {
+        const noteResults = result.data ?? valid.map(() => 1)
+        valid.forEach((record, index) => {
+            if (noteResults[index] === null) {
+                repositories.vocabulary.update(record.id, {
+                    ankiStatus: 'failed',
+                    ankiError: 'Duplicate card in Anki'
+                })
+                summary.duplicates++
+                return
+            }
             repositories.vocabulary.update(record.id, { ankiStatus: 'submitted', ankiError: null })
             summary.submitted++
-        }
+        })
         return success(summary)
     }
 }

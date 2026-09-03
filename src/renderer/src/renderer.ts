@@ -248,7 +248,7 @@ function initVocabularyActions(): void {
         try {
             const response = await window.api.submitToAnki({ records: importDraftRecords })
             showResponseAlert('Submit to Anki', response)
-            if (response.status === 'success') {
+            if (response.status === 'success' && response.data && response.data.failed === 0) {
                 importDraftRecords = []
                 await refreshVocabulary()
                 renderRecords()
@@ -371,10 +371,23 @@ function setButtonLoading(
 }
 
 function showResponseAlert(actionLabel: string, response: AppResponse<unknown> | undefined): void {
-    // Only show alerts for errors; success feedback comes from button state
-    if (response?.status !== 'success') {
-        alert(`${actionLabel} failed: ${response?.message || 'Unknown error.'}`)
+    if (response?.status === 'success') {
+        const data = response.data
+        if (
+            data &&
+            typeof data === 'object' &&
+            'submitted' in data &&
+            'duplicates' in data &&
+            'failed' in data
+        ) {
+            const summary = data as { submitted: number; duplicates: number; failed: number }
+            alert(
+                `${actionLabel}: ${summary.submitted} added, ${summary.duplicates} duplicate(s), ${summary.failed} failed.`
+            )
+        }
+        return
     }
+    alert(`${actionLabel} failed: ${response?.message || 'Unknown error.'}`)
 }
 
 function switchTab(tabName: TabName): void {

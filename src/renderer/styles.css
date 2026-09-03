@@ -1226,6 +1226,10 @@ body {
     background: #f05d5e;
     color: #fff8dc;
 }
+.generate-btn span {
+    display: inline;
+    margin-top: 0;
+}
 .editable-cell {
     min-width: 170px;
     white-space: normal !important;

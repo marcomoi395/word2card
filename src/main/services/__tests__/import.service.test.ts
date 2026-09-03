@@ -22,8 +22,9 @@ describe('ImportService', () => {
         vi.mocked(checkAnkiConnect).mockResolvedValue(false)
     })
 
-    it('returns unique draft words without persisting or calling providers', async () => {
-        vi.mocked(readFileContent).mockResolvedValue([' Hello ', 'hello', 'world'])
+    it('filters words already stored in the database and reports skipped count', async () => {
+        database.vocabulary.create({ word: 'Hello' })
+        vi.mocked(readFileContent).mockResolvedValue([' Hello ', 'world'])
         const result = await ImportService.handleImportRequest({
             type: 'FILE_IMPORT',
             payload: {
@@ -34,11 +35,9 @@ describe('ImportService', () => {
         })
         expect(result).toMatchObject({
             status: 'success',
-            data: { inserted: 2, skipped: 0, failed: 0, records: expect.any(Array) }
+            data: { inserted: 1, skipped: 1, failed: 0 }
         })
-        expect(result.status === 'success' ? result.data?.records : []).toHaveLength(2)
-        expect(database.vocabulary.list()).toHaveLength(0)
-        expect(checkAnkiConnect).not.toHaveBeenCalled()
+        expect(result.status === 'success' ? result.data?.records?.[0].word : null).toBe('world')
     })
 
     it('loads words into pending draft records when providers are unavailable', async () => {

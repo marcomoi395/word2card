@@ -1,4 +1,5 @@
 import type { BrowserWindow } from 'electron'
+import { setImportDatabase } from '../services/import.service'
 import { createLogger } from '../../shared/logger'
 import { registerWindowHandlers } from './handlers/window.handler'
 import { registerFileHandlers } from './handlers/file.handler'
@@ -20,6 +21,7 @@ export function registerAllIpcHandlers(
     registerFileHandlers()
     registerSettingsHandlers()
     registerProviderHealthHandlers()
+    setImportDatabase(database)
     registerImportHandlers()
     registerCollectionHandlers(database)
     registerGenerationHandlers(database)

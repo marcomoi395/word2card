@@ -46,7 +46,7 @@ describe('AnkiService', () => {
     it('validates required fields and persists failed status without submitting', async () => {
         const repositories = db([record({ vietnamese: null })])
         const result = await AnkiService.submitPersistedCards(repositories)
-        expect(result).toEqual({ status: 'error', message: expect.stringContaining('validation') })
+        expect(result).toMatchObject({ status: 'success', data: { failed: 1, duplicates: 0 } })
         expect(repositories.vocabulary.update).toHaveBeenCalledWith(
             'id-1',
             expect.objectContaining({
@@ -60,9 +60,9 @@ describe('AnkiService', () => {
         vi.mocked(DeckService.addNotesToAnki).mockResolvedValue({ status: 'success' })
         const repositories = db([record()])
         const result = await AnkiService.submitPersistedCards(repositories)
-        expect(result).toEqual({
+        expect(result).toMatchObject({
             status: 'success',
-            data: { processed: 1, submitted: 1, failed: 0 }
+            data: { processed: 1, submitted: 1, duplicates: 0, failed: 0 }
         })
         expect(repositories.vocabulary.update).toHaveBeenCalledWith('id-1', {
             ankiStatus: 'submitted',
@@ -76,7 +76,50 @@ describe('AnkiService', () => {
         })
         const repositories = db([record()])
         const result = await AnkiService.submitPersistedCards(repositories)
-        expect(result).toEqual({ status: 'error', message: 'offline' })
-        expect(repositories.vocabulary.update).not.toHaveBeenCalled()
+        expect(result).toMatchObject({
+            status: 'success',
+            message: 'offline',
+            data: { processed: 1, submitted: 0, duplicates: 0, failed: 1 }
+        })
+    })
+    it('counts drafts already in the database as duplicates', async () => {
+        const repositories = db([])
+        const draft = {
+            id: 'draft-1',
+            word: 'hello',
+            source: 'file' as const,
+            sourceReference: null,
+            partOfSpeech: 'noun',
+            cloze: null,
+            example: null,
+            vietnamese: 'xin chào',
+            ipa: null,
+            meaning: null,
+            imageUrl: null,
+            imageProvider: null,
+            audio: null,
+            generationStatus: 'ready' as const,
+            generationError: null
+        }
+        vi.mocked(repositories.transaction).mockImplementation((callback) => callback())
+        vi.mocked(repositories.vocabulary.create).mockReturnValue({ inserted: false, record: null })
+        const result = await AnkiService.submitDraftCards(repositories, [draft])
+        expect(result).toMatchObject({
+            data: { processed: 1, submitted: 0, duplicates: 1, failed: 0 }
+        })
+        expect(DeckService.addNotesToAnki).not.toHaveBeenCalled()
+    })
+
+    it('counts null Anki note IDs as duplicates', async () => {
+        vi.mocked(DeckService.addNotesToAnki).mockResolvedValue({
+            status: 'success',
+            data: [null]
+        })
+        const repositories = db([record()])
+        const result = await AnkiService.submitPersistedCards(repositories)
+        expect(result).toMatchObject({
+            status: 'success',
+            data: { processed: 1, submitted: 0, duplicates: 1, failed: 0 }
+        })
     })
 })

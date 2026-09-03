@@ -199,13 +199,10 @@ export interface GenerationSummary {
     failed: number
 }
 
-export interface SubmitToAnkiPayload {
-    recordIds?: string[]
-}
-
 export interface AnkiSubmissionSummary {
     processed: number
     submitted: number
+    duplicates: number
     failed: number
 }
 
