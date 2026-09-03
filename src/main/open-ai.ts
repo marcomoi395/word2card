@@ -8,7 +8,6 @@ export interface FlashcardResponse {
     vietnamese: string
     ipa?: string
     example?: string
-    audio_word?: string
 }
 
 export class OpenAIService {
