@@ -98,10 +98,46 @@ export interface NotionSyncRequest {
 
 export type ImportRequest = FileImportRequest | NotionSyncRequest
 
+export interface ImportDraftRecord {
+    id: string
+    word: string
+    source: SourceType
+    sourceReference: string | null
+    partOfSpeech: string | null
+    cloze: string | null
+    example: string | null
+    vietnamese: string | null
+    ipa: string | null
+    meaning: string | null
+    imageUrl: string | null
+    imageProvider: string | null
+    audio: string | null
+    generationStatus: GenerationStatus
+    generationError: string | null
+}
+
 export interface ImportSummary {
     inserted: number
     skipped: number
     failed: number
+    records?: ImportDraftRecord[]
+}
+
+export interface GenerateMissingDataPayload {
+    recordIds?: string[]
+    records?: ImportDraftRecord[]
+}
+
+export interface GenerationSummary {
+    processed: number
+    succeeded: number
+    failed: number
+    records?: ImportDraftRecord[]
+}
+
+export interface SubmitToAnkiPayload {
+    recordIds?: string[]
+    records?: ImportDraftRecord[]
 }
 
 export interface SaveSettingsPayload {

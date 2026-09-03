@@ -20,7 +20,9 @@ export function registerAnkiHandlers(database: DatabaseRepositories): void {
                 return failure('Invalid Anki submission payload')
             }
             try {
-                return await AnkiService.submitPersistedCards(database, parsed.recordIds)
+                return parsed.records
+                    ? await AnkiService.submitDraftCards(database, parsed.records)
+                    : await AnkiService.submitPersistedCards(database, parsed.recordIds)
             } catch (error) {
                 logger.error('anki_submission_failed', {
                     error: error instanceof Error ? error : new Error(String(error)),

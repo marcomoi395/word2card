@@ -3,15 +3,13 @@ import type { AppResponse, ImportSummary } from '../../../shared/ipc'
 import { IPC_CHANNELS } from '../../../shared/ipc'
 import { failure } from '../../utils/response'
 import { parseImportRequest } from '../../utils/validators'
-import { ImportService, setImportDatabase } from '../../services/import.service'
+import { ImportService } from '../../services/import.service'
 import { validateTextFilePath } from '../../helper/readFile'
-import type { DatabaseRepositories } from '../../database'
 import { createLogger } from '../../../shared/logger'
 
 const logger = createLogger('main.ipc.import')
 
-export function registerImportHandlers(database?: DatabaseRepositories): void {
-    if (database) setImportDatabase(database)
+export function registerImportHandlers(): void {
     ipcMain.handle(
         IPC_CHANNELS.sendImport,
         async (_event, payload: unknown): Promise<AppResponse<ImportSummary>> => {

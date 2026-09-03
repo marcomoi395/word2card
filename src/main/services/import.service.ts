@@ -1,7 +1,7 @@
 import { createLogger } from '../../shared/logger'
 import { NotionService } from '../notion'
 import { getRuntimeState } from '../state/runtime'
-import type { ImportRequest, AppResponse, SecretKey } from '../../shared/ipc'
+import type { ImportRequest, AppResponse, SecretKey, ImportDraftRecord, ImportSummary } from '../../shared/ipc'
 import { success, failure } from '../utils/response'
 import { readFileContent } from '../helper/readFile'
 import { getWordEntriesFromResponse } from '../helper/get-words-from-notion-response'
@@ -11,62 +11,63 @@ import {
     type NotionSyncTarget
 } from '../helper/notion-sync'
 import type { DatabaseRepositories } from '../database'
+
 const logger = createLogger('main.import')
 
-let database: DatabaseRepositories | null = null
-export interface ImportSummary {
-    inserted: number
-    skipped: number
-    failed: number
-}
 const syncRuntimeSecret = (key: SecretKey, value: string): boolean => {
     const trimmed = value.trim()
     return Boolean(trimmed) && getRuntimeState().updateRuntimeSettings({ [key]: trimmed })
 }
-export function setImportDatabase(repositories: DatabaseRepositories): void {
-    database = repositories
-}
-const persistWords = (words: string[], source: 'file' | 'notion') => {
-    if (!database) throw new Error('Import database is not initialized')
-    return database.transaction(() => {
-        const imported: string[] = []
-        let skipped = 0
-        for (const word of words) {
-            const result = database!.vocabulary.create({ word, source })
-            if (result.inserted) imported.push(word)
-            else skipped++
-        }
-        return { words: imported, summary: { inserted: imported.length, skipped, failed: 0 } }
+
+const createDraftRecords = (words: string[], source: 'file' | 'notion'): ImportDraftRecord[] => {
+    const seen = new Set<string>()
+    return words.flatMap((rawWord, index) => {
+        const word = rawWord.trim()
+        const normalized = word.toLocaleLowerCase()
+        if (!word || seen.has(normalized)) return []
+        seen.add(normalized)
+        return [{
+            id: `draft-${Date.now()}-${index}-${normalized}`,
+            word,
+            source,
+            sourceReference: null,
+            partOfSpeech: null,
+            cloze: null,
+            example: null,
+            vietnamese: null,
+            ipa: null,
+            meaning: null,
+            imageUrl: null,
+            imageProvider: null,
+            audio: null,
+            generationStatus: 'pending' as const,
+            generationError: null
+        }]
     })
 }
+
+export function setImportDatabase(_repositories?: DatabaseRepositories): void {}
+
 export class ImportService {
     private static lastSummary: ImportSummary = { inserted: 0, skipped: 0, failed: 0 }
+
     private static async loadWords(
         request: ImportRequest
-    ): Promise<AppResponse<{ words: string[]; notionTargets?: NotionSyncTarget[] }>> {
+    ): Promise<AppResponse<{ words: string[]; records: ImportDraftRecord[]; notionTargets?: NotionSyncTarget[] }>> {
         if (request.type === 'FILE_IMPORT') {
             const raw = await readFileContent(request.payload.filePath)
-            if (raw === null) {
-                logger.error('import_source_read_failed', { source: 'file' })
-                return failure('Failed to read words from the source.')
-            }
-            const persisted = persistWords(raw, 'file')
-            this.lastSummary = persisted.summary
-            return success({ words: persisted.words })
+            if (raw === null) return failure('Failed to read words from the source.')
+            const records = createDraftRecords(raw, 'file')
+            this.lastSummary = { inserted: records.length, skipped: 0, failed: 0, records }
+            return success({ words: records.map((record) => record.word), records })
         }
         try {
             if (
                 !syncRuntimeSecret('notionToken', request.payload.token) ||
                 !syncRuntimeSecret('notionDatabaseId', request.payload.notionDatabaseId)
-            ) {
-                logger.error('notion_settings_save_failed', { source: 'notion' })
-                return failure('Failed to save Notion settings.')
-            }
+            ) return failure('Failed to save Notion settings.')
             const sources = await NotionService.getPages(request.payload.notionDatabaseId)
-            if (!sources?.length) {
-                logger.warn('notion_pages_not_found', { source: 'notion', count: 0 })
-                return failure('No pages found in the Notion database.')
-            }
+            if (!sources?.length) return failure('No pages found in the Notion database.')
             const targets = sources.flatMap((source) =>
                 getWordEntriesFromResponse(source.pages).map((entry) => ({
                     pageId: entry.pageId,
@@ -74,42 +75,26 @@ export class ImportService {
                     deckName: resolveNotionDeckName(request.payload.deck, source.dataSourceName)
                 }))
             )
-            const persisted = persistWords(
-                targets.map((target) => target.word),
-                'notion'
-            )
-            this.lastSummary = persisted.summary
+            const records = createDraftRecords(targets.map((target) => target.word), 'notion')
+            this.lastSummary = { inserted: records.length, skipped: 0, failed: 0, records }
             return success({
-                words: persisted.words,
-                notionTargets: filterNotionTargetsByWords(targets, persisted.words)
+                words: records.map((record) => record.word),
+                records,
+                notionTargets: filterNotionTargetsByWords(targets, records.map((record) => record.word))
             })
         } catch (error) {
             logger.error('notion_import_failed', { source: 'notion', error })
-            return failure(
-                error instanceof Error
-                    ? error.message
-                    : 'Error retrieving data from Notion, please check your token and database ID.'
-            )
+            return failure(error instanceof Error ? error.message : 'Error retrieving data from Notion.')
         }
     }
-    public static async handleImportRequest(
-        request: ImportRequest
-    ): Promise<AppResponse<ImportSummary>> {
+
+    public static async handleImportRequest(request: ImportRequest): Promise<AppResponse<ImportSummary>> {
         try {
             const loaded = await this.loadWords(request)
-            if (loaded.status === 'error') {
-                logger.error('import_request_failed', { source: request.type === 'FILE_IMPORT' ? 'file' : 'notion', error: new Error(loaded.message) })
-                return failure(loaded.message)
-            }
-            return success(
-                this.lastSummary,
-                this.lastSummary.inserted === 0
-                    ? 'No new words to import.'
-                    : 'Words imported successfully.'
-            )
+            if (loaded.status === 'error') return failure(loaded.message)
+            return success(this.lastSummary, 'Words loaded into review.')
         } catch (error) {
-            logger.error('import_request_failed', { source: request.type === 'FILE_IMPORT' ? 'file' : 'notion', error })
-            return failure(error instanceof Error ? error.message : 'Failed to import words')
+            return failure(error instanceof Error ? error.message : 'Failed to load words')
         }
     }
 }

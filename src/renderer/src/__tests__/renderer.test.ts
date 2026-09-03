@@ -136,7 +136,7 @@ describe('Renderer UI', () => {
             )
         })
         it('uses red status dots for providers that are not connected', async () => {
-            vi.mocked(window.api.getProviderHealth).mockResolvedValueOnce({
+            vi.mocked(window.api.getProviderHealth).mockResolvedValue({
                 status: 'success',
                 data: {
                     providers: {
@@ -148,20 +148,13 @@ describe('Renderer UI', () => {
                 }
             })
             window.dispatchEvent(new Event('DOMContentLoaded'))
-            await new Promise((resolve) => setTimeout(resolve, 0))
+            await Promise.resolve()
+            await Promise.resolve()
 
-            expect(
-                document.querySelector('.connection-item[data-provider="openai"] .status-dot')
-            ).toHaveClass('disconnected')
-            expect(
-                document.querySelector('.connection-item[data-provider="notion"] .status-dot')
-            ).toHaveClass('disconnected')
-            expect(
-                document.querySelector('.connection-item[data-provider="pexels"] .status-dot')
-            ).toHaveClass('disconnected')
-            expect(
-                document.querySelector('.connection-item[data-provider="anki"] .status-dot')
-            ).toHaveClass('connected')
+            expect(document.querySelector('.connection-item[data-provider="openai"] .status-dot')?.classList.contains('disconnected')).toBe(true)
+            expect(document.querySelector('.connection-item[data-provider="notion"] .status-dot')?.classList.contains('disconnected')).toBe(true)
+            expect(document.querySelector('.connection-item[data-provider="pexels"] .status-dot')?.classList.contains('disconnected')).toBe(true)
+            expect(document.querySelector('.connection-item[data-provider="anki"] .status-dot')?.classList.contains('connected')).toBe(true)
         })
     })
     it('loads and saves OpenAI base URL and model settings', async () => {

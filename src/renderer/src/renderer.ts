@@ -1,6 +1,7 @@
 import { createLogger } from '../../shared/logger'
 import type {
     AppResponse,
+    ImportDraftRecord,
     ImportRequest,
     NotionSyncRequest,
     ProviderHealthSnapshot,
@@ -12,7 +13,8 @@ const logger = createLogger('renderer')
 
 type TabName = 'import' | 'collection' | 'notion' | 'settings'
 
-let vocabularyRecords: VocabularyRecord[] = []
+let importDraftRecords: ImportDraftRecord[] = []
+let collectionRecords: VocabularyRecord[] = []
 
 function escapeHtml(value: string | null | undefined): string {
     return (value ?? '')
@@ -23,14 +25,14 @@ function escapeHtml(value: string | null | undefined): string {
         .replaceAll("'", '&#039;')
 }
 
-function statusLabel(record: VocabularyRecord): string {
-    if (record.ankiStatus === 'submitted') return 'Submitted'
+function statusLabel(record: ImportDraftRecord | VocabularyRecord): string {
+    if ('ankiStatus' in record && record.ankiStatus === 'submitted') return 'Submitted'
     if (record.generationStatus === 'ready') return 'Ready'
     if (record.generationStatus === 'failed') return 'Generation failed'
     return 'Needs data'
 }
 
-function recordRow(record: VocabularyRecord, editable: boolean, index: number): string {
+function recordRow(record: ImportDraftRecord | VocabularyRecord, editable: boolean, index: number): string {
     const fields = ['partOfSpeech', 'cloze', 'vietnamese', 'ipa', 'meaning'] as const
     const values = fields.map((field) => escapeHtml(record[field]))
     const editableCells = values
@@ -83,48 +85,25 @@ function initSelectionControls(): void {
 function renderRecords(): void {
     const previewBody = document.querySelector('#section-import .data-grid tbody')
     const collectionBody = document.querySelector('#section-collection .data-grid tbody')
-    const empty =
-        '<tr><td colspan="11" role="status">No vocabulary saved yet. Import words to get started.</td></tr>'
-    if (previewBody)
-        previewBody.innerHTML = vocabularyRecords.length
-            ? vocabularyRecords.map((record, i) => recordRow(record, true, i)).join('')
-            : empty
-    if (collectionBody)
-        collectionBody.innerHTML = vocabularyRecords.length
-            ? vocabularyRecords.map((record, i) => recordRow(record, false, i)).join('')
-            : empty
+    const empty = '<tr><td colspan="11" role="status">No words in this import yet.</td></tr>'
+    if (previewBody) previewBody.innerHTML = importDraftRecords.length ? importDraftRecords.map((record, i) => recordRow(record, true, i)).join('') : empty
+    if (collectionBody) collectionBody.innerHTML = collectionRecords.length ? collectionRecords.map((record, i) => recordRow(record, false, i)).join('') : empty
     document.querySelectorAll<HTMLTableElement>('.data-grid').forEach(updateSelectAllState)
-    document
-        .querySelectorAll<HTMLElement>('.table-count')
-        .forEach((el) => (el.textContent = `${vocabularyRecords.length} words saved`))
+    const counts = document.querySelectorAll<HTMLElement>('.table-count')
+    if (counts[0]) counts[0].textContent = `${importDraftRecords.length} words ready`
+    if (counts[1]) counts[1].textContent = `${collectionRecords.length} words saved`
     const stat = document.querySelector<HTMLElement>('.heading-stat strong')
-    if (stat) stat.textContent = String(vocabularyRecords.length)
+    if (stat) stat.textContent = String(importDraftRecords.length)
     initAudioPreview()
 }
-
-async function loadVocabulary(): Promise<void> {
-    const previewBody = document.querySelector('#section-import .data-grid tbody')
-    if (previewBody)
-        previewBody.innerHTML =
-            '<tr><td colspan="11" role="status" aria-busy="true">Loading vocabulary…</td></tr>'
-    try {
-        const response = await window.api.listVocabulary()
-        if (response.status !== 'success' || !response.data)
-            throw new Error(response.message || 'Failed to load vocabulary')
-        vocabularyRecords = response.data
-        renderRecords()
-    } catch (error) {
-        logger.error('vocabulary_load_failed', {
-            error: error instanceof Error ? error : new Error('Unknown vocabulary load failure')
-        })
-        const message = error instanceof Error ? error.message : 'Failed to load vocabulary'
-        if (previewBody)
-            previewBody.innerHTML = `<tr><td colspan="11" role="alert">${escapeHtml(message)}</td></tr>`
-    }
+async function loadCollection(): Promise<void> {
+    const response = await window.api.listVocabulary()
+    if (response.status !== 'success' || !response.data) throw new Error(response.message || 'Failed to load collection')
+    collectionRecords = response.data
+    renderRecords()
 }
-
 async function refreshVocabulary(): Promise<void> {
-    await loadVocabulary()
+    await loadCollection()
 }
 
 function initVocabularyActions(): void {
@@ -132,73 +111,44 @@ function initVocabularyActions(): void {
         const button = event.currentTarget as HTMLButtonElement
         setButtonLoading(button, true, 'Generating...')
         try {
-            const response = await window.api.generateMissingData({
-                recordIds: vocabularyRecords.map((record) => record.id)
-            })
+            const response = await window.api.generateMissingData({ records: importDraftRecords })
             showResponseAlert('Generate data', response)
-            if (response.status === 'success') await refreshVocabulary()
+            if (response.status === 'success' && response.data?.records) {
+                importDraftRecords = response.data.records
+                renderRecords()
+            }
         } catch (error) {
-            logger.error('missing_data_generation_failed', {
-                error: error instanceof Error ? error : new Error('Unknown data generation failure')
-            })
+            logger.error('missing_data_generation_failed', { error: error instanceof Error ? error : new Error(String(error)) })
             alert('An error occurred while generating data.')
         } finally {
             setButtonLoading(button, false)
         }
     })
-
     document.getElementById('btn-submit-anki')?.addEventListener('click', async (event) => {
         const button = event.currentTarget as HTMLButtonElement
         setButtonLoading(button, true, 'Submitting...')
         try {
-            const response = await window.api.submitToAnki({
-                recordIds: vocabularyRecords.map((record) => record.id)
-            })
+            const response = await window.api.submitToAnki({ records: importDraftRecords })
             showResponseAlert('Submit to Anki', response)
-            if (response.status === 'success') await refreshVocabulary()
+            if (response.status === 'success') {
+                importDraftRecords = []
+                await refreshVocabulary()
+                renderRecords()
+            }
         } catch (error) {
-            logger.error('anki_submission_failed', {
-                error: error instanceof Error ? error : new Error('Unknown Anki submission failure')
-            })
+            logger.error('anki_submission_failed', { error: error instanceof Error ? error : new Error(String(error)) })
             alert('An error occurred while submitting to Anki.')
         } finally {
             setButtonLoading(button, false)
         }
     })
-
-    document.addEventListener(
-        'blur',
-        (event) => {
-            const cell = event.target
-            if (!(cell instanceof HTMLElement) || !cell.classList.contains('editable-cell')) return
-            const id = cell.dataset.id
-            const field = cell.dataset.field
-            const record = vocabularyRecords.find((item) => item.id === id)
-            if (
-                !id ||
-                !field ||
-                !record ||
-                (record as unknown as Record<string, unknown>)[field] === cell.innerText
-            )
-                return
-            void window.api
-                .updateVocabulary({ id, changes: { [field]: cell.innerText } })
-                .then(async (response) => {
-                    if (response.status !== 'success') throw new Error(response.message)
-                    await refreshVocabulary()
-                })
-                .catch(async (error) => {
-                    logger.error('vocabulary_edit_save_failed', {
-                        error: error instanceof Error ? error : new Error('Unknown vocabulary edit failure')
-                    })
-                    alert(
-                        `Failed to save edit: ${error instanceof Error ? error.message : 'Unknown error'}`
-                    )
-                    await refreshVocabulary()
-                })
-        },
-        true
-    )
+    document.addEventListener('blur', (event) => {
+        const cell = event.target
+        if (!(cell instanceof HTMLElement) || !cell.classList.contains('editable-cell')) return
+        const record = importDraftRecords.find((item) => item.id === cell.dataset.id)
+        const field = cell.dataset.field as keyof ImportDraftRecord | undefined
+        if (record && field && field in record) (record as unknown as Record<string, unknown>)[field] = cell.innerText
+    }, true)
 }
 
 function renderHealth(snapshot: ProviderHealthSnapshot): void {
@@ -524,6 +474,10 @@ function initImportForm(): void {
 
             const result = await window.api.sendImport(importData)
             showResponseAlert('Import', result)
+            if (result.status === 'success' && result.data?.records) {
+                importDraftRecords = result.data.records
+                renderRecords()
+            }
         } catch (error) {
             logger.error('file_import_failed', {
                 error: error instanceof Error ? error : new Error('Unknown file import failure')
@@ -602,7 +556,10 @@ function initNotionForm(): void {
 
             const result = await window.api.sendImport(notionData)
             showResponseAlert('Import', result)
-            if (result.status === 'success') await refreshVocabulary()
+            if (result.status === 'success' && result.data?.records) {
+                importDraftRecords = result.data.records
+                renderRecords()
+            }
         } catch (error) {
             logger.error('notion_sync_failed', {
                 error: error instanceof Error ? error : new Error('Unknown Notion sync failure')
@@ -705,6 +662,9 @@ function initAudioPreview(): void {
 
 function init(): void {
     window.addEventListener('DOMContentLoaded', () => {
+        void loadCollection().catch((error) => {
+            logger.error('collection_load_failed', { error: error instanceof Error ? error : new Error(String(error)) })
+        })
         initWindowControls()
         initFileDrop()
         initFilePicker()

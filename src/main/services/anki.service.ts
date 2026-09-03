@@ -1,4 +1,5 @@
 import type { DatabaseRepositories, VocabularyRecord } from '../database'
+import type { ImportDraftRecord } from '../../shared/ipc'
 import type { QuizNote } from '../handle'
 import type { AnkiSubmissionSummary, AppResponse } from '../../shared/ipc'
 import { DeckService } from './deck.service'
@@ -30,6 +31,19 @@ const toNote = (record: VocabularyRecord): QuizNote => ({
 })
 
 export class AnkiService {
+    public static async submitDraftCards(
+        repositories: DatabaseRepositories,
+        records: ImportDraftRecord[]
+    ): Promise<AppResponse<AnkiSubmissionSummary>> {
+        const persisted = repositories.transaction(() =>
+            records
+                .map((record) => repositories.vocabulary.create(record))
+                .map((result) => result.record)
+                .filter((record): record is VocabularyRecord => record !== null)
+        )
+        return this.submitPersistedCards(repositories, persisted.map((record) => record.id))
+    }
+
     public static async submitPersistedCards(
         repositories: DatabaseRepositories,
         recordIds?: string[]

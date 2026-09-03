@@ -3,7 +3,9 @@ import {
     isRecord,
     isImportOptions,
     parseSaveSettingsPayload,
-    parseImportRequest
+    parseImportRequest,
+    parseImportDraftRecord,
+    parseRecordIdsPayload
 } from '../validators'
 
 describe('validators', () => {
@@ -368,5 +370,26 @@ describe('validators', () => {
                 expect(parseImportRequest([])).toBeNull()
             })
         })
+    })
+})
+describe('import draft validation', () => {
+    const validDraft = {
+        id: 'draft-1', word: 'hello', source: 'file', sourceReference: null,
+        partOfSpeech: null, cloze: null, example: null, vietnamese: null,
+        ipa: null, meaning: null, imageUrl: null, imageProvider: null,
+        audio: null, generationStatus: 'pending', generationError: null
+    }
+
+    it('accepts a structurally valid draft', () => {
+        expect(parseImportDraftRecord(validDraft)).toEqual(validDraft)
+    })
+
+    it('rejects malformed draft records', () => {
+        expect(parseImportDraftRecord({ ...validDraft, generationStatus: 'unexpected' })).toBeNull()
+        expect(parseRecordIdsPayload({ records: [{ ...validDraft, word: 42 }] })).toBeNull()
+    })
+
+    it('accepts validated draft records in payloads', () => {
+        expect(parseRecordIdsPayload({ records: [validDraft] })).toEqual({ records: [validDraft] })
     })
 })

@@ -1,4 +1,5 @@
 import { createLogger } from '../../shared/logger'
+import type { ImportDraftRecord } from '../../shared/ipc'
 import type { DatabaseRepositories } from '../database'
 import { OpenAIService, type FlashcardResponse } from '../open-ai'
 import type { GenerationSummary } from '../../shared/ipc'
@@ -26,6 +27,33 @@ function failureMessage(error: unknown): string {
 }
 
 export class GenerationService {
+    static async generateDraftData(records: ImportDraftRecord[]): Promise<GenerationResult> {
+        const pending = records.filter((record) => record.generationStatus !== 'ready')
+        if (!pending.length) return { processed: 0, succeeded: 0, failed: 0, results: [], records }
+        try {
+            const generated = await OpenAIService.generateFlashcardData(pending.map((record) => record.word))
+            const updated = records.map((record) => {
+                const item = generated.find((candidate) => candidate.word?.trim().toLocaleLowerCase() === record.word.toLocaleLowerCase())
+                if (!item) return { ...record, generationStatus: 'failed' as const, generationError: 'No generated data returned for this word' }
+                return {
+                    ...record,
+                    partOfSpeech: item.pos ?? null,
+                    vietnamese: item.vietnamese ?? null,
+                    ipa: item.ipa ?? null,
+                    example: item.example ?? null,
+                    cloze: record.cloze ?? record.word,
+                    generationStatus: 'ready' as const,
+                    generationError: null
+                }
+            })
+            const results = updated.map((record) => ({ id: record.id, status: record.generationStatus === 'ready' ? 'ready' as const : 'failed' as const, ...(record.generationError ? { error: record.generationError } : {}) }))
+            return { processed: pending.length, succeeded: results.filter((item) => item.status === 'ready').length, failed: results.filter((item) => item.status === 'failed').length, results, records: updated }
+        } catch (error) {
+            const message = failureMessage(error)
+            const updated = records.map((record) => record.generationStatus === 'ready' ? record : { ...record, generationStatus: 'failed' as const, generationError: message })
+            return { processed: pending.length, succeeded: 0, failed: pending.length, results: pending.map((record) => ({ id: record.id, status: 'failed' as const, error: message })), records: updated }
+        }
+    }
     static async generateMissingData(
         database: DatabaseRepositories,
         recordIds?: string[]

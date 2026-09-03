@@ -20,7 +20,7 @@ export function registerAllIpcHandlers(
     registerFileHandlers()
     registerSettingsHandlers()
     registerProviderHealthHandlers()
-    registerImportHandlers(database)
+    registerImportHandlers()
     registerCollectionHandlers(database)
     registerGenerationHandlers(database)
     registerAnkiHandlers(database)

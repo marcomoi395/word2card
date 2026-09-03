@@ -8,18 +8,13 @@ import { IPC_CHANNELS } from '../../../shared/ipc'
 import { GenerationService } from '../../services/generation.service'
 import type { DatabaseRepositories } from '../../database'
 import { failure, success } from '../../utils/response'
+import { parseRecordIdsPayload } from '../../utils/validators'
 import { createLogger } from '../../../shared/logger'
 
 const logger = createLogger('main.ipc.generation')
 
 function parsePayload(value: unknown): GenerateMissingDataPayload | null {
-    if (value === undefined) return {}
-    if (typeof value !== 'object' || value === null || Array.isArray(value)) return null
-    const recordIds = (value as { recordIds?: unknown }).recordIds
-    if (recordIds === undefined) return {}
-    if (!Array.isArray(recordIds) || recordIds.some((id) => typeof id !== 'string' || !id.trim()))
-        return null
-    return { recordIds }
+    return parseRecordIdsPayload(value)
 }
 
 export function registerGenerationHandlers(database: DatabaseRepositories): void {
@@ -34,9 +29,10 @@ export function registerGenerationHandlers(database: DatabaseRepositories): void
                 return failure('Invalid generation request payload')
             }
             try {
-                return success(
-                    await GenerationService.generateMissingData(database, parsed.recordIds)
-                )
+                if (parsed.records) {
+                    return success(await GenerationService.generateDraftData(parsed.records))
+                }
+                return success(await GenerationService.generateMissingData(database, parsed.recordIds))
             } catch (error) {
                 logger.error('generation_failed', {
                     error: error instanceof Error ? error : new Error(String(error)),

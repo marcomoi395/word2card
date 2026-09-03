@@ -1,5 +1,6 @@
 import type {
     GenerateMissingDataPayload,
+    ImportDraftRecord,
     ImportOptions,
     ImportRequest,
     SaveSettingsPayload,
@@ -95,6 +96,35 @@ const EDITABLE_FIELDS = [
 const isStringArray = (value: unknown): value is string[] =>
     Array.isArray(value) &&
     value.every((item) => typeof item === 'string' && item.trim().length > 0)
+const isNullableString = (value: unknown): value is string | null => value === null || typeof value === 'string'
+
+export const parseImportDraftRecord = (value: unknown): ImportDraftRecord | null => {
+    if (!isRecord(value)) return null
+    if (
+        typeof value.id !== 'string' || !value.id.trim() ||
+        typeof value.word !== 'string' || !value.word.trim() ||
+        (value.source !== 'file' && value.source !== 'notion') ||
+        !isNullableString(value.sourceReference) ||
+        !isNullableString(value.partOfSpeech) ||
+        !isNullableString(value.cloze) ||
+        !isNullableString(value.example) ||
+        !isNullableString(value.vietnamese) ||
+        !isNullableString(value.ipa) ||
+        !isNullableString(value.meaning) ||
+        !isNullableString(value.imageUrl) ||
+        !isNullableString(value.imageProvider) ||
+        !isNullableString(value.audio) ||
+        !['pending', 'generating', 'ready', 'failed'].includes(value.generationStatus as string) ||
+        !isNullableString(value.generationError)
+    ) return null
+    return value as unknown as ImportDraftRecord
+}
+
+export const parseImportDraftRecords = (value: unknown): ImportDraftRecord[] | null => {
+    if (!Array.isArray(value)) return null
+    const records = value.map(parseImportDraftRecord)
+    return records.every((record): record is ImportDraftRecord => record !== null) ? records : null
+}
 
 export const parseUpdateVocabularyPayload = (value: unknown): UpdateVocabularyPayload | null => {
     if (
@@ -121,9 +151,12 @@ export const parseRecordIdsPayload = (
     value: unknown
 ): GenerateMissingDataPayload | SubmitToAnkiPayload | null => {
     if (value === undefined) return {}
-    if (!isRecord(value) || (value.recordIds !== undefined && !isStringArray(value.recordIds))) {
-        return null
+    if (!isRecord(value)) return null
+    if (value.records !== undefined) {
+        const records = parseImportDraftRecords(value.records)
+        return records ? { records } : null
     }
+    if (value.recordIds !== undefined && !isStringArray(value.recordIds)) return null
     return value.recordIds ? { recordIds: value.recordIds } : {}
 }
 export const parseEditVocabularyPayload = parseUpdateVocabularyPayload

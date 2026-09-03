@@ -22,7 +22,7 @@ describe('ImportService', () => {
         vi.mocked(checkAnkiConnect).mockResolvedValue(false)
     })
 
-    it('persists unique file words and reports duplicates without provider calls', async () => {
+    it('returns unique draft words without persisting or calling providers', async () => {
         vi.mocked(readFileContent).mockResolvedValue([' Hello ', 'hello', 'world'])
         const result = await ImportService.handleImportRequest({
             type: 'FILE_IMPORT',
@@ -34,16 +34,14 @@ describe('ImportService', () => {
         })
         expect(result).toMatchObject({
             status: 'success',
-            data: { inserted: 2, skipped: 1, failed: 0 }
+            data: { inserted: 2, skipped: 0, failed: 0, records: expect.any(Array) }
         })
-        expect(database.vocabulary.list()).toHaveLength(2)
-        expect(
-            database.vocabulary.list().every((record) => record.generationStatus === 'pending')
-        ).toBe(true)
+        expect(result.status === 'success' ? result.data?.records : []).toHaveLength(2)
+        expect(database.vocabulary.list()).toHaveLength(0)
         expect(checkAnkiConnect).not.toHaveBeenCalled()
     })
 
-    it('imports successfully when OpenAI and Anki are unavailable', async () => {
+    it('loads words into pending draft records when providers are unavailable', async () => {
         vi.mocked(readFileContent).mockResolvedValue(['pending'])
         const result = await ImportService.handleImportRequest({
             type: 'FILE_IMPORT',
@@ -54,6 +52,8 @@ describe('ImportService', () => {
             }
         })
         expect(result.status).toBe('success')
-        expect(database.vocabulary.list()[0].generationStatus).toBe('pending')
+        expect(result.status === 'success' ? result.data?.records?.[0].generationStatus : null).toBe('pending')
+        expect(database.vocabulary.list()).toHaveLength(0)
     })
+
 })
