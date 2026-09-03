@@ -34,7 +34,14 @@ export interface QuizNote {
     }[]
 }
 
-const clozeWord = (word: string): string => {
+export const normalizeIpa = (ipa: string | undefined): string | undefined => {
+    if (!ipa) {
+        return undefined
+    }
+    return ipa.trim().replace(/^\/+|\/+$/g, '') || undefined
+}
+
+export const clozeWord = (word: string): string => {
     if (word.length <= 2) {
         return '_'.repeat(word.length)
     }
@@ -74,6 +81,7 @@ export const createFlashcards = async (
                 fields: {
                     ...item,
                     id: uuidv4(),
+                    ipa: normalizeIpa(item.ipa),
                     image,
                     cloze: clozeWord(item.word)
                 },

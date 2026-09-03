@@ -1,6 +1,7 @@
 import type { DatabaseRepositories, VocabularyRecord } from '../database'
 import type { ImportDraftRecord } from '../../shared/ipc'
 import type { QuizNote } from '../handle'
+import { normalizeIpa } from '../handle'
 import type { AnkiSubmissionSummary, AppResponse } from '../../shared/ipc'
 import { DeckService } from './deck.service'
 import { failure, success } from '../utils/response'
@@ -22,7 +23,7 @@ const toNote = (record: VocabularyRecord): QuizNote => ({
         pos: record.partOfSpeech ?? undefined,
         cloze: record.cloze ?? undefined,
         vietnamese: record.vietnamese ?? '',
-        ipa: record.ipa ?? undefined,
+        ipa: normalizeIpa(record.ipa ?? undefined),
         image: record.imageUrl ?? undefined,
         audio_word: record.audio ?? undefined
     },

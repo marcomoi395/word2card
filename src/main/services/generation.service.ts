@@ -2,6 +2,7 @@ import { createLogger } from '../../shared/logger'
 import type { ImportDraftRecord } from '../../shared/ipc'
 import type { DatabaseRepositories } from '../database'
 import { OpenAIService, type FlashcardResponse } from '../open-ai'
+import { clozeWord } from '../handle'
 import type { GenerationSummary } from '../../shared/ipc'
 
 const logger = createLogger('main.generation')
@@ -65,7 +66,7 @@ export class GenerationService {
                     vietnamese: item.vietnamese ?? null,
                     ipa: item.ipa ?? null,
                     example: item.example ?? null,
-                    cloze: record.cloze ?? record.word,
+                    cloze: record.cloze ?? clozeWord(record.word),
                     generationStatus: 'ready' as const,
                     generationError: null
                 }
@@ -189,11 +190,7 @@ export class GenerationService {
                         vietnamese: item.vietnamese,
                         ipa: item.ipa ?? null,
                         example: item.example ?? null,
-                        cloze:
-                            record.cloze ??
-                            (record.word.length <= 2
-                                ? '_'.repeat(record.word.length)
-                                : `${record.word[0]}${'_'.repeat(record.word.length - 2)}${record.word.at(-1)}`),
+                        cloze: record.cloze ?? clozeWord(record.word),
                         generationStatus: 'ready',
                         generationError: null
                     })
