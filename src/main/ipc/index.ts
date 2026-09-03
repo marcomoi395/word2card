@@ -1,4 +1,5 @@
 import type { BrowserWindow } from 'electron'
+import { createLogger } from '../../shared/logger'
 import { registerWindowHandlers } from './handlers/window.handler'
 import { registerFileHandlers } from './handlers/file.handler'
 import { registerSettingsHandlers } from './handlers/settings.handler'
@@ -8,6 +9,8 @@ import { registerCollectionHandlers } from './handlers/collection.handler'
 import { registerGenerationHandlers } from './handlers/generation.handler'
 import { registerAnkiHandlers } from './handlers/anki.handler'
 import type { DatabaseRepositories } from '../database'
+
+const logger = createLogger('main.ipc')
 
 export function registerAllIpcHandlers(
     _mainWindow: BrowserWindow,
@@ -21,4 +24,5 @@ export function registerAllIpcHandlers(
     registerCollectionHandlers(database)
     registerGenerationHandlers(database)
     registerAnkiHandlers(database)
+    logger.info('ipc_handlers_registered')
 }

@@ -1,7 +1,9 @@
 import { checkAnkiConnect } from './anki-connect'
 import { getRuntimeSetting } from './state/runtime'
 import type { ProviderHealthSnapshot, ProviderHealthStatus, ProviderName } from '../shared/ipc'
+import { createLogger } from '../shared/logger'
 
+const logger = createLogger('main.provider_health')
 const timeoutMs = 5000
 const result = (
     provider: ProviderName,
@@ -34,12 +36,11 @@ const checkOpenAI = async (): Promise<ProviderHealthStatus> => {
         })
         return response.ok
             ? result('openai', 'connected', 'Connected')
-            : result(
-                  'openai',
-                  response.status === 401 ? 'invalid' : 'unreachable',
-                  `HTTP ${response.status}`
-              )
-    } catch {
+            : result('openai', response.status === 401 ? 'invalid' : 'unreachable', `HTTP ${response.status}`)
+    } catch (error) {
+        logger.error('openai_health_check_failed', {
+            error: error instanceof Error ? error : new Error(String(error))
+        })
         return result('openai', 'unreachable', 'Unable to reach OpenAI')
     }
 }
@@ -56,12 +57,11 @@ const checkNotion = async (): Promise<ProviderHealthStatus> => {
         )
         return response.ok
             ? result('notion', 'connected', 'Connected')
-            : result(
-                  'notion',
-                  response.status === 401 ? 'invalid' : 'unreachable',
-                  `HTTP ${response.status}`
-              )
-    } catch {
+            : result('notion', response.status === 401 ? 'invalid' : 'unreachable', `HTTP ${response.status}`)
+    } catch (error) {
+        logger.error('notion_health_check_failed', {
+            error: error instanceof Error ? error : new Error(String(error))
+        })
         return result('notion', 'unreachable', 'Unable to reach Notion')
     }
 }
@@ -75,12 +75,11 @@ const checkPexels = async (): Promise<ProviderHealthStatus> => {
         })
         return response.ok
             ? result('pexels', 'connected', 'Connected')
-            : result(
-                  'pexels',
-                  response.status === 401 ? 'invalid' : 'unreachable',
-                  `HTTP ${response.status}`
-              )
-    } catch {
+            : result('pexels', response.status === 401 ? 'invalid' : 'unreachable', `HTTP ${response.status}`)
+    } catch (error) {
+        logger.error('pexels_health_check_failed', {
+            error: error instanceof Error ? error : new Error(String(error))
+        })
         return result('pexels', 'unreachable', 'Unable to reach Pexels')
     }
 }

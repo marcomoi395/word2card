@@ -1,8 +1,11 @@
 import { safeStorage } from 'electron'
 import Store from 'electron-store'
 import type { SecretKey } from '../shared/ipc'
+import { createLogger } from '../shared/logger'
 
 import type { StatePersistence } from './state/persistence'
+
+const logger = createLogger('main.store')
 
 export interface SecretPersistenceManager {
     getSecret(key: SecretKey): string | null
@@ -42,6 +45,7 @@ export const createSecretPersistence = (manager: SecretPersistenceManager): Stat
                 : (manager.deleteSecret(key), true)
 
             if (!succeeded) {
+                logger.error('secret_persistence_save_failed', { key })
                 for (const appliedKey of applied) {
                     const previousValue = previous[appliedKey]
                     if (previousValue) {
@@ -56,13 +60,16 @@ export const createSecretPersistence = (manager: SecretPersistenceManager): Stat
             applied.push(key)
         }
 
+        logger.debug('secret_persistence_saved', { keyCount: applied.length })
         return true
     },
     delete: (key) => {
         try {
             manager.deleteSecret(key)
+            logger.debug('secret_persistence_deleted', { key })
             return true
-        } catch {
+        } catch (error) {
+            logger.error('secret_persistence_delete_failed', { key, error: error instanceof Error ? error : new Error(String(error)) })
             return false
         }
     }
@@ -84,6 +91,7 @@ export class SecretManager {
             name: 'secrets',
             fileExtension: 'json'
         })
+        logger.debug('secret_store_initialized')
     }
 
     public static getInstance(): SecretManager {
@@ -110,9 +118,10 @@ export class SecretManager {
                 value,
                 encrypted
             })
+            logger.debug('secret_saved', { key, encrypted })
             return true
         } catch (error) {
-            console.error('Save failed:', error)
+            logger.error('secret_save_failed', { key, error: error instanceof Error ? error : new Error(String(error)) })
             return false
         }
     }
@@ -126,6 +135,7 @@ export class SecretManager {
 
             if (item.encrypted) {
                 if (!this.isEncryptionAvailable()) {
+                    logger.warn('secret_read_unavailable', { key, reason: 'encryption_unavailable' })
                     return null
                 }
 
@@ -135,13 +145,14 @@ export class SecretManager {
 
             return item.value
         } catch (error) {
-            console.error('Read error:', error)
+            logger.error('secret_read_failed', { key, error: error instanceof Error ? error : new Error(String(error)) })
             return null
         }
     }
 
     public deleteSecret(key: SecretKey): void {
         this.store.delete(key)
+        logger.debug('secret_deleted', { key })
     }
 }
 

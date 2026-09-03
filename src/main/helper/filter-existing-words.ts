@@ -1,4 +1,7 @@
 import { sendRequest } from '../anki-connect'
+import { createLogger } from '../../shared/logger'
+
+const logger = createLogger('main.filter_existing_words')
 
 export async function filterExistingWords(
     words: string[],
@@ -6,6 +9,7 @@ export async function filterExistingWords(
 ): Promise<string[]> {
     try {
         if (words.length === 0) {
+            logger.debug('word_filter_skipped', { reason: 'empty_input' })
             return []
         }
 
@@ -26,12 +30,14 @@ export async function filterExistingWords(
             throw new Error(response.error)
         }
 
-        return words.filter((_, index) => {
+        const filteredWords = words.filter((_, index) => {
             const resultForWord = response.result[index]
             return resultForWord && resultForWord.length === 0
         })
+        logger.info('word_filter_completed', { inputCount: words.length, outputCount: filteredWords.length })
+        return filteredWords
     } catch (error) {
-        console.error('Error filtering existing words:', error)
+        logger.error('word_filter_failed', { error: error instanceof Error ? error : new Error(String(error)), inputCount: words.length })
         return words
     }
 }

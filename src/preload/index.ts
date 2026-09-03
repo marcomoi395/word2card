@@ -15,6 +15,10 @@ import type {
     VocabularyRecord
 } from '../shared/ipc'
 import { IPC_CHANNELS } from '../shared/ipc'
+import { createLogger } from '../shared/logger'
+
+const logger = createLogger('preload')
+
 
 const api: RendererApi = {
     minimize: () => ipcRenderer.send(IPC_CHANNELS.windowMinimize),
@@ -49,5 +53,7 @@ if (!process.contextIsolated) {
 try {
     contextBridge.exposeInMainWorld('api', api)
 } catch (error) {
-    console.error(error)
+    logger.error('preload_api_exposure_failed', {
+        error: error instanceof Error ? error : new Error('Unknown preload API exposure failure')
+    })
 }

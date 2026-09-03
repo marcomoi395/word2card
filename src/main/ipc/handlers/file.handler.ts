@@ -2,6 +2,9 @@ import { dialog, ipcMain } from 'electron'
 import type { AppResponse, OpenFileDialogData } from '../../../shared/ipc'
 import { IPC_CHANNELS } from '../../../shared/ipc'
 import { success, failure } from '../../utils/response'
+import { createLogger } from '../../../shared/logger'
+
+const logger = createLogger('main.ipc.file')
 
 export function registerFileHandlers(): void {
     ipcMain.handle(
@@ -19,6 +22,9 @@ export function registerFileHandlers(): void {
 
                 return success({ filePath: result.filePaths[0] })
             } catch (error) {
+                logger.error('file_dialog_failed', {
+                    error: error instanceof Error ? error : new Error(String(error))
+                })
                 const message =
                     error instanceof Error ? error.message : 'Failed to open file dialog'
                 return failure(message)

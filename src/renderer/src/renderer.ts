@@ -1,3 +1,4 @@
+import { createLogger } from '../../shared/logger'
 import type {
     AppResponse,
     ImportRequest,
@@ -6,6 +7,8 @@ import type {
     SaveSettingsPayload,
     VocabularyRecord
 } from '../../shared/ipc'
+
+const logger = createLogger('renderer')
 
 type TabName = 'import' | 'collection' | 'notion' | 'settings'
 
@@ -75,7 +78,9 @@ async function loadVocabulary(): Promise<void> {
         vocabularyRecords = response.data
         renderRecords()
     } catch (error) {
-        console.error(error)
+        logger.error('vocabulary_load_failed', {
+            error: error instanceof Error ? error : new Error('Unknown vocabulary load failure')
+        })
         const message = error instanceof Error ? error.message : 'Failed to load vocabulary'
         if (previewBody)
             previewBody.innerHTML = `<tr><td colspan="10" role="alert">${escapeHtml(message)}</td></tr>`
@@ -97,7 +102,9 @@ function initVocabularyActions(): void {
             showResponseAlert('Generate data', response)
             if (response.status === 'success') await refreshVocabulary()
         } catch (error) {
-            console.error(error)
+            logger.error('missing_data_generation_failed', {
+                error: error instanceof Error ? error : new Error('Unknown data generation failure')
+            })
             alert('An error occurred while generating data.')
         } finally {
             setButtonLoading(button, false)
@@ -114,7 +121,9 @@ function initVocabularyActions(): void {
             showResponseAlert('Submit to Anki', response)
             if (response.status === 'success') await refreshVocabulary()
         } catch (error) {
-            console.error(error)
+            logger.error('anki_submission_failed', {
+                error: error instanceof Error ? error : new Error('Unknown Anki submission failure')
+            })
             alert('An error occurred while submitting to Anki.')
         } finally {
             setButtonLoading(button, false)
@@ -143,7 +152,9 @@ function initVocabularyActions(): void {
                     await refreshVocabulary()
                 })
                 .catch(async (error) => {
-                    console.error(error)
+                    logger.error('vocabulary_edit_save_failed', {
+                        error: error instanceof Error ? error : new Error('Unknown vocabulary edit failure')
+                    })
                     alert(
                         `Failed to save edit: ${error instanceof Error ? error.message : 'Unknown error'}`
                     )
@@ -177,7 +188,9 @@ async function loadHealth(): Promise<void> {
         const response = await window.api.getProviderHealth()
         if (response.status === 'success' && response.data) renderHealth(response.data)
     } catch (error) {
-        console.error(error)
+        logger.error('provider_health_load_failed', {
+            error: error instanceof Error ? error : new Error('Unknown provider health load failure')
+        })
     }
 }
 
@@ -463,7 +476,9 @@ function initImportForm(): void {
             const result = await window.api.sendImport(importData)
             showResponseAlert('Import', result)
         } catch (error) {
-            console.error(error)
+            logger.error('file_import_failed', {
+                error: error instanceof Error ? error : new Error('Unknown file import failure')
+            })
             alert('An error occurred during import.')
         } finally {
             setButtonLoading(submitButton, false)
@@ -540,7 +555,9 @@ function initNotionForm(): void {
             showResponseAlert('Import', result)
             if (result.status === 'success') await refreshVocabulary()
         } catch (error) {
-            console.error(error)
+            logger.error('notion_sync_failed', {
+                error: error instanceof Error ? error : new Error('Unknown Notion sync failure')
+            })
             alert('An error occurred during sync.')
         } finally {
             setButtonLoading(submitButton, false)
@@ -583,7 +600,9 @@ function initSettingsForm(): void {
                 pexelsStatus.textContent = status.pexelsToken ? 'Configured' : 'Not configured'
             }
         } catch (error) {
-            console.error('Error loading settings:', error)
+            logger.error('settings_load_failed', {
+                error: error instanceof Error ? error : new Error('Unknown settings load failure')
+            })
         }
     }
 
@@ -614,7 +633,9 @@ function initSettingsForm(): void {
                 alert(`Failed to save settings: ${result.message}`)
             }
         } catch (error) {
-            console.error(error)
+            logger.error('settings_save_failed', {
+                error: error instanceof Error ? error : new Error('Unknown settings save failure')
+            })
             alert('An error occurred while saving settings.')
         } finally {
             setButtonLoading(saveButton, false)

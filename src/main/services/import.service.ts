@@ -1,3 +1,4 @@
+import { createLogger } from '../../shared/logger'
 import { NotionService } from '../notion'
 import { getRuntimeState } from '../state/runtime'
 import type { ImportRequest, AppResponse, SecretKey } from '../../shared/ipc'
@@ -10,6 +11,7 @@ import {
     type NotionSyncTarget
 } from '../helper/notion-sync'
 import type { DatabaseRepositories } from '../database'
+const logger = createLogger('main.import')
 
 let database: DatabaseRepositories | null = null
 export interface ImportSummary {
@@ -44,7 +46,10 @@ export class ImportService {
     ): Promise<AppResponse<{ words: string[]; notionTargets?: NotionSyncTarget[] }>> {
         if (request.type === 'FILE_IMPORT') {
             const raw = await readFileContent(request.payload.filePath)
-            if (raw === null) return failure('Failed to read words from the source.')
+            if (raw === null) {
+                logger.error('import_source_read_failed', { source: 'file' })
+                return failure('Failed to read words from the source.')
+            }
             const persisted = persistWords(raw, 'file')
             this.lastSummary = persisted.summary
             return success({ words: persisted.words })
@@ -53,10 +58,15 @@ export class ImportService {
             if (
                 !syncRuntimeSecret('notionToken', request.payload.token) ||
                 !syncRuntimeSecret('notionDatabaseId', request.payload.notionDatabaseId)
-            )
+            ) {
+                logger.error('notion_settings_save_failed', { source: 'notion' })
                 return failure('Failed to save Notion settings.')
+            }
             const sources = await NotionService.getPages(request.payload.notionDatabaseId)
-            if (!sources?.length) return failure('No pages found in the Notion database.')
+            if (!sources?.length) {
+                logger.warn('notion_pages_not_found', { source: 'notion', count: 0 })
+                return failure('No pages found in the Notion database.')
+            }
             const targets = sources.flatMap((source) =>
                 getWordEntriesFromResponse(source.pages).map((entry) => ({
                     pageId: entry.pageId,
@@ -74,6 +84,7 @@ export class ImportService {
                 notionTargets: filterNotionTargetsByWords(targets, persisted.words)
             })
         } catch (error) {
+            logger.error('notion_import_failed', { source: 'notion', error })
             return failure(
                 error instanceof Error
                     ? error.message
@@ -86,7 +97,10 @@ export class ImportService {
     ): Promise<AppResponse<ImportSummary>> {
         try {
             const loaded = await this.loadWords(request)
-            if (loaded.status === 'error') return failure(loaded.message)
+            if (loaded.status === 'error') {
+                logger.error('import_request_failed', { source: request.type === 'FILE_IMPORT' ? 'file' : 'notion', error: new Error(loaded.message) })
+                return failure(loaded.message)
+            }
             return success(
                 this.lastSummary,
                 this.lastSummary.inserted === 0
@@ -94,6 +108,7 @@ export class ImportService {
                     : 'Words imported successfully.'
             )
         } catch (error) {
+            logger.error('import_request_failed', { source: request.type === 'FILE_IMPORT' ? 'file' : 'notion', error })
             return failure(error instanceof Error ? error.message : 'Failed to import words')
         }
     }

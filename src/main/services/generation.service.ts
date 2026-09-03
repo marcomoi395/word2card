@@ -1,7 +1,9 @@
+import { createLogger } from '../../shared/logger'
 import type { DatabaseRepositories } from '../database'
 import { OpenAIService, type FlashcardResponse } from '../open-ai'
 import type { GenerationSummary } from '../../shared/ipc'
 
+const logger = createLogger('main.generation')
 export interface GenerationResult extends GenerationSummary {
     results: Array<{ id: string; status: 'ready' | 'failed'; error?: string }>
 }
@@ -43,6 +45,7 @@ export class GenerationService {
             )
         } catch (error) {
             const message = failureMessage(error)
+            logger.error('generation_batch_failed', { count: pending.length, error })
             const results = pending.map((record) => {
                 database.transaction(() =>
                     database.vocabulary.update(record.id, {
@@ -55,6 +58,7 @@ export class GenerationService {
             return { processed: pending.length, succeeded: 0, failed: pending.length, results }
         }
 
+
         const seen = new Set<string>()
         const results: GenerationResult['results'] = []
         for (const record of pending) {
@@ -65,6 +69,7 @@ export class GenerationService {
                 ? validateGenerated(item)
                 : 'No generated data returned for this word'
             if (error || !item) {
+                logger.error('generation_record_validation_failed', { id: record.id, error: new Error(error ?? 'Generation failed') })
                 database.transaction(() =>
                     database.vocabulary.update(record.id, {
                         generationStatus: 'failed',
@@ -78,8 +83,10 @@ export class GenerationService {
                 })
                 continue
             }
+
             if (seen.has(record.normalizedWord)) {
                 const duplicateError = 'Duplicate generated data returned for this word'
+                logger.error('generation_duplicate_failed', { id: record.id, error: new Error(duplicateError) })
                 database.transaction(() =>
                     database.vocabulary.update(record.id, {
                         generationStatus: 'failed',
@@ -89,6 +96,7 @@ export class GenerationService {
                 results.push({ id: record.id, status: 'failed', error: duplicateError })
                 continue
             }
+
             seen.add(record.normalizedWord)
             try {
                 database.transaction(() => {
@@ -109,6 +117,7 @@ export class GenerationService {
                 results.push({ id: record.id, status: 'ready' })
             } catch (error) {
                 const message = failureMessage(error)
+                logger.error('generation_record_persist_failed', { id: record.id, error })
                 database.transaction(() =>
                     database.vocabulary.update(record.id, {
                         generationStatus: 'failed',

@@ -1,5 +1,7 @@
 import { createClient } from 'pexels'
+import { createLogger } from '../shared/logger'
 
+const logger = createLogger('main.pexels')
 export async function searchImagePexels(token: string, query: string): Promise<string | null> {
     try {
         const client = createClient(token)
@@ -15,7 +17,10 @@ export async function searchImagePexels(token: string, query: string): Promise<s
         }
 
         return null
-    } catch {
+    } catch (error) {
+        logger.error('pexels_image_search_failed', {
+            error: error instanceof Error ? error : new Error(String(error))
+        })
         return null
     }
 }

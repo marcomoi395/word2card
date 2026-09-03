@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3'
 import { randomUUID } from 'node:crypto'
+import { createLogger } from '../shared/logger'
 
 export type SourceType = 'file' | 'notion'
 export type GenerationStatus = 'pending' | 'generating' | 'ready' | 'failed'
@@ -77,8 +78,10 @@ export interface DatabaseRepositories {
 export const OPENAI_DEFAULT_BASE_URL = 'https://api.openai.com/v1'
 export const OPENAI_DEFAULT_MODEL = 'gpt-4o-mini'
 
+
 import type { RuntimeSettings } from './state/model'
 
+const logger = createLogger('main.database')
 export interface DatabaseSettingsPersistence {
     load: () => RuntimeSettings
     save: (settings: RuntimeSettings) => boolean
@@ -107,18 +110,22 @@ export function createDatabaseSettingsPersistence(
                     }
                 })
                 return true
-            } catch {
+            } catch (error) {
+                logger.error('database_settings_save_failed', { error })
                 return false
             }
+
         },
         delete: (key) => {
             if (!keys.includes(key)) return true
             try {
                 repositories.transaction(() => repositories.settings.set(key, ''))
                 return true
-            } catch {
+            } catch (error) {
+                logger.error('database_settings_delete_failed', { key: String(key), error })
                 return false
             }
+
         }
     }
 }
@@ -169,9 +176,11 @@ export function createDatabase(database: Database.Database): DatabaseRepositorie
             database.prepare('INSERT OR IGNORE INTO schema_migrations (version) VALUES (?)').run(1)
             database.exec('COMMIT')
         } catch (error) {
+            logger.error('database_migration_failed', { error })
             database.exec('ROLLBACK')
             throw error
         }
+
     }
     const get = (id: string): VocabularyRecord | null => {
         const row = database.prepare('SELECT * FROM vocabulary WHERE id = ?').get(id) as
