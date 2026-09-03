@@ -43,7 +43,8 @@ const api: RendererApi = {
     getSettingsStatus: (): Promise<AppResponse<SettingsStatus>> =>
         ipcRenderer.invoke(IPC_CHANNELS.getSettingsStatus),
     getProviderHealth: (): Promise<AppResponse<ProviderHealthSnapshot>> =>
-        ipcRenderer.invoke(IPC_CHANNELS.getProviderHealth)
+        ipcRenderer.invoke(IPC_CHANNELS.getProviderHealth),
+    getAnkiHealth: () => ipcRenderer.invoke(IPC_CHANNELS.getAnkiHealth)
 }
 
 if (!process.contextIsolated) {

@@ -1,7 +1,8 @@
 import { ipcMain } from 'electron'
-import type { AppResponse, ProviderHealthSnapshot } from '../../../shared/ipc'
+import type { AppResponse, ProviderHealthSnapshot, ProviderHealthStatus } from '../../../shared/ipc'
 import { IPC_CHANNELS } from '../../../shared/ipc'
 import { checkProviderHealth } from '../../provider-health'
+import { checkAnkiConnect } from '../../anki-connect'
 import { failure, success } from '../../utils/response'
 import { createLogger } from '../../../shared/logger'
 
@@ -20,6 +21,25 @@ export function registerProviderHealthHandlers(): void {
                 return failure(
                     error instanceof Error ? error.message : 'Failed to check provider health'
                 )
+            }
+        }
+    )
+
+    ipcMain.handle(
+        IPC_CHANNELS.getAnkiHealth,
+        async (): Promise<AppResponse<ProviderHealthStatus>> => {
+            try {
+                const connected = await checkAnkiConnect()
+                return success({
+                    provider: 'anki',
+                    state: connected ? 'connected' : 'unreachable',
+                    message: connected ? 'Connected' : 'AnkiConnect is not running'
+                })
+            } catch (error) {
+                logger.error('anki_health_check_failed', {
+                    error: error instanceof Error ? error : new Error(String(error))
+                })
+                return failure(error instanceof Error ? error.message : 'Failed to check Anki health')
             }
         }
     )

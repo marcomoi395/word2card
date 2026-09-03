@@ -9,6 +9,7 @@ export const IPC_CHANNELS = {
     updateVocabulary: 'update-vocabulary',
     generateMissingData: 'generate-missing-data',
     getProviderHealth: 'get-provider-health',
+    getAnkiHealth: 'get-anki-health',
     submitToAnki: 'submit-to-anki'
 } as const
 
@@ -189,4 +190,5 @@ export interface RendererApi {
     saveSettings: (payload: SaveSettingsPayload) => Promise<AppResponse>
     getSettingsStatus: () => Promise<AppResponse<SettingsStatus>>
     getProviderHealth: () => Promise<AppResponse<ProviderHealthSnapshot>>
+    getAnkiHealth: () => Promise<AppResponse<ProviderHealthStatus>>
 }

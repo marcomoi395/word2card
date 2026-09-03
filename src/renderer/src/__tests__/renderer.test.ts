@@ -21,6 +21,21 @@ describe('Renderer UI', () => {
             getFilePath: vi.fn((file: File) => `/mock/${file.name}`),
             openFileDialog: vi.fn(),
             sendImport: vi.fn(),
+            getProviderHealth: vi.fn().mockResolvedValue({
+                status: 'success',
+                data: {
+                    providers: {
+                        openai: { provider: 'openai', state: 'connected' },
+                        notion: { provider: 'notion', state: 'connected' },
+                        pexels: { provider: 'pexels', state: 'connected' },
+                        anki: { provider: 'anki', state: 'connected' }
+                    }
+                }
+            }),
+            getAnkiHealth: vi.fn().mockResolvedValue({
+                status: 'success',
+                data: { provider: 'anki', state: 'connected' }
+            }),
             saveSettings: vi.fn(),
             getSettingsStatus: vi.fn().mockResolvedValue({
                 status: 'success',
