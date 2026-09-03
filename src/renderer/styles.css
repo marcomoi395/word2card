@@ -1621,6 +1621,24 @@ body {
     gap: 10px;
     margin-top: 22px;
 }
+.dialog-actions .grid-action,
+.dialog-actions .submit-btn {
+    width: auto;
+    min-width: 88px;
+    height: 40px;
+    margin-top: 0;
+    justify-content: center;
+}
+.dialog-actions .submit-btn {
+    padding: 0 14px;
+}
+.dialog-actions .submit-btn span {
+    margin-left: 8px;
+}
+.dialog-actions button:focus-visible {
+    outline: 3px solid #9ebe88;
+    outline-offset: 3px;
+}
 .app-toast {
     position: fixed;
     right: 28px;
@@ -1628,11 +1646,30 @@ body {
     z-index: 21;
     max-width: min(420px, calc(100vw - 56px));
     padding: 13px 16px;
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    background: var(--ink);
-    color: #f7f9e9;
-    box-shadow: 0 14px 30px #29352f2b;
+    border: 2px solid var(--ink);
+    border-left: 7px solid var(--green);
+    border-radius: 0;
+    background: #effbdd;
+    color: var(--ink);
+    box-shadow: 5px 5px 0 var(--ink);
     font-size: 12px;
     font-weight: 800;
+    line-height: 1.45;
+}
+@media (max-width: 560px) {
+    .dialog-content {
+        padding: 20px;
+    }
+    .dialog-actions {
+        flex-direction: column-reverse;
+    }
+    .dialog-actions .grid-action,
+    .dialog-actions .submit-btn {
+        width: 100%;
+    }
+    .app-toast {
+        right: 20px;
+        bottom: 20px;
+        max-width: calc(100vw - 40px);
+    }
 }
