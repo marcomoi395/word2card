@@ -922,15 +922,25 @@ body {
     }
     .side-nav {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 10px;
         padding: 0;
     }
     .nav-item {
         min-width: 0;
     }
+    .settings-nav {
+        margin-bottom: 0;
+    }
     .sidebar-footer {
-        display: none;
+        display: block;
+        position: relative;
+        z-index: 1;
+        margin-top: 12px;
+        padding-right: 0;
+    }
+    .version-chip {
+        margin: 0;
     }
     .content-area {
         margin: 0;
@@ -1298,7 +1308,7 @@ body {
         font-size: 9px;
     }
     .side-nav {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
     .nav-item {
         padding: 10px;
