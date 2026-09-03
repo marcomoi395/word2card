@@ -43,7 +43,7 @@ function recordRow(
     editable: boolean,
     index: number
 ): string {
-    const fields = ['partOfSpeech', 'cloze', 'vietnamese', 'ipa', 'meaning'] as const
+    const fields = ['partOfSpeech', 'cloze', 'vietnamese', 'ipa'] as const
     const values = fields.map((field) => escapeHtml(record[field]))
     const editableCells = values
         .map(
@@ -100,7 +100,7 @@ function initSelectionControls(): void {
 function renderRecords(): void {
     const previewBody = document.querySelector('#section-import .data-grid tbody')
     const collectionBody = document.querySelector('#section-collection .data-grid tbody')
-    const empty = '<tr><td colspan="11" role="status">No words in this import yet.</td></tr>'
+    const empty = '<tr><td colspan="10" role="status">No words in this import yet.</td></tr>'
     if (previewBody) {
         previewBody.innerHTML = importDraftRecords.length
             ? importDraftRecords.map((record, i) => recordRow(record, true, i)).join('')
@@ -280,7 +280,7 @@ function initVocabularyActions(): void {
             if (
                 id &&
                 field &&
-                ['word', 'partOfSpeech', 'cloze', 'vietnamese', 'ipa', 'meaning'].includes(field)
+                ['word', 'partOfSpeech', 'cloze', 'vietnamese', 'ipa'].includes(field)
             ) {
                 const response = await window.api.updateVocabulary({
                     id,

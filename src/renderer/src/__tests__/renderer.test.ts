@@ -71,6 +71,21 @@ describe('Renderer UI', () => {
             expect(document.getElementById('section-notion')).toBeTruthy()
             expect(document.getElementById('section-settings')).toBeTruthy()
         })
+        it('omits the meaning column from import and collection tables', () => {
+            for (const selector of [
+                '#section-import .data-grid',
+                '#section-collection .data-grid'
+            ]) {
+                const table = document.querySelector<HTMLTableElement>(selector)
+                expect(table?.querySelector('th:nth-child(8)')?.textContent?.trim()).not.toBe(
+                    'Meaning'
+                )
+                expect(table?.querySelectorAll('thead th')).toHaveLength(10)
+                expect(
+                    table?.querySelector('tbody td[role="status"]')?.getAttribute('colspan')
+                ).toBe('10')
+            }
+        })
         it('calls getSettingsStatus on load', () => {
             expect(window.api.getSettingsStatus).toHaveBeenCalled()
         })
