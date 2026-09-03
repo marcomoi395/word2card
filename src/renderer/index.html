@@ -815,6 +815,22 @@
                 </main>
             </div>
         </div>
+        <div id="app-dialog" class="app-dialog" hidden>
+            <div class="app-dialog-backdrop" data-dialog-dismiss="true"></div>
+            <section class="dialog-card" role="alertdialog" aria-modal="true" aria-labelledby="dialog-title" aria-describedby="dialog-message">
+                <div class="dialog-accent" aria-hidden="true"></div>
+                <div class="dialog-content">
+                    <p class="eyebrow" id="dialog-eyebrow">WORD2CARD</p>
+                    <h2 id="dialog-title">Notice</h2>
+                    <p id="dialog-message"></p>
+                    <div class="dialog-actions">
+                        <button class="grid-action" type="button" id="dialog-cancel">Cancel</button>
+                        <button class="submit-btn" type="button" id="dialog-confirm">OK <span>&gt;</span></button>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <div id="app-toast" class="app-toast" role="status" aria-live="polite" hidden></div>
         <script type="module" src="./src/renderer.ts"></script>
     </body>
 </html>

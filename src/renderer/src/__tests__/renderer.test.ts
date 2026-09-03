@@ -305,9 +305,8 @@ describe('Renderer UI', () => {
             setTimeout(r2, 10)
             await p2
 
-            expect(window.alert).toHaveBeenCalledWith(
-                expect.stringContaining('Failed to save settings: Failed to save')
-            )
+            expect(document.getElementById('app-toast')?.textContent).toContain(
+                'Failed to save settings: Failed to save')
         })
 
         it('shows error alert when saveSettings returns error without message', async () => {
@@ -327,9 +326,8 @@ describe('Renderer UI', () => {
             setTimeout(r2, 10)
             await p2
 
-            expect(window.alert).toHaveBeenCalledWith(
-                expect.stringContaining('Failed to save settings: undefined')
-            )
+            expect(document.getElementById('app-toast')?.textContent).toContain(
+                'Failed to save settings: Unknown error.')
         })
 
         it('shows error alert when saveSettings throws error', async () => {
@@ -349,9 +347,7 @@ describe('Renderer UI', () => {
             await p2
 
             expect(consoleSpy).toHaveBeenCalled()
-            expect(window.alert).toHaveBeenCalledWith(
-                expect.stringContaining('An error occurred while saving settings.')
-            )
+            expect(document.getElementById('app-toast')?.textContent).toContain('An error occurred while saving settings.')
             consoleSpy.mockRestore()
         })
     })
@@ -454,7 +450,7 @@ describe('Renderer UI', () => {
             await promise
 
             expect(window.api.sendImport).not.toHaveBeenCalled()
-            expect(window.alert).toHaveBeenCalledWith(expect.stringContaining('source file'))
+            expect(document.getElementById('app-toast')?.textContent).toContain('source file')
         })
 
         it('uses flashcard format without a format selection', async () => {
@@ -500,9 +496,8 @@ describe('Renderer UI', () => {
             await promise
 
             expect(consoleSpy).toHaveBeenCalled()
-            expect(window.alert).toHaveBeenCalledWith(
-                expect.stringContaining('An error occurred during import.')
-            )
+            expect(document.getElementById('app-toast')?.textContent).toContain(
+                'An error occurred during import.')
             consoleSpy.mockRestore()
         })
     })
@@ -558,7 +553,7 @@ describe('Renderer UI', () => {
             await promise
 
             expect(window.api.sendImport).not.toHaveBeenCalled()
-            expect(window.alert).toHaveBeenCalledWith(expect.stringContaining('Notion token'))
+            expect(document.getElementById('app-toast')?.textContent).toContain('Notion token')
         })
 
         it('does not call sendImport when database ID missing', async () => {
@@ -576,7 +571,7 @@ describe('Renderer UI', () => {
             await promise
 
             expect(window.api.sendImport).not.toHaveBeenCalled()
-            expect(window.alert).toHaveBeenCalledWith(expect.stringContaining('database ID'))
+            expect(document.getElementById('app-toast')?.textContent).toContain('database ID')
         })
 
         it('uses flashcard format without a format selection', async () => {
@@ -625,9 +620,8 @@ describe('Renderer UI', () => {
             await promise
 
             expect(consoleSpy).toHaveBeenCalled()
-            expect(window.alert).toHaveBeenCalledWith(
-                expect.stringContaining('An error occurred during sync.')
-            )
+            expect(document.getElementById('app-toast')?.textContent).toContain(
+                'An error occurred during sync.')
             consoleSpy.mockRestore()
         })
     })

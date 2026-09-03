@@ -15,6 +15,18 @@ type TabName = 'import' | 'collection' | 'notion' | 'settings'
 
 let importDraftRecords: ImportDraftRecord[] = []
 let collectionRecords: VocabularyRecord[] = []
+let toastTimer: number | undefined
+
+function showToast(message: string): void {
+    const toast = document.getElementById('app-toast')
+    if (!toast) return
+    toast.textContent = message
+    toast.hidden = false
+    window.clearTimeout(toastTimer)
+    toastTimer = window.setTimeout(() => {
+        toast.hidden = true
+    }, 4200)
+}
 
 function escapeHtml(value: string | null | undefined): string {
     return (value ?? '')
@@ -197,7 +209,7 @@ function initAddDeleteActions(): void {
             logger.error('vocabulary_create_failed', {
                 error: error instanceof Error ? error : new Error(String(error))
             })
-            alert('An error occurred while adding the word.')
+            showToast('An error occurred while adding the word.')
         }
     })
     document
@@ -217,7 +229,7 @@ function initAddDeleteActions(): void {
                 logger.error('vocabulary_delete_failed', {
                     error: error instanceof Error ? error : new Error(String(error))
                 })
-                alert('An error occurred while deleting words.')
+                showToast('An error occurred while deleting words.')
             }
         })
 }
@@ -237,7 +249,7 @@ function initVocabularyActions(): void {
             logger.error('missing_data_generation_failed', {
                 error: error instanceof Error ? error : new Error(String(error))
             })
-            alert('An error occurred while generating data.')
+            showToast('An error occurred while generating data.')
         } finally {
             setButtonLoading(button, false)
         }
@@ -257,7 +269,7 @@ function initVocabularyActions(): void {
             logger.error('anki_submission_failed', {
                 error: error instanceof Error ? error : new Error(String(error))
             })
-            alert('An error occurred while submitting to Anki.')
+            showToast('An error occurred while submitting to Anki.')
         } finally {
             setButtonLoading(button, false)
         }
@@ -381,13 +393,13 @@ function showResponseAlert(actionLabel: string, response: AppResponse<unknown> |
             'failed' in data
         ) {
             const summary = data as { submitted: number; duplicates: number; failed: number }
-            alert(
+            showToast(
                 `${actionLabel}: ${summary.submitted} added, ${summary.duplicates} duplicate(s), ${summary.failed} failed.`
             )
         }
         return
     }
-    alert(`${actionLabel} failed: ${response?.message || 'Unknown error.'}`)
+    showToast(`${actionLabel} failed: ${response?.message || 'Unknown error.'}`)
 }
 
 function switchTab(tabName: TabName): void {
@@ -622,7 +634,7 @@ function initImportForm(): void {
         const deck = deckInput?.value.trim() || ''
 
         if (!sourceFile) {
-            alert('Please provide a source file path.')
+            showToast('Please provide a source file path.')
             sourceFileInput?.focus()
             return
         }
@@ -652,7 +664,7 @@ function initImportForm(): void {
             logger.error('file_import_failed', {
                 error: error instanceof Error ? error : new Error('Unknown file import failure')
             })
-            alert('An error occurred during import.')
+            showToast('An error occurred during import.')
         } finally {
             setButtonLoading(submitButton, false)
         }
@@ -686,13 +698,13 @@ function initNotionForm(): void {
         const deck = deckInput?.value.trim() || ''
 
         if (!notionToken) {
-            alert('Please provide a Notion token.')
+            showToast('Please provide a Notion token.')
             notionTokenInput?.focus()
             return
         }
 
         if (!notionDatabaseId) {
-            alert('Please provide a Notion database ID.')
+            showToast('Please provide a Notion database ID.')
             notionDatabaseIdInput?.focus()
             return
         }
@@ -723,7 +735,7 @@ function initNotionForm(): void {
             logger.error('notion_sync_failed', {
                 error: error instanceof Error ? error : new Error('Unknown Notion sync failure')
             })
-            alert('An error occurred during sync.')
+            showToast('An error occurred during sync.')
         } finally {
             setButtonLoading(submitButton, false)
         }
@@ -795,7 +807,7 @@ function initSettingsForm(): void {
             const result = await window.api.saveSettings(settingsData)
             // Only show alert on error; success feedback is provided by button state
             if (result.status !== 'success') {
-                alert(`Failed to save settings: ${result.message}`)
+                showToast(`Failed to save settings: ${result.message || 'Unknown error.'}`)
             } else {
                 await loadHealth()
             }
@@ -803,7 +815,7 @@ function initSettingsForm(): void {
             logger.error('settings_save_failed', {
                 error: error instanceof Error ? error : new Error('Unknown settings save failure')
             })
-            alert('An error occurred while saving settings.')
+            showToast('An error occurred while saving settings.')
         } finally {
             setButtonLoading(saveButton, false)
         }
@@ -836,6 +848,12 @@ function init(): void {
         initVocabularyActions()
         initAddDeleteActions()
         initSelectionControls()
+        document.getElementById('dialog-cancel')?.addEventListener('click', () => {
+            document.getElementById('app-dialog')?.setAttribute('hidden', '')
+        })
+        document.querySelector('[data-dialog-dismiss="true"]')?.addEventListener('click', () => {
+            document.getElementById('app-dialog')?.setAttribute('hidden', '')
+        })
         void loadHealth()
         void refreshAnkiHealth()
         window.setInterval(() => void refreshAnkiHealth(), 10_000)
