@@ -305,7 +305,9 @@ describe('Renderer UI', () => {
             setTimeout(r2, 10)
             await p2
 
-            expect(document.getElementById('app-toast')?.textContent).toContain('Failed to save settings: Failed to save')
+            expect(document.getElementById('app-toast')?.textContent).toContain(
+                'Failed to save settings: Failed to save'
+            )
         })
 
         it('shows error alert when saveSettings returns error without message', async () => {
@@ -325,7 +327,9 @@ describe('Renderer UI', () => {
             setTimeout(r2, 10)
             await p2
 
-            expect(document.getElementById('app-toast')?.textContent).toContain('Failed to save settings: Unknown error.')
+            expect(document.getElementById('app-toast')?.textContent).toContain(
+                'Failed to save settings: Unknown error.'
+            )
         })
 
         it('shows error alert when saveSettings throws error', async () => {
@@ -345,7 +349,9 @@ describe('Renderer UI', () => {
             await p2
 
             expect(consoleSpy).toHaveBeenCalled()
-            expect(document.getElementById('app-toast')?.textContent).toContain('An error occurred while saving settings.')
+            expect(document.getElementById('app-toast')?.textContent).toContain(
+                'An error occurred while saving settings.'
+            )
             consoleSpy.mockRestore()
         })
     })
@@ -468,7 +474,6 @@ describe('Renderer UI', () => {
             expect(document.getElementById('app-toast')?.hidden).toBe(true)
         })
 
-
         it('does not call sendImport when file path missing', async () => {
             const form = document.getElementById('form-import') as HTMLFormElement
             const fileInput = document.getElementById('source-file') as HTMLInputElement
@@ -548,7 +553,6 @@ describe('Renderer UI', () => {
 
             expect(document.getElementById('app-toast')?.hidden).toBe(true)
         })
-
 
         it('shows error alert when sendImport throws error', async () => {
             const form = document.getElementById('form-import') as HTMLFormElement
