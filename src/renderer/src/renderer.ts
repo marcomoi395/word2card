@@ -26,9 +26,15 @@ function escapeHtml(value: string | null | undefined): string {
 }
 
 function statusLabel(record: ImportDraftRecord | VocabularyRecord): string {
-    if ('ankiStatus' in record && record.ankiStatus === 'submitted') return 'Submitted'
-    if (record.generationStatus === 'ready') return 'Ready'
-    if (record.generationStatus === 'failed') return 'Generation failed'
+    if ('ankiStatus' in record && record.ankiStatus === 'submitted') {
+        return 'Submitted'
+    }
+    if (record.generationStatus === 'ready') {
+        return 'Ready'
+    }
+    if (record.generationStatus === 'failed') {
+        return 'Generation failed'
+    }
     return 'Needs data'
 }
 
@@ -55,7 +61,9 @@ function recordRow(
 function updateSelectAllState(table: HTMLTableElement): void {
     const selectAll = table.querySelector<HTMLInputElement>('thead .select-all')
     const rowCheckboxes = Array.from(table.querySelectorAll<HTMLInputElement>('tbody .row-select'))
-    if (!selectAll) return
+    if (!selectAll) {
+        return
+    }
 
     const selectedCount = rowCheckboxes.filter((checkbox) => checkbox.checked).length
     selectAll.checked = rowCheckboxes.length > 0 && selectedCount === rowCheckboxes.length
@@ -63,7 +71,9 @@ function updateSelectAllState(table: HTMLTableElement): void {
 }
 
 function initSelectionControls(): void {
-    if (document.body.dataset.selectionControlsInitialized === 'true') return
+    if (document.body.dataset.selectionControlsInitialized === 'true') {
+        return
+    }
     document.body.dataset.selectionControlsInitialized = 'true'
 
     document.addEventListener('change', (event) => {
@@ -73,7 +83,9 @@ function initSelectionControls(): void {
         }
 
         const table = checkbox.closest('table')
-        if (!(table instanceof HTMLTableElement)) return
+        if (!(table instanceof HTMLTableElement)) {
+            return
+        }
 
         if (checkbox.classList.contains('select-all')) {
             table.querySelectorAll<HTMLInputElement>('tbody .row-select').forEach((rowCheckbox) => {
@@ -89,26 +101,35 @@ function renderRecords(): void {
     const previewBody = document.querySelector('#section-import .data-grid tbody')
     const collectionBody = document.querySelector('#section-collection .data-grid tbody')
     const empty = '<tr><td colspan="11" role="status">No words in this import yet.</td></tr>'
-    if (previewBody)
+    if (previewBody) {
         previewBody.innerHTML = importDraftRecords.length
             ? importDraftRecords.map((record, i) => recordRow(record, true, i)).join('')
             : empty
-    if (collectionBody)
+    }
+    if (collectionBody) {
         collectionBody.innerHTML = collectionRecords.length
             ? collectionRecords.map((record, i) => recordRow(record, true, i)).join('')
             : empty
+    }
     document.querySelectorAll<HTMLTableElement>('.data-grid').forEach(updateSelectAllState)
     const counts = document.querySelectorAll<HTMLElement>('.table-count')
-    if (counts[0]) counts[0].textContent = `${importDraftRecords.length} words ready`
-    if (counts[1]) counts[1].textContent = `${collectionRecords.length} words saved`
+    if (counts[0]) {
+        counts[0].textContent = `${importDraftRecords.length} words ready`
+    }
+    if (counts[1]) {
+        counts[1].textContent = `${collectionRecords.length} words saved`
+    }
     const stat = document.querySelector<HTMLElement>('.heading-stat strong')
-    if (stat) stat.textContent = String(importDraftRecords.length)
+    if (stat) {
+        stat.textContent = String(importDraftRecords.length)
+    }
     initAudioPreview()
 }
 async function loadCollection(): Promise<void> {
     const response = await window.api.listVocabulary()
-    if (response.status !== 'success' || !response.data)
+    if (response.status !== 'success' || !response.data) {
         throw new Error(response.message || 'Failed to load collection')
+    }
     collectionRecords = response.data
     renderRecords()
 }
@@ -159,7 +180,9 @@ function initAddDeleteActions(): void {
                 .map((checkbox) => checkbox.closest('tr')?.dataset.id)
                 .filter((id): id is string => Boolean(id))
         )
-        if (!selectedIds.size) return
+        if (!selectedIds.size) {
+            return
+        }
         importDraftRecords = importDraftRecords.filter((record) => !selectedIds.has(record.id))
         renderRecords()
     })
@@ -167,7 +190,9 @@ function initAddDeleteActions(): void {
         try {
             const response = await window.api.createVocabulary({ word: '' })
             showResponseAlert('Add word', response)
-            if (response.status === 'success') await refreshVocabulary()
+            if (response.status === 'success') {
+                await refreshVocabulary()
+            }
         } catch (error) {
             logger.error('vocabulary_create_failed', {
                 error: error instanceof Error ? error : new Error(String(error))
@@ -179,11 +204,15 @@ function initAddDeleteActions(): void {
         .getElementById('btn-delete-collection-selected')
         ?.addEventListener('click', async () => {
             const recordIds = selectedRecordIds('#section-collection .data-grid')
-            if (!recordIds.length) return
+            if (!recordIds.length) {
+                return
+            }
             try {
                 const response = await window.api.deleteVocabulary({ recordIds })
                 showResponseAlert('Delete selected', response)
-                if (response.status === 'success') await refreshVocabulary()
+                if (response.status === 'success') {
+                    await refreshVocabulary()
+                }
             } catch (error) {
                 logger.error('vocabulary_delete_failed', {
                     error: error instanceof Error ? error : new Error(String(error))
@@ -237,7 +266,9 @@ function initVocabularyActions(): void {
         'blur',
         async (event) => {
             const cell = event.target
-            if (!(cell instanceof HTMLElement) || !cell.classList.contains('editable-cell')) return
+            if (!(cell instanceof HTMLElement) || !cell.classList.contains('editable-cell')) {
+                return
+            }
             const id = cell.dataset.id
             const field = cell.dataset.field
             const value = cell.innerText.trim()
@@ -255,7 +286,9 @@ function initVocabularyActions(): void {
                     id,
                     changes: { [field]: value }
                 })
-                if (response.status === 'success') await refreshVocabulary()
+                if (response.status === 'success') {
+                    await refreshVocabulary()
+                }
             }
         },
         true
@@ -265,7 +298,9 @@ function initVocabularyActions(): void {
 function renderHealth(snapshot: ProviderHealthSnapshot): void {
     const status = document.querySelector<HTMLElement>('.step-two-status')
     const list = status?.querySelector('.connection-list')
-    if (!list) return
+    if (!list) {
+        return
+    }
     const labels: Record<string, string> = {
         openai: 'AI',
         anki: 'AnkiConnect',
@@ -283,7 +318,9 @@ function renderHealth(snapshot: ProviderHealthSnapshot): void {
 async function loadHealth(): Promise<void> {
     try {
         const response = await window.api.getProviderHealth()
-        if (response.status === 'success' && response.data) renderHealth(response.data)
+        if (response.status === 'success' && response.data) {
+            renderHealth(response.data)
+        }
     } catch (error) {
         logger.error('provider_health_load_failed', {
             error:
@@ -296,8 +333,9 @@ async function refreshAnkiHealth(): Promise<void> {
         const response = await window.api.getAnkiHealth()
         const anki = response.status === 'success' ? response.data : undefined
         const item = document.querySelector<HTMLElement>('.connection-item[data-provider="anki"]')
-        if (item && anki)
+        if (item && anki) {
             item.innerHTML = `<span class="status-dot ${anki.state === 'connected' ? 'connected' : 'disconnected'}"></span>AnkiConnect: ${anki.state}`
+        }
     } catch (error) {
         logger.error('anki_health_load_failed', {
             error: error instanceof Error ? error : new Error('Unknown Anki health load failure')
@@ -398,20 +436,38 @@ function switchTab(tabName: TabName): void {
     const pageStatLabel = document.querySelector<HTMLElement>('.heading-stat span:last-child')
 
     if (tabName === 'collection') {
-        if (pageEyebrow) pageEyebrow.textContent = 'WORD LIBRARY'
-        if (pageTitle) pageTitle.textContent = 'Collection.'
-        if (pageCopy)
+        if (pageEyebrow) {
+            pageEyebrow.textContent = 'WORD LIBRARY'
+        }
+        if (pageTitle) {
+            pageTitle.textContent = 'Collection.'
+        }
+        if (pageCopy) {
             pageCopy.textContent = 'Browse and review the words collected from your sources.'
-        if (pageStat) pageStat.textContent = '4'
-        if (pageStatLabel) pageStatLabel.textContent = 'words saved'
+        }
+        if (pageStat) {
+            pageStat.textContent = '4'
+        }
+        if (pageStatLabel) {
+            pageStatLabel.textContent = 'words saved'
+        }
     } else if (tabName === 'import') {
-        if (pageEyebrow) pageEyebrow.textContent = 'IMPORT CENTER'
-        if (pageTitle) pageTitle.textContent = 'Turn words into cards.'
-        if (pageCopy)
+        if (pageEyebrow) {
+            pageEyebrow.textContent = 'IMPORT CENTER'
+        }
+        if (pageTitle) {
+            pageTitle.textContent = 'Turn words into cards.'
+        }
+        if (pageCopy) {
             pageCopy.textContent =
                 'Choose a source, set your destination, and review the vocabulary before creating your deck.'
-        if (pageStat) pageStat.textContent = '0'
-        if (pageStatLabel) pageStatLabel.textContent = 'words ready'
+        }
+        if (pageStat) {
+            pageStat.textContent = '0'
+        }
+        if (pageStatLabel) {
+            pageStatLabel.textContent = 'words ready'
+        }
     }
 
     if (tabName === 'import' || tabName === 'collection') {

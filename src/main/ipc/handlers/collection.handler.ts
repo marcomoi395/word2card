@@ -29,7 +29,9 @@ export function registerCollectionHandlers(database: DatabaseRepositories): void
         IPC_CHANNELS.createVocabulary,
         async (_event, payload: unknown): Promise<AppResponse<VocabularyRecord>> => {
             const parsed = parseCreateVocabularyPayload(payload)
-            if (!parsed) return failure('Invalid vocabulary create payload')
+            if (!parsed) {
+                return failure('Invalid vocabulary create payload')
+            }
             try {
                 return success(service.create(parsed.word))
             } catch (error) {
@@ -43,7 +45,9 @@ export function registerCollectionHandlers(database: DatabaseRepositories): void
         IPC_CHANNELS.updateVocabulary,
         async (_event, payload: unknown): Promise<AppResponse<VocabularyRecord>> => {
             const parsed = parseEditVocabularyPayload(payload)
-            if (!parsed) return failure('Invalid vocabulary edit payload')
+            if (!parsed) {
+                return failure('Invalid vocabulary edit payload')
+            }
             try {
                 return success(service.update(parsed.id, parsed.changes))
             } catch (error) {
@@ -57,7 +61,9 @@ export function registerCollectionHandlers(database: DatabaseRepositories): void
         IPC_CHANNELS.deleteVocabulary,
         async (_event, payload: unknown): Promise<AppResponse<DeleteVocabularySummary>> => {
             const parsed = parseDeleteVocabularyPayload(payload)
-            if (!parsed) return failure('Invalid vocabulary delete payload')
+            if (!parsed) {
+                return failure('Invalid vocabulary delete payload')
+            }
             try {
                 return success({ deleted: service.delete(parsed.recordIds) })
             } catch (error) {

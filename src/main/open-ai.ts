@@ -24,7 +24,9 @@ export class OpenAIService {
         const baseURL = configuredBaseUrl?.startsWith('http')
             ? configuredBaseUrl
             : OPENAI_DEFAULT_BASE_URL
-        if (!apiKey) throw new Error('Missing OpenAI API key in state')
+        if (!apiKey) {
+            throw new Error('Missing OpenAI API key in state')
+        }
         const model =
             configuredModel && configuredModel !== apiKey ? configuredModel : OPENAI_DEFAULT_MODEL
         const configKey = `${apiKey}\u0000${baseURL}\u0000${model}`
@@ -54,7 +56,9 @@ export class OpenAIService {
             response_format: { type: 'json_object' }
         })
         const content = completion.choices[0].message.content
-        if (!content) throw new Error('No content returned from GPT')
+        if (!content) {
+            throw new Error('No content returned from GPT')
+        }
         return (JSON.parse(content) as { data: FlashcardResponse[] }).data
     }
 }

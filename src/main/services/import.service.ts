@@ -30,7 +30,9 @@ const createDraftRecords = (words: string[], source: 'file' | 'notion'): ImportD
     return words.flatMap((rawWord, index) => {
         const word = rawWord.trim()
         const normalized = word.toLocaleLowerCase()
-        if (!word || seen.has(normalized)) return []
+        if (!word || seen.has(normalized)) {
+            return []
+        }
         seen.add(normalized)
         return [
             {
@@ -54,7 +56,9 @@ const createDraftRecords = (words: string[], source: 'file' | 'notion'): ImportD
     })
 }
 
-export function setImportDatabase(_repositories?: DatabaseRepositories): void {}
+export function setImportDatabase(_repositories?: DatabaseRepositories): void {
+    void _repositories
+}
 
 export class ImportService {
     private static lastSummary: ImportSummary = { inserted: 0, skipped: 0, failed: 0 }
@@ -68,7 +72,9 @@ export class ImportService {
     > {
         if (request.type === 'FILE_IMPORT') {
             const raw = await readFileContent(request.payload.filePath)
-            if (raw === null) return failure('Failed to read words from the source.')
+            if (raw === null) {
+                return failure('Failed to read words from the source.')
+            }
             const records = createDraftRecords(raw, 'file')
             this.lastSummary = { inserted: records.length, skipped: 0, failed: 0, records }
             return success({ words: records.map((record) => record.word), records })
@@ -77,10 +83,13 @@ export class ImportService {
             if (
                 !syncRuntimeSecret('notionToken', request.payload.token) ||
                 !syncRuntimeSecret('notionDatabaseId', request.payload.notionDatabaseId)
-            )
+            ) {
                 return failure('Failed to save Notion settings.')
+            }
             const sources = await NotionService.getPages(request.payload.notionDatabaseId)
-            if (!sources?.length) return failure('No pages found in the Notion database.')
+            if (!sources?.length) {
+                return failure('No pages found in the Notion database.')
+            }
             const targets = sources.flatMap((source) =>
                 getWordEntriesFromResponse(source.pages).map((entry) => ({
                     pageId: entry.pageId,
@@ -114,7 +123,9 @@ export class ImportService {
     ): Promise<AppResponse<ImportSummary>> {
         try {
             const loaded = await this.loadWords(request)
-            if (loaded.status === 'error') return failure(loaded.message)
+            if (loaded.status === 'error') {
+                return failure(loaded.message)
+            }
             return success(this.lastSummary, 'Words loaded into review.')
         } catch (error) {
             return failure(error instanceof Error ? error.message : 'Failed to load words')

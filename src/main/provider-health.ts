@@ -27,7 +27,9 @@ const request = async (url: string, init?: RequestInit): Promise<Response> => {
 
 const checkOpenAI = async (): Promise<ProviderHealthStatus> => {
     const key = getRuntimeSetting('openaiApiKey')
-    if (!key) return result('openai', 'not_configured', 'API key not configured')
+    if (!key) {
+        return result('openai', 'not_configured', 'API key not configured')
+    }
     const baseUrl =
         getRuntimeSetting('openaiBaseUrl')?.replace(/\/$/, '') || 'https://api.openai.com/v1'
     try {
@@ -52,8 +54,9 @@ const checkOpenAI = async (): Promise<ProviderHealthStatus> => {
 const checkNotion = async (): Promise<ProviderHealthStatus> => {
     const token = getRuntimeSetting('notionToken')
     const databaseId = getRuntimeSetting('notionDatabaseId')
-    if (!token || !databaseId)
+    if (!token || !databaseId) {
         return result('notion', 'not_configured', 'Token and database ID required')
+    }
     try {
         const response = await request(
             `https://api.notion.com/v1/databases/${encodeURIComponent(databaseId)}`,
@@ -76,7 +79,9 @@ const checkNotion = async (): Promise<ProviderHealthStatus> => {
 
 const checkPexels = async (): Promise<ProviderHealthStatus> => {
     const token = getRuntimeSetting('pexelsToken')
-    if (!token) return result('pexels', 'not_configured', 'API key not configured')
+    if (!token) {
+        return result('pexels', 'not_configured', 'API key not configured')
+    }
     try {
         const response = await request('https://api.pexels.com/v1/curated?per_page=1', {
             headers: { Authorization: token }

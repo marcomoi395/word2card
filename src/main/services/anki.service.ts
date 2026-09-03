@@ -74,7 +74,9 @@ export class AnkiService {
                     missingFieldCount: missing.length
                 })
                 summary.failed++
-            } else valid.push(record)
+            } else {
+                valid.push(record)
+            }
         }
         if (!valid.length) {
             if (summary.failed) {

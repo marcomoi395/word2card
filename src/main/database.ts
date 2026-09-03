@@ -98,7 +98,9 @@ export function createDatabaseSettingsPersistence(
             const settings: RuntimeSettings = {}
             for (const key of keys) {
                 const value = repositories.settings.get(key)
-                if (value !== null) settings[key] = value
+                if (value !== null) {
+                    settings[key] = value
+                }
             }
             return settings
         },
@@ -107,7 +109,9 @@ export function createDatabaseSettingsPersistence(
                 repositories.transaction(() => {
                     for (const key of keys) {
                         const value = settings[key]
-                        if (value !== undefined) repositories.settings.set(key, value)
+                        if (value !== undefined) {
+                            repositories.settings.set(key, value)
+                        }
                     }
                 })
                 return true
@@ -117,7 +121,9 @@ export function createDatabaseSettingsPersistence(
             }
         },
         delete: (key) => {
-            if (!keys.includes(key)) return true
+            if (!keys.includes(key)) {
+                return true
+            }
             try {
                 repositories.transaction(() => repositories.settings.set(key, ''))
                 return true
@@ -226,7 +232,9 @@ export function createDatabase(database: Database.Database): DatabaseRepositorie
                         .all() as Record<string, unknown>[]
                 ).map(toRecord),
             update: (id, input) => {
-                if (!get(id)) return null
+                if (!get(id)) {
+                    return null
+                }
                 const map: Record<string, string> = {
                     word: 'word',
                     source: 'source',
@@ -248,12 +256,15 @@ export function createDatabase(database: Database.Database): DatabaseRepositorie
                 const keys = Object.keys(input).filter(
                     (key) => (input as Record<string, unknown>)[key] !== undefined
                 )
-                if (keys.length === 0) return get(id)
+                if (keys.length === 0) {
+                    return get(id)
+                }
                 const values = keys.map((key) => {
                     const value = (input as Record<string, unknown>)[key]
                     if (key === 'word') {
-                        if (typeof value !== 'string' || !value.trim())
+                        if (typeof value !== 'string' || !value.trim()) {
                             throw new Error('word is required')
+                        }
                         return value.trim()
                     }
                     return value ?? null
@@ -270,7 +281,9 @@ export function createDatabase(database: Database.Database): DatabaseRepositorie
                 return get(id)
             },
             delete: (ids) => {
-                if (ids.length === 0) return 0
+                if (ids.length === 0) {
+                    return 0
+                }
                 const placeholders = ids.map(() => '?').join(', ')
                 return database
                     .prepare(`DELETE FROM vocabulary WHERE id IN (${placeholders})`)

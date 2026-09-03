@@ -24,7 +24,9 @@ const sanitizeText = (value: string): string =>
     )
 
 const sanitize = (value: unknown, key?: string, seen = new WeakSet<object>()): unknown => {
-    if (key && SECRET_KEY_PATTERN.test(key)) return '[REDACTED]'
+    if (key && SECRET_KEY_PATTERN.test(key)) {
+        return '[REDACTED]'
+    }
     if (value instanceof Error) {
         const error = value as Error & { code?: string }
         return {
@@ -33,12 +35,20 @@ const sanitize = (value: unknown, key?: string, seen = new WeakSet<object>()): u
             ...(error.code ? { code: sanitizeText(error.code) } : {})
         }
     }
-    if (typeof value === 'string') return sanitizeText(value)
-    if (typeof value === 'bigint') return value.toString()
+    if (typeof value === 'string') {
+        return sanitizeText(value)
+    }
+    if (typeof value === 'bigint') {
+        return value.toString()
+    }
     if (value && typeof value === 'object') {
-        if (seen.has(value)) return '[Circular]'
+        if (seen.has(value)) {
+            return '[Circular]'
+        }
         seen.add(value)
-        if (Array.isArray(value)) return value.map((item) => sanitize(item, undefined, seen))
+        if (Array.isArray(value)) {
+            return value.map((item) => sanitize(item, undefined, seen))
+        }
         return Object.fromEntries(
             Object.entries(value as Record<string, unknown>).map(([entryKey, entryValue]) => [
                 entryKey,
@@ -58,14 +68,22 @@ const ANSI = {
 } as const
 
 const supportsColor = (): boolean => {
-    if (typeof process === 'undefined') return false
-    if (process.env['NO_COLOR'] !== undefined) return false
-    if (process.env['FORCE_COLOR'] !== undefined) return process.env['FORCE_COLOR'] !== '0'
+    if (typeof process === 'undefined') {
+        return false
+    }
+    if (process.env['NO_COLOR'] !== undefined) {
+        return false
+    }
+    if (process.env['FORCE_COLOR'] !== undefined) {
+        return process.env['FORCE_COLOR'] !== '0'
+    }
     return Boolean(process.stdout?.isTTY || process.stderr?.isTTY)
 }
 
 const formatValue = (value: unknown): string => {
-    if (typeof value === 'string') return JSON.stringify(value)
+    if (typeof value === 'string') {
+        return JSON.stringify(value)
+    }
     try {
         const output = JSON.stringify(value)
         return output === undefined ? String(value) : output
@@ -85,17 +103,24 @@ export const formatLogEntry = (entry: Record<string, unknown>, color = supportsC
         .map(([key, value]) => `${key}=${formatValue(value)}`)
         .join(' ')
     const line = `${timestamp} ${level.toUpperCase().padEnd(5)} ${component} ${event}${details ? ` ${details}` : ''}`
-    if (!color || !(level in ANSI)) return line
+    if (!color || !(level in ANSI)) {
+        return line
+    }
     return `${ANSI[level].concat(line)}${ANSI.reset}`
 }
 
 const defaultSink = (entry: Record<string, unknown>): void => {
     const output = formatLogEntry(entry)
     const level = entry.level as LogLevel
-    if (level === 'error') console.error(output)
-    else if (level === 'warn') console.warn(output)
-    else if (level === 'debug') console.debug(output)
-    else console.info(output)
+    if (level === 'error') {
+        console.error(output)
+    } else if (level === 'warn') {
+        console.warn(output)
+    } else if (level === 'debug') {
+        console.debug(output)
+    } else {
+        console.info(output)
+    }
 }
 
 export class Logger {
@@ -137,7 +162,9 @@ export class Logger {
     }
 
     private write(level: LogLevel, event: string, context: LogContext): void {
-        if (LEVEL_WEIGHT[level] < LEVEL_WEIGHT[this.minimumLevel]) return
+        if (LEVEL_WEIGHT[level] < LEVEL_WEIGHT[this.minimumLevel]) {
+            return
+        }
         const baseContext = sanitize(this.context) as Record<string, unknown>
         const eventContext = sanitize(context) as Record<string, unknown>
         try {

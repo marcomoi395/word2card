@@ -46,5 +46,7 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
     logger.info('all_windows_closed', { should_quit: process.platform !== 'darwin' })
-    if (process.platform !== 'darwin') app.quit()
+    if (process.platform !== 'darwin') {
+        app.quit()
+    }
 })

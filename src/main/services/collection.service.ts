@@ -16,14 +16,20 @@ export class CollectionService {
         const result = this.database.vocabulary.create({
             word: word.trim()
         } satisfies VocabularyInput)
-        if (!result.inserted || !result.record) throw new Error('word already exists')
+        if (!result.inserted || !result.record) {
+            throw new Error('word already exists')
+        }
         return result.record
     }
 
     update(id: string, changes: VocabularyUpdate): VocabularyRecord {
-        if (!id.trim()) throw new Error('record id is required')
+        if (!id.trim()) {
+            throw new Error('record id is required')
+        }
         const record = this.database.vocabulary.update(id, changes)
-        if (!record) throw new Error('record not found')
+        if (!record) {
+            throw new Error('record not found')
+        }
         return record
     }
 

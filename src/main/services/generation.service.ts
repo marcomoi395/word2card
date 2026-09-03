@@ -14,11 +14,21 @@ function validText(value: unknown): value is string {
 }
 
 function validateGenerated(item: FlashcardResponse): string | null {
-    if (!validText(item.word)) return 'Generated record is missing a word'
-    if (!validText(item.pos)) return 'Generated record is missing part of speech'
-    if (!validText(item.vietnamese)) return 'Generated record is missing Vietnamese meaning'
-    if (!validText(item.ipa)) return 'Generated record is missing pronunciation'
-    if (!validText(item.example)) return 'Generated record is missing example sentence'
+    if (!validText(item.word)) {
+        return 'Generated record is missing a word'
+    }
+    if (!validText(item.pos)) {
+        return 'Generated record is missing part of speech'
+    }
+    if (!validText(item.vietnamese)) {
+        return 'Generated record is missing Vietnamese meaning'
+    }
+    if (!validText(item.ipa)) {
+        return 'Generated record is missing pronunciation'
+    }
+    if (!validText(item.example)) {
+        return 'Generated record is missing example sentence'
+    }
     return null
 }
 
@@ -29,7 +39,9 @@ function failureMessage(error: unknown): string {
 export class GenerationService {
     static async generateDraftData(records: ImportDraftRecord[]): Promise<GenerationResult> {
         const pending = records.filter((record) => record.generationStatus !== 'ready')
-        if (!pending.length) return { processed: 0, succeeded: 0, failed: 0, results: [], records }
+        if (!pending.length) {
+            return { processed: 0, succeeded: 0, failed: 0, results: [], records }
+        }
         try {
             const generated = await OpenAIService.generateFlashcardData(
                 pending.map((record) => record.word)
@@ -40,12 +52,13 @@ export class GenerationService {
                         candidate.word?.trim().toLocaleLowerCase() ===
                         record.word.toLocaleLowerCase()
                 )
-                if (!item)
+                if (!item) {
                     return {
                         ...record,
                         generationStatus: 'failed' as const,
                         generationError: 'No generated data returned for this word'
                     }
+                }
                 return {
                     ...record,
                     partOfSpeech: item.pos ?? null,
@@ -100,7 +113,9 @@ export class GenerationService {
                 recordIds ? recordIds.includes(record.id) : record.generationStatus === 'pending'
             )
         const pending = records.filter((record) => record.generationStatus !== 'ready')
-        if (pending.length === 0) return { processed: 0, succeeded: 0, failed: 0, results: [] }
+        if (pending.length === 0) {
+            return { processed: 0, succeeded: 0, failed: 0, results: [] }
+        }
 
         let generated: FlashcardResponse[]
         try {
