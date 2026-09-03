@@ -42,14 +42,49 @@ function recordRow(record: VocabularyRecord, editable: boolean, index: number): 
     const image = record.imageUrl
         ? `<a class="image-link" href="${escapeHtml(record.imageUrl)}" target="_blank" rel="noreferrer"><img src="${escapeHtml(record.imageUrl)}" alt="Preview for ${escapeHtml(record.word)}" /></a>`
         : '<span aria-label="No image">—</span>'
-    return `<tr data-id="${record.id}"><td class="index-col">${String(index + 1).padStart(2, '0')}</td><td class="word-cell">${escapeHtml(record.word)}</td>${editableCells}<td class="asset-cell">${image}</td><td class="asset-cell"><button class="audio-preview" type="button" data-audio-url="" data-word="${escapeHtml(record.word)}">Play</button></td><td><span class="status-pill ${record.generationStatus === 'ready' ? 'ready' : 'pending'}">${statusLabel(record)}</span></td></tr>`
+    return `<tr data-id="${record.id}"><td class="select-col"><input class="row-select" type="checkbox" aria-label="Select ${escapeHtml(record.word)}" /></td><td class="index-col">${String(index + 1).padStart(2, '0')}</td><td class="word-cell">${escapeHtml(record.word)}</td>${editableCells}<td class="asset-cell">${image}</td><td class="asset-cell"><button class="audio-preview" type="button" data-audio-url="" data-word="${escapeHtml(record.word)}">Play</button></td><td><span class="status-pill ${record.generationStatus === 'ready' ? 'ready' : 'pending'}">${statusLabel(record)}</span></td></tr>`
+}
+
+function updateSelectAllState(table: HTMLTableElement): void {
+    const selectAll = table.querySelector<HTMLInputElement>('thead .select-all')
+    const rowCheckboxes = Array.from(
+        table.querySelectorAll<HTMLInputElement>('tbody .row-select')
+    )
+    if (!selectAll) return
+
+    const selectedCount = rowCheckboxes.filter((checkbox) => checkbox.checked).length
+    selectAll.checked = rowCheckboxes.length > 0 && selectedCount === rowCheckboxes.length
+    selectAll.indeterminate = selectedCount > 0 && selectedCount < rowCheckboxes.length
+}
+
+function initSelectionControls(): void {
+    if (document.body.dataset.selectionControlsInitialized === 'true') return
+    document.body.dataset.selectionControlsInitialized = 'true'
+
+    document.addEventListener('change', (event) => {
+        const checkbox = event.target
+        if (!(checkbox instanceof HTMLInputElement) || !checkbox.classList.contains('row-select')) {
+            return
+        }
+
+        const table = checkbox.closest('table')
+        if (!(table instanceof HTMLTableElement)) return
+
+        if (checkbox.classList.contains('select-all')) {
+            table.querySelectorAll<HTMLInputElement>('tbody .row-select').forEach((rowCheckbox) => {
+                rowCheckbox.checked = checkbox.checked
+            })
+        }
+
+        updateSelectAllState(table)
+    })
 }
 
 function renderRecords(): void {
     const previewBody = document.querySelector('#section-import .data-grid tbody')
     const collectionBody = document.querySelector('#section-collection .data-grid tbody')
     const empty =
-        '<tr><td colspan="10" role="status">No vocabulary saved yet. Import words to get started.</td></tr>'
+        '<tr><td colspan="11" role="status">No vocabulary saved yet. Import words to get started.</td></tr>'
     if (previewBody)
         previewBody.innerHTML = vocabularyRecords.length
             ? vocabularyRecords.map((record, i) => recordRow(record, true, i)).join('')
@@ -58,6 +93,7 @@ function renderRecords(): void {
         collectionBody.innerHTML = vocabularyRecords.length
             ? vocabularyRecords.map((record, i) => recordRow(record, false, i)).join('')
             : empty
+    document.querySelectorAll<HTMLTableElement>('.data-grid').forEach(updateSelectAllState)
     document
         .querySelectorAll<HTMLElement>('.table-count')
         .forEach((el) => (el.textContent = `${vocabularyRecords.length} words saved`))
@@ -70,7 +106,7 @@ async function loadVocabulary(): Promise<void> {
     const previewBody = document.querySelector('#section-import .data-grid tbody')
     if (previewBody)
         previewBody.innerHTML =
-            '<tr><td colspan="10" role="status" aria-busy="true">Loading vocabulary…</td></tr>'
+            '<tr><td colspan="11" role="status" aria-busy="true">Loading vocabulary…</td></tr>'
     try {
         const response = await window.api.listVocabulary()
         if (response.status !== 'success' || !response.data)
@@ -83,7 +119,7 @@ async function loadVocabulary(): Promise<void> {
         })
         const message = error instanceof Error ? error.message : 'Failed to load vocabulary'
         if (previewBody)
-            previewBody.innerHTML = `<tr><td colspan="10" role="alert">${escapeHtml(message)}</td></tr>`
+            previewBody.innerHTML = `<tr><td colspan="11" role="alert">${escapeHtml(message)}</td></tr>`
     }
 }
 
@@ -178,7 +214,7 @@ function renderHealth(snapshot: ProviderHealthSnapshot): void {
     list.innerHTML = Object.entries(snapshot.providers)
         .map(
             ([key, value]) =>
-                `<span class="connection-item" data-provider="${key}"><span class="status-dot"></span>${labels[key] || key}: ${value.state}</span>`
+                `<span class="connection-item" data-provider="${key}"><span class="status-dot ${value.state === 'connected' ? 'connected' : 'disconnected'}"></span>${labels[key] || key}: ${value.state}</span>`
         )
         .join('')
 }
@@ -198,7 +234,8 @@ async function refreshAnkiHealth(): Promise<void> {
         const response = await window.api.getAnkiHealth()
         const anki = response.status === 'success' ? response.data : undefined
         const item = document.querySelector<HTMLElement>('.connection-item[data-provider="anki"]')
-        if (item && anki) item.innerHTML = `<span class="status-dot"></span>AnkiConnect: ${anki.state}`
+        if (item && anki)
+            item.innerHTML = `<span class="status-dot ${anki.state === 'connected' ? 'connected' : 'disconnected'}"></span>AnkiConnect: ${anki.state}`
     } catch (error) {
         logger.error('anki_health_load_failed', {
             error: error instanceof Error ? error : new Error('Unknown Anki health load failure')
@@ -676,6 +713,7 @@ function init(): void {
         initSettingsForm()
         initAudioPreview()
         initVocabularyActions()
+        initSelectionControls()
         void loadHealth()
         void refreshAnkiHealth()
         window.setInterval(() => void refreshAnkiHealth(), 10_000)

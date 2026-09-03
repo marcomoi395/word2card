@@ -50,7 +50,7 @@ export class OpenAIService {
                 { role: 'user', content: `List of words to process: ${JSON.stringify(words)}` }
             ],
             model,
-            reasoning_effort: 'minimal',
+            reasoning_effort: 'low',
             response_format: { type: 'json_object' }
         })
         const content = completion.choices[0].message.content

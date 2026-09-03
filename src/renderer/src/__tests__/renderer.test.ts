@@ -135,6 +135,34 @@ describe('Renderer UI', () => {
                 'password'
             )
         })
+        it('uses red status dots for providers that are not connected', async () => {
+            vi.mocked(window.api.getProviderHealth).mockResolvedValueOnce({
+                status: 'success',
+                data: {
+                    providers: {
+                        openai: { provider: 'openai', state: 'unreachable' },
+                        notion: { provider: 'notion', state: 'not_configured' },
+                        pexels: { provider: 'pexels', state: 'invalid' },
+                        anki: { provider: 'anki', state: 'connected' }
+                    }
+                }
+            })
+            window.dispatchEvent(new Event('DOMContentLoaded'))
+            await new Promise((resolve) => setTimeout(resolve, 0))
+
+            expect(
+                document.querySelector('.connection-item[data-provider="openai"] .status-dot')
+            ).toHaveClass('disconnected')
+            expect(
+                document.querySelector('.connection-item[data-provider="notion"] .status-dot')
+            ).toHaveClass('disconnected')
+            expect(
+                document.querySelector('.connection-item[data-provider="pexels"] .status-dot')
+            ).toHaveClass('disconnected')
+            expect(
+                document.querySelector('.connection-item[data-provider="anki"] .status-dot')
+            ).toHaveClass('connected')
+        })
     })
     it('loads and saves OpenAI base URL and model settings', async () => {
         vi.mocked(window.api.getSettingsStatus).mockResolvedValueOnce({
