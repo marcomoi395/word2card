@@ -47,18 +47,47 @@ const sanitize = (value: unknown, key?: string, seen = new WeakSet<object>()): u
     return value
 }
 
-const defaultSink = (entry: Record<string, unknown>): void => {
-    let output: string
+const ANSI = {
+    reset: '\u001b[0m',
+    debug: '\u001b[36m',
+    info: '\u001b[32m',
+    warn: '\u001b[33m',
+    error: '\u001b[31m'
+} as const
+
+const supportsColor = (): boolean => {
+    if (typeof process === 'undefined') return false
+    if (process.env['NO_COLOR'] !== undefined) return false
+    if (process.env['FORCE_COLOR'] !== undefined) return process.env['FORCE_COLOR'] !== '0'
+    return Boolean(process.stdout?.isTTY || process.stderr?.isTTY)
+}
+
+const formatValue = (value: unknown): string => {
+    if (typeof value === 'string') return JSON.stringify(value)
     try {
-        output = JSON.stringify(entry)
+        const output = JSON.stringify(value)
+        return output === undefined ? String(value) : output
     } catch {
-        output = JSON.stringify({
-            timestamp: new Date().toISOString(),
-            level: 'error',
-            component: 'logger',
-            event: 'log_serialization_failed'
-        })
+        return '[Unserializable]'
     }
+}
+
+export const formatLogEntry = (entry: Record<string, unknown>, color = supportsColor()): string => {
+    const level = entry.level as LogLevel
+    const timestamp = typeof entry.timestamp === 'string' ? entry.timestamp.slice(11, 23) : '----------'
+    const component = String(entry.component ?? 'logger')
+    const event = String(entry.event ?? 'unknown_event')
+    const details = Object.entries(entry)
+        .filter(([key]) => !['timestamp', 'level', 'component', 'event'].includes(key))
+        .map(([key, value]) => `${key}=${formatValue(value)}`)
+        .join(' ')
+    const line = `${timestamp} ${level.toUpperCase().padEnd(5)} ${component} ${event}${details ? ` ${details}` : ''}`
+    if (!color || !(level in ANSI)) return line
+    return `${ANSI[level].concat(line)}${ANSI.reset}`
+}
+
+const defaultSink = (entry: Record<string, unknown>): void => {
+    const output = formatLogEntry(entry)
     const level = entry.level as LogLevel
     if (level === 'error') console.error(output)
     else if (level === 'warn') console.warn(output)

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createLogger } from '../logger'
+import { createLogger, formatLogEntry } from '../logger'
 
 describe('Logger', () => {
     it('emits structured entries with component and context', () => {
@@ -65,5 +65,33 @@ describe('Logger', () => {
             }
         })
         expect(() => logger.error('sink_failure_safe')).not.toThrow()
+    })
+})
+
+describe('formatLogEntry', () => {
+    it('formats entries as readable text without changing their fields', () => {
+        expect(
+            formatLogEntry(
+                {
+                    timestamp: '2026-09-03T08:57:55.123Z',
+                    level: 'error',
+                    component: 'main.database',
+                    event: 'migration_failed',
+                    error: { message: 'database unavailable' },
+                    retryable: false
+                },
+                false
+            )
+        ).toBe(
+            '08:57:55.123 ERROR main.database migration_failed error={"message":"database unavailable"} retryable=false'
+        )
+    })
+
+    it('wraps the complete line in the level color when enabled', () => {
+        const output = formatLogEntry(
+            { timestamp: '2026-09-03T08:57:55.123Z', level: 'warn', component: 'main', event: 'slow_operation' },
+            true
+        )
+        expect(output).toBe('\u001b[33m08:57:55.123 WARN  main slow_operation\u001b[0m')
     })
 })
