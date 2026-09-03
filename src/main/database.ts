@@ -69,12 +69,14 @@ export interface DatabaseRepositories {
         get(id: string): VocabularyRecord | null
         list(): VocabularyRecord[]
         update(id: string, input: VocabularyUpdate): VocabularyRecord | null
+        delete(ids: string[]): number
     }
     settings: { get(key: string): string | null; set(key: string, value: string): void }
     migrate(): void
     transaction<T>(callback: () => T): T
     close(): void
 }
+
 export const OPENAI_DEFAULT_BASE_URL = 'https://api.openai.com/v1'
 export const OPENAI_DEFAULT_MODEL = 'gpt-4o-mini'
 
@@ -194,8 +196,8 @@ export function createDatabase(database: Database.Database): DatabaseRepositorie
         vocabulary: {
             create: (input) => {
                 const word = input.word.trim()
-                if (!word) throw new Error('word is required')
                 const id = randomUUID()
+                const normalizedWord = word ? word.toLocaleLowerCase() : `__draft_${id}`
                 const result = database
                     .prepare(
                         `INSERT OR IGNORE INTO vocabulary (id, word, normalized_word, source, source_reference, part_of_speech, cloze, example, vietnamese, ipa, meaning, image_url, image_provider, audio) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
@@ -203,7 +205,7 @@ export function createDatabase(database: Database.Database): DatabaseRepositorie
                     .run(
                         id,
                         word,
-                        word.toLocaleLowerCase(),
+                        normalizedWord,
                         input.source ?? 'file',
                         input.sourceReference ?? null,
                         input.partOfSpeech ?? null,
@@ -270,6 +272,11 @@ export function createDatabase(database: Database.Database): DatabaseRepositorie
                     .prepare(`UPDATE vocabulary SET ${assignments.join(', ')} WHERE id = ?`)
                     .run(...values, id)
                 return get(id)
+            },
+            delete: (ids) => {
+                if (ids.length === 0) return 0
+                const placeholders = ids.map(() => '?').join(', ')
+                return database.prepare(`DELETE FROM vocabulary WHERE id IN (${placeholders})`).run(...ids).changes
             }
         },
         settings: {

@@ -92,11 +92,19 @@ const EDITABLE_FIELDS = [
     'imageProvider',
     'audio'
 ] as const
-
 const isStringArray = (value: unknown): value is string[] =>
-    Array.isArray(value) &&
-    value.every((item) => typeof item === 'string' && item.trim().length > 0)
+    Array.isArray(value) && value.every((item) => typeof item === 'string' && item.trim().length > 0)
+
 const isNullableString = (value: unknown): value is string | null => value === null || typeof value === 'string'
+export const parseCreateVocabularyPayload = (value: unknown): { word: string } | null => {
+    if (!isRecord(value) || typeof value.word !== 'string') return null
+    return { word: value.word.trim() }
+}
+
+export const parseDeleteVocabularyPayload = (value: unknown): { recordIds: string[] } | null => {
+    if (!isRecord(value) || !isStringArray(value.recordIds) || value.recordIds.length === 0) return null
+    return { recordIds: value.recordIds }
+}
 
 export const parseImportDraftRecord = (value: unknown): ImportDraftRecord | null => {
     if (!isRecord(value)) return null

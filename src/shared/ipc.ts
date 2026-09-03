@@ -6,7 +6,9 @@ export const IPC_CHANNELS = {
     getSettingsStatus: 'get-settings-status',
     sendImport: 'send-import',
     listVocabulary: 'list-vocabulary',
+    createVocabulary: 'create-vocabulary',
     updateVocabulary: 'update-vocabulary',
+    deleteVocabulary: 'delete-vocabulary',
     generateMissingData: 'generate-missing-data',
     getProviderHealth: 'get-provider-health',
     getAnkiHealth: 'get-anki-health',
@@ -62,12 +64,25 @@ export type VocabularyEditableField =
     | 'audio'
 export type VocabularyEdit = Partial<Pick<VocabularyRecord, VocabularyEditableField>>
 
+export interface CreateVocabularyPayload {
+    word: string
+}
+
+export interface DeleteVocabularyPayload {
+    recordIds: string[]
+}
+
+export interface DeleteVocabularySummary {
+    deleted: number
+}
+
 export interface UpdateVocabularyPayload {
     id: string
     changes: VocabularyEdit
 }
 
 export type EditVocabularyPayload = UpdateVocabularyPayload
+
 export interface ImportOptions {
     quiz: boolean
     flashcard: boolean
@@ -218,10 +233,10 @@ export interface RendererApi {
     openFileDialog: () => Promise<AppResponse<OpenFileDialogData>>
     sendImport: (importData: ImportRequest) => Promise<AppResponse<ImportSummary>>
     listVocabulary: () => Promise<AppResponse<VocabularyRecord[]>>
+    createVocabulary: (payload: CreateVocabularyPayload) => Promise<AppResponse<VocabularyRecord>>
     updateVocabulary: (payload: UpdateVocabularyPayload) => Promise<AppResponse<VocabularyRecord>>
-    generateMissingData: (
-        payload?: GenerateMissingDataPayload
-    ) => Promise<AppResponse<GenerationSummary>>
+    deleteVocabulary: (payload: DeleteVocabularyPayload) => Promise<AppResponse<DeleteVocabularySummary>>
+    generateMissingData: (payload?: GenerateMissingDataPayload) => Promise<AppResponse<GenerationSummary>>
     submitToAnki: (payload?: SubmitToAnkiPayload) => Promise<AppResponse<AnkiSubmissionSummary>>
     saveSettings: (payload: SaveSettingsPayload) => Promise<AppResponse>
     getSettingsStatus: () => Promise<AppResponse<SettingsStatus>>

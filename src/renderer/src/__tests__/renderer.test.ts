@@ -21,6 +21,10 @@ describe('Renderer UI', () => {
             getFilePath: vi.fn((file: File) => `/mock/${file.name}`),
             openFileDialog: vi.fn(),
             sendImport: vi.fn(),
+            listVocabulary: vi.fn().mockResolvedValue({ status: 'success', data: [] }),
+            createVocabulary: vi.fn(),
+            updateVocabulary: vi.fn(),
+            deleteVocabulary: vi.fn(),
             getProviderHealth: vi.fn().mockResolvedValue({
                 status: 'success',
                 data: {
@@ -628,6 +632,31 @@ describe('Renderer UI', () => {
             expect(
                 document.getElementById('section-import')?.classList.contains('active-section')
             ).toBe(true)
+        })
+    })
+
+    describe('Add and Delete Actions', () => {
+        it('adds a blank editable row in the import tab', () => {
+            document.getElementById('btn-add-import-word')?.click()
+            const row = document.querySelector<HTMLTableRowElement>('#section-import tbody tr[data-id]')
+            expect(row?.querySelector('.word-cell')?.textContent).toBe('')
+            expect(row?.querySelector('.word-cell')?.getAttribute('contenteditable')).toBe('true')
+            expect(row?.querySelector<HTMLInputElement>('.row-select')).toBeTruthy()
+        })
+
+        it('creates and deletes selected collection words through the API', async () => {
+            vi.mocked(window.api.createVocabulary).mockResolvedValue({ status: 'success' })
+            document.getElementById('btn-add-collection-word')?.click()
+            await Promise.resolve()
+            expect(window.api.createVocabulary).toHaveBeenCalledWith({ word: '' })
+
+            const body = document.querySelector('#section-collection tbody')
+            body!.innerHTML = '<tr data-id="word-1"><td><input class="row-select" type="checkbox" /></td></tr>'
+            body!.querySelector<HTMLInputElement>('.row-select')!.checked = true
+            vi.mocked(window.api.deleteVocabulary).mockResolvedValue({ status: 'success', data: { deleted: 1 } })
+            document.getElementById('btn-delete-collection-selected')?.click()
+            await Promise.resolve()
+            expect(window.api.deleteVocabulary).toHaveBeenCalledWith({ recordIds: ['word-1'] })
         })
     })
 

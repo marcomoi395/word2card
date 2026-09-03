@@ -41,10 +41,11 @@ function recordRow(record: ImportDraftRecord | VocabularyRecord, editable: boole
                 `<td class="${editable ? 'editable-cell' : ''}" ${editable ? `contenteditable="true" data-field="${fields[fieldIndex]}" data-id="${record.id}"` : ''}>${value}</td>`
         )
         .join('')
+    const wordCell = `<td class="word-cell ${editable ? 'editable-cell' : ''}" ${editable ? `contenteditable="true" data-field="word" data-id="${record.id}"` : ''}>${escapeHtml(record.word)}</td>`
     const image = record.imageUrl
         ? `<a class="image-link" href="${escapeHtml(record.imageUrl)}" target="_blank" rel="noreferrer"><img src="${escapeHtml(record.imageUrl)}" alt="Preview for ${escapeHtml(record.word)}" /></a>`
         : '<span aria-label="No image">—</span>'
-    return `<tr data-id="${record.id}"><td class="select-col"><input class="row-select" type="checkbox" aria-label="Select ${escapeHtml(record.word)}" /></td><td class="index-col">${String(index + 1).padStart(2, '0')}</td><td class="word-cell">${escapeHtml(record.word)}</td>${editableCells}<td class="asset-cell">${image}</td><td class="asset-cell"><button class="audio-preview" type="button" data-audio-url="" data-word="${escapeHtml(record.word)}">Play</button></td><td><span class="status-pill ${record.generationStatus === 'ready' ? 'ready' : 'pending'}">${statusLabel(record)}</span></td></tr>`
+    return `<tr data-id="${record.id}"><td class="select-col"><input class="row-select" type="checkbox" aria-label="Select ${escapeHtml(record.word || 'new word')}" /></td><td class="index-col">${String(index + 1).padStart(2, '0')}</td>${wordCell}${editableCells}<td class="asset-cell">${image}</td><td class="asset-cell"><button class="audio-preview" type="button" data-audio-url="" data-word="${escapeHtml(record.word)}">Play</button></td><td><span class="status-pill ${record.generationStatus === 'ready' ? 'ready' : 'pending'}">${statusLabel(record)}</span></td></tr>`
 }
 
 function updateSelectAllState(table: HTMLTableElement): void {
@@ -87,7 +88,7 @@ function renderRecords(): void {
     const collectionBody = document.querySelector('#section-collection .data-grid tbody')
     const empty = '<tr><td colspan="11" role="status">No words in this import yet.</td></tr>'
     if (previewBody) previewBody.innerHTML = importDraftRecords.length ? importDraftRecords.map((record, i) => recordRow(record, true, i)).join('') : empty
-    if (collectionBody) collectionBody.innerHTML = collectionRecords.length ? collectionRecords.map((record, i) => recordRow(record, false, i)).join('') : empty
+    if (collectionBody) collectionBody.innerHTML = collectionRecords.length ? collectionRecords.map((record, i) => recordRow(record, true, i)).join('') : empty
     document.querySelectorAll<HTMLTableElement>('.data-grid').forEach(updateSelectAllState)
     const counts = document.querySelectorAll<HTMLElement>('.table-count')
     if (counts[0]) counts[0].textContent = `${importDraftRecords.length} words ready`
@@ -105,6 +106,72 @@ async function loadCollection(): Promise<void> {
 async function refreshVocabulary(): Promise<void> {
     await loadCollection()
 }
+function selectedRecordIds(selector: string): string[] {
+    return Array.from(document.querySelectorAll<HTMLInputElement>(`${selector} tbody .row-select:checked`))
+        .map((checkbox) => checkbox.closest<HTMLTableRowElement>('tr')?.dataset.id)
+        .filter((id): id is string => Boolean(id))
+}
+
+function draftRecord(word = ''): ImportDraftRecord {
+    return {
+        id: crypto.randomUUID(),
+        word,
+        source: 'file',
+        sourceReference: null,
+        partOfSpeech: null,
+        cloze: null,
+        example: null,
+        vietnamese: null,
+        ipa: null,
+        meaning: null,
+        imageUrl: null,
+        imageProvider: null,
+        audio: null,
+        generationStatus: 'pending',
+        generationError: null
+    }
+}
+
+function initAddDeleteActions(): void {
+    document.getElementById('btn-add-import-word')?.addEventListener('click', () => {
+        importDraftRecords = [...importDraftRecords, draftRecord()]
+        renderRecords()
+    })
+    document.getElementById('btn-delete-import-selected')?.addEventListener('click', () => {
+        const selectedIds = new Set(
+            Array.from(document.querySelectorAll<HTMLInputElement>('#section-import .data-grid tbody .row-select'))
+                .filter((checkbox) => checkbox.checked)
+                .map((checkbox) => checkbox.closest('tr')?.dataset.id)
+                .filter((id): id is string => Boolean(id))
+        )
+        if (!selectedIds.size) return
+        importDraftRecords = importDraftRecords.filter((record) => !selectedIds.has(record.id))
+        renderRecords()
+    })
+    document.getElementById('btn-add-collection-word')?.addEventListener('click', async () => {
+        try {
+            const response = await window.api.createVocabulary({ word: '' })
+            showResponseAlert('Add word', response)
+            if (response.status === 'success') await refreshVocabulary()
+        } catch (error) {
+            logger.error('vocabulary_create_failed', { error: error instanceof Error ? error : new Error(String(error)) })
+            alert('An error occurred while adding the word.')
+        }
+    })
+    document.getElementById('btn-delete-collection-selected')?.addEventListener('click', async () => {
+        const recordIds = selectedRecordIds('#section-collection .data-grid')
+        if (!recordIds.length) return
+        try {
+            const response = await window.api.deleteVocabulary({ recordIds })
+            showResponseAlert('Delete selected', response)
+            if (response.status === 'success') await refreshVocabulary()
+        } catch (error) {
+            logger.error('vocabulary_delete_failed', { error: error instanceof Error ? error : new Error(String(error)) })
+            alert('An error occurred while deleting words.')
+        }
+    })
+}
+
 
 function initVocabularyActions(): void {
     document.getElementById('btn-generate-data')?.addEventListener('click', async (event) => {
@@ -142,12 +209,21 @@ function initVocabularyActions(): void {
             setButtonLoading(button, false)
         }
     })
-    document.addEventListener('blur', (event) => {
+    document.addEventListener('blur', async (event) => {
         const cell = event.target
         if (!(cell instanceof HTMLElement) || !cell.classList.contains('editable-cell')) return
-        const record = importDraftRecords.find((item) => item.id === cell.dataset.id)
-        const field = cell.dataset.field as keyof ImportDraftRecord | undefined
-        if (record && field && field in record) (record as unknown as Record<string, unknown>)[field] = cell.innerText
+        const id = cell.dataset.id
+        const field = cell.dataset.field
+        const value = cell.innerText.trim()
+        const draft = importDraftRecords.find((item) => item.id === id)
+        if (draft && field && field in draft) {
+            ;(draft as unknown as Record<string, unknown>)[field] = value
+            return
+        }
+        if (id && field && ['word', 'partOfSpeech', 'cloze', 'vietnamese', 'ipa', 'meaning'].includes(field)) {
+            const response = await window.api.updateVocabulary({ id, changes: { [field]: value } })
+            if (response.status === 'success') await refreshVocabulary()
+        }
     }, true)
 }
 
@@ -673,6 +749,7 @@ function init(): void {
         initSettingsForm()
         initAudioPreview()
         initVocabularyActions()
+        initAddDeleteActions()
         initSelectionControls()
         void loadHealth()
         void refreshAnkiHealth()
