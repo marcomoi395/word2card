@@ -305,8 +305,7 @@ describe('Renderer UI', () => {
             setTimeout(r2, 10)
             await p2
 
-            expect(document.getElementById('app-toast')?.textContent).toContain(
-                'Failed to save settings: Failed to save')
+            expect(document.getElementById('app-toast')?.textContent).toContain('Failed to save settings: Failed to save')
         })
 
         it('shows error alert when saveSettings returns error without message', async () => {
@@ -326,8 +325,7 @@ describe('Renderer UI', () => {
             setTimeout(r2, 10)
             await p2
 
-            expect(document.getElementById('app-toast')?.textContent).toContain(
-                'Failed to save settings: Unknown error.')
+            expect(document.getElementById('app-toast')?.textContent).toContain('Failed to save settings: Unknown error.')
         })
 
         it('shows error alert when saveSettings throws error', async () => {
@@ -436,6 +434,40 @@ describe('Renderer UI', () => {
                 }
             })
         })
+        it('shows duplicate count after a file import with skipped words', async () => {
+            const form = document.getElementById('form-import') as HTMLFormElement
+            const fileInput = document.getElementById('source-file') as HTMLInputElement
+
+            fileInput.value = '/path/to/file.txt'
+            vi.mocked(window.api.sendImport).mockResolvedValue({
+                status: 'success',
+                data: { inserted: 0, skipped: 3, failed: 0, records: [] }
+            })
+
+            form.dispatchEvent(new Event('submit'))
+            await Promise.resolve()
+            await Promise.resolve()
+
+            expect(document.getElementById('app-toast')?.textContent).toContain('3 duplicate(s)')
+        })
+
+        it('does not show an alert after a fully successful file import', async () => {
+            const form = document.getElementById('form-import') as HTMLFormElement
+            const fileInput = document.getElementById('source-file') as HTMLInputElement
+
+            fileInput.value = '/path/to/file.txt'
+            vi.mocked(window.api.sendImport).mockResolvedValue({
+                status: 'success',
+                data: { inserted: 3, skipped: 0, failed: 0, records: [] }
+            })
+
+            form.dispatchEvent(new Event('submit'))
+            await Promise.resolve()
+            await Promise.resolve()
+
+            expect(document.getElementById('app-toast')?.hidden).toBe(true)
+        })
+
 
         it('does not call sendImport when file path missing', async () => {
             const form = document.getElementById('form-import') as HTMLFormElement
@@ -479,6 +511,44 @@ describe('Renderer UI', () => {
                 }
             })
         })
+        it('shows duplicate count after a Notion import with skipped words', async () => {
+            const form = document.getElementById('form-notion') as HTMLFormElement
+            const tokenInput = document.getElementById('notion-token') as HTMLInputElement
+            const dbInput = document.getElementById('notion-database-id') as HTMLInputElement
+
+            tokenInput.value = 'token'
+            dbInput.value = 'db-id'
+            vi.mocked(window.api.sendImport).mockResolvedValue({
+                status: 'success',
+                data: { inserted: 0, skipped: 2, failed: 0, records: [] }
+            })
+
+            form.dispatchEvent(new Event('submit'))
+            await Promise.resolve()
+            await Promise.resolve()
+
+            expect(document.getElementById('app-toast')?.textContent).toContain('2 duplicate(s)')
+        })
+
+        it('does not show an alert after a fully successful Notion import', async () => {
+            const form = document.getElementById('form-notion') as HTMLFormElement
+            const tokenInput = document.getElementById('notion-token') as HTMLInputElement
+            const dbInput = document.getElementById('notion-database-id') as HTMLInputElement
+
+            tokenInput.value = 'token'
+            dbInput.value = 'db-id'
+            vi.mocked(window.api.sendImport).mockResolvedValue({
+                status: 'success',
+                data: { inserted: 2, skipped: 0, failed: 0, records: [] }
+            })
+
+            form.dispatchEvent(new Event('submit'))
+            await Promise.resolve()
+            await Promise.resolve()
+
+            expect(document.getElementById('app-toast')?.hidden).toBe(true)
+        })
+
 
         it('shows error alert when sendImport throws error', async () => {
             const form = document.getElementById('form-import') as HTMLFormElement
@@ -497,7 +567,8 @@ describe('Renderer UI', () => {
 
             expect(consoleSpy).toHaveBeenCalled()
             expect(document.getElementById('app-toast')?.textContent).toContain(
-                'An error occurred during import.')
+                'An error occurred during import.'
+            )
             consoleSpy.mockRestore()
         })
     })
@@ -621,7 +692,8 @@ describe('Renderer UI', () => {
 
             expect(consoleSpy).toHaveBeenCalled()
             expect(document.getElementById('app-toast')?.textContent).toContain(
-                'An error occurred during sync.')
+                'An error occurred during sync.'
+            )
             consoleSpy.mockRestore()
         })
     })

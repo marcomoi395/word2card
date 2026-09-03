@@ -388,6 +388,21 @@ function showResponseAlert(actionLabel: string, response: AppResponse<unknown> |
         if (
             data &&
             typeof data === 'object' &&
+            'inserted' in data &&
+            'skipped' in data &&
+            'failed' in data
+        ) {
+            const summary = data as { inserted: number; skipped: number; failed: number }
+            if (summary.skipped > 0 || summary.failed > 0) {
+                showToast(
+                    `${actionLabel}: ${summary.inserted} added, ${summary.skipped} duplicate(s), ${summary.failed} failed.`
+                )
+            }
+            return
+        }
+        if (
+            data &&
+            typeof data === 'object' &&
             'submitted' in data &&
             'duplicates' in data &&
             'failed' in data
