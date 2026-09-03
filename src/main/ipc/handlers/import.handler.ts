@@ -15,14 +15,18 @@ export function registerImportHandlers(): void {
         async (_event, payload: unknown): Promise<AppResponse<ImportSummary>> => {
             const importRequest = parseImportRequest(payload)
             if (!importRequest) {
-                logger.error('import_validation_failed', { error: new Error('Invalid import request payload') })
+                logger.error('import_validation_failed', {
+                    error: new Error('Invalid import request payload')
+                })
                 return failure('Invalid import request payload')
             }
             if (
                 importRequest.type === 'FILE_IMPORT' &&
                 !(await validateTextFilePath(importRequest.payload.filePath))
             ) {
-                logger.error('file_import_validation_failed', { error: new Error('Invalid text file path') })
+                logger.error('file_import_validation_failed', {
+                    error: new Error('Invalid text file path')
+                })
                 return failure('Invalid text file path')
             }
             return ImportService.handleImportRequest(importRequest)

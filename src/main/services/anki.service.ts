@@ -41,7 +41,10 @@ export class AnkiService {
                 .map((result) => result.record)
                 .filter((record): record is VocabularyRecord => record !== null)
         )
-        return this.submitPersistedCards(repositories, persisted.map((record) => record.id))
+        return this.submitPersistedCards(
+            repositories,
+            persisted.map((record) => record.id)
+        )
     }
 
     public static async submitPersistedCards(

@@ -39,7 +39,9 @@ export function registerProviderHealthHandlers(): void {
                 logger.error('anki_health_check_failed', {
                     error: error instanceof Error ? error : new Error(String(error))
                 })
-                return failure(error instanceof Error ? error.message : 'Failed to check Anki health')
+                return failure(
+                    error instanceof Error ? error.message : 'Failed to check Anki health'
+                )
             }
         }
     )

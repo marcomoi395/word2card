@@ -18,7 +18,10 @@ export const validateTextFilePath = async (filePath: string): Promise<boolean> =
         })
         return valid
     } catch {
-        logger.debug('text_file_path_rejected', { reason: 'stat_failed', error: new Error('file_stat_failed') })
+        logger.debug('text_file_path_rejected', {
+            reason: 'stat_failed',
+            error: new Error('file_stat_failed')
+        })
         return false
     }
 }

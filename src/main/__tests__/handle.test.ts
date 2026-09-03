@@ -109,7 +109,13 @@ describe('createFlashcards', () => {
         vi.mocked(notionSync.createNotionTargetQueueMap).mockReturnValue(mockQueue)
         vi.mocked(notionSync.shiftNotionTarget).mockReturnValueOnce(notionTargets[0])
 
-        const result = await createFlashcards(['word1'], '/audio', 'DefaultDeck', false, notionTargets)
+        const result = await createFlashcards(
+            ['word1'],
+            '/audio',
+            'DefaultDeck',
+            false,
+            notionTargets
+        )
 
         expect(NotionService.update).not.toHaveBeenCalled()
         expect(result[0].deckName).toBe('NotionDeck')

@@ -17,7 +17,9 @@ export class DeckService {
         try {
             const isConnected = await checkAnkiConnect()
             if (!isConnected) {
-                logger.error('deck_connection_failed', { error: new Error('anki_connect_unavailable') })
+                logger.error('deck_connection_failed', {
+                    error: new Error('anki_connect_unavailable')
+                })
                 return failure('Failed to connect to AnkiConnect. Please ensure Anki is running.')
             }
 
@@ -42,7 +44,6 @@ export class DeckService {
             return failure(message)
             /* v8 ignore stop */
         }
-
     }
 
     public static async createDecksIfNotExist(deckNames: string[]): Promise<AppResponse> {
@@ -85,7 +86,9 @@ export class DeckService {
             })
 
             if (createModelResponse.error) {
-                logger.error('model_create_rejected', { error: new Error(createModelResponse.error) })
+                logger.error('model_create_rejected', {
+                    error: new Error(createModelResponse.error)
+                })
                 return failure(`Failed to create Anki model: ${createModelResponse.error}`)
             }
 
@@ -97,7 +100,6 @@ export class DeckService {
             return failure(message)
             /* v8 ignore stop */
         }
-
     }
 
     public static async addNotesToAnki(notes: QuizNote[]): Promise<AppResponse> {
@@ -116,7 +118,10 @@ export class DeckService {
             })
 
             if (response.error) {
-                logger.error('anki_notes_add_rejected', { count: notes.length, error: new Error(response.error) })
+                logger.error('anki_notes_add_rejected', {
+                    count: notes.length,
+                    error: new Error(response.error)
+                })
                 return failure(`Anki error: ${response.error}`)
             }
 

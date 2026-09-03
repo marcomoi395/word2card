@@ -32,7 +32,11 @@ function statusLabel(record: ImportDraftRecord | VocabularyRecord): string {
     return 'Needs data'
 }
 
-function recordRow(record: ImportDraftRecord | VocabularyRecord, editable: boolean, index: number): string {
+function recordRow(
+    record: ImportDraftRecord | VocabularyRecord,
+    editable: boolean,
+    index: number
+): string {
     const fields = ['partOfSpeech', 'cloze', 'vietnamese', 'ipa', 'meaning'] as const
     const values = fields.map((field) => escapeHtml(record[field]))
     const editableCells = values
@@ -50,9 +54,7 @@ function recordRow(record: ImportDraftRecord | VocabularyRecord, editable: boole
 
 function updateSelectAllState(table: HTMLTableElement): void {
     const selectAll = table.querySelector<HTMLInputElement>('thead .select-all')
-    const rowCheckboxes = Array.from(
-        table.querySelectorAll<HTMLInputElement>('tbody .row-select')
-    )
+    const rowCheckboxes = Array.from(table.querySelectorAll<HTMLInputElement>('tbody .row-select'))
     if (!selectAll) return
 
     const selectedCount = rowCheckboxes.filter((checkbox) => checkbox.checked).length
@@ -87,8 +89,14 @@ function renderRecords(): void {
     const previewBody = document.querySelector('#section-import .data-grid tbody')
     const collectionBody = document.querySelector('#section-collection .data-grid tbody')
     const empty = '<tr><td colspan="11" role="status">No words in this import yet.</td></tr>'
-    if (previewBody) previewBody.innerHTML = importDraftRecords.length ? importDraftRecords.map((record, i) => recordRow(record, true, i)).join('') : empty
-    if (collectionBody) collectionBody.innerHTML = collectionRecords.length ? collectionRecords.map((record, i) => recordRow(record, true, i)).join('') : empty
+    if (previewBody)
+        previewBody.innerHTML = importDraftRecords.length
+            ? importDraftRecords.map((record, i) => recordRow(record, true, i)).join('')
+            : empty
+    if (collectionBody)
+        collectionBody.innerHTML = collectionRecords.length
+            ? collectionRecords.map((record, i) => recordRow(record, true, i)).join('')
+            : empty
     document.querySelectorAll<HTMLTableElement>('.data-grid').forEach(updateSelectAllState)
     const counts = document.querySelectorAll<HTMLElement>('.table-count')
     if (counts[0]) counts[0].textContent = `${importDraftRecords.length} words ready`
@@ -99,7 +107,8 @@ function renderRecords(): void {
 }
 async function loadCollection(): Promise<void> {
     const response = await window.api.listVocabulary()
-    if (response.status !== 'success' || !response.data) throw new Error(response.message || 'Failed to load collection')
+    if (response.status !== 'success' || !response.data)
+        throw new Error(response.message || 'Failed to load collection')
     collectionRecords = response.data
     renderRecords()
 }
@@ -107,7 +116,9 @@ async function refreshVocabulary(): Promise<void> {
     await loadCollection()
 }
 function selectedRecordIds(selector: string): string[] {
-    return Array.from(document.querySelectorAll<HTMLInputElement>(`${selector} tbody .row-select:checked`))
+    return Array.from(
+        document.querySelectorAll<HTMLInputElement>(`${selector} tbody .row-select:checked`)
+    )
         .map((checkbox) => checkbox.closest<HTMLTableRowElement>('tr')?.dataset.id)
         .filter((id): id is string => Boolean(id))
 }
@@ -139,7 +150,11 @@ function initAddDeleteActions(): void {
     })
     document.getElementById('btn-delete-import-selected')?.addEventListener('click', () => {
         const selectedIds = new Set(
-            Array.from(document.querySelectorAll<HTMLInputElement>('#section-import .data-grid tbody .row-select'))
+            Array.from(
+                document.querySelectorAll<HTMLInputElement>(
+                    '#section-import .data-grid tbody .row-select'
+                )
+            )
                 .filter((checkbox) => checkbox.checked)
                 .map((checkbox) => checkbox.closest('tr')?.dataset.id)
                 .filter((id): id is string => Boolean(id))
@@ -154,24 +169,29 @@ function initAddDeleteActions(): void {
             showResponseAlert('Add word', response)
             if (response.status === 'success') await refreshVocabulary()
         } catch (error) {
-            logger.error('vocabulary_create_failed', { error: error instanceof Error ? error : new Error(String(error)) })
+            logger.error('vocabulary_create_failed', {
+                error: error instanceof Error ? error : new Error(String(error))
+            })
             alert('An error occurred while adding the word.')
         }
     })
-    document.getElementById('btn-delete-collection-selected')?.addEventListener('click', async () => {
-        const recordIds = selectedRecordIds('#section-collection .data-grid')
-        if (!recordIds.length) return
-        try {
-            const response = await window.api.deleteVocabulary({ recordIds })
-            showResponseAlert('Delete selected', response)
-            if (response.status === 'success') await refreshVocabulary()
-        } catch (error) {
-            logger.error('vocabulary_delete_failed', { error: error instanceof Error ? error : new Error(String(error)) })
-            alert('An error occurred while deleting words.')
-        }
-    })
+    document
+        .getElementById('btn-delete-collection-selected')
+        ?.addEventListener('click', async () => {
+            const recordIds = selectedRecordIds('#section-collection .data-grid')
+            if (!recordIds.length) return
+            try {
+                const response = await window.api.deleteVocabulary({ recordIds })
+                showResponseAlert('Delete selected', response)
+                if (response.status === 'success') await refreshVocabulary()
+            } catch (error) {
+                logger.error('vocabulary_delete_failed', {
+                    error: error instanceof Error ? error : new Error(String(error))
+                })
+                alert('An error occurred while deleting words.')
+            }
+        })
 }
-
 
 function initVocabularyActions(): void {
     document.getElementById('btn-generate-data')?.addEventListener('click', async (event) => {
@@ -185,7 +205,9 @@ function initVocabularyActions(): void {
                 renderRecords()
             }
         } catch (error) {
-            logger.error('missing_data_generation_failed', { error: error instanceof Error ? error : new Error(String(error)) })
+            logger.error('missing_data_generation_failed', {
+                error: error instanceof Error ? error : new Error(String(error))
+            })
             alert('An error occurred while generating data.')
         } finally {
             setButtonLoading(button, false)
@@ -203,28 +225,41 @@ function initVocabularyActions(): void {
                 renderRecords()
             }
         } catch (error) {
-            logger.error('anki_submission_failed', { error: error instanceof Error ? error : new Error(String(error)) })
+            logger.error('anki_submission_failed', {
+                error: error instanceof Error ? error : new Error(String(error))
+            })
             alert('An error occurred while submitting to Anki.')
         } finally {
             setButtonLoading(button, false)
         }
     })
-    document.addEventListener('blur', async (event) => {
-        const cell = event.target
-        if (!(cell instanceof HTMLElement) || !cell.classList.contains('editable-cell')) return
-        const id = cell.dataset.id
-        const field = cell.dataset.field
-        const value = cell.innerText.trim()
-        const draft = importDraftRecords.find((item) => item.id === id)
-        if (draft && field && field in draft) {
-            ;(draft as unknown as Record<string, unknown>)[field] = value
-            return
-        }
-        if (id && field && ['word', 'partOfSpeech', 'cloze', 'vietnamese', 'ipa', 'meaning'].includes(field)) {
-            const response = await window.api.updateVocabulary({ id, changes: { [field]: value } })
-            if (response.status === 'success') await refreshVocabulary()
-        }
-    }, true)
+    document.addEventListener(
+        'blur',
+        async (event) => {
+            const cell = event.target
+            if (!(cell instanceof HTMLElement) || !cell.classList.contains('editable-cell')) return
+            const id = cell.dataset.id
+            const field = cell.dataset.field
+            const value = cell.innerText.trim()
+            const draft = importDraftRecords.find((item) => item.id === id)
+            if (draft && field && field in draft) {
+                ;(draft as unknown as Record<string, unknown>)[field] = value
+                return
+            }
+            if (
+                id &&
+                field &&
+                ['word', 'partOfSpeech', 'cloze', 'vietnamese', 'ipa', 'meaning'].includes(field)
+            ) {
+                const response = await window.api.updateVocabulary({
+                    id,
+                    changes: { [field]: value }
+                })
+                if (response.status === 'success') await refreshVocabulary()
+            }
+        },
+        true
+    )
 }
 
 function renderHealth(snapshot: ProviderHealthSnapshot): void {
@@ -251,7 +286,8 @@ async function loadHealth(): Promise<void> {
         if (response.status === 'success' && response.data) renderHealth(response.data)
     } catch (error) {
         logger.error('provider_health_load_failed', {
-            error: error instanceof Error ? error : new Error('Unknown provider health load failure')
+            error:
+                error instanceof Error ? error : new Error('Unknown provider health load failure')
         })
     }
 }
@@ -739,7 +775,9 @@ function initAudioPreview(): void {
 function init(): void {
     window.addEventListener('DOMContentLoaded', () => {
         void loadCollection().catch((error) => {
-            logger.error('collection_load_failed', { error: error instanceof Error ? error : new Error(String(error)) })
+            logger.error('collection_load_failed', {
+                error: error instanceof Error ? error : new Error(String(error))
+            })
         })
         initWindowControls()
         initFileDrop()

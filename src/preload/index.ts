@@ -21,7 +21,6 @@ import { createLogger } from '../shared/logger'
 
 const logger = createLogger('preload')
 
-
 const api: RendererApi = {
     minimize: () => ipcRenderer.send(IPC_CHANNELS.windowMinimize),
     close: () => ipcRenderer.send(IPC_CHANNELS.windowClose),
@@ -32,10 +31,12 @@ const api: RendererApi = {
         ipcRenderer.invoke(IPC_CHANNELS.sendImport, importData),
     listVocabulary: (): Promise<AppResponse<VocabularyRecord[]>> =>
         ipcRenderer.invoke(IPC_CHANNELS.listVocabulary),
-    createVocabulary: (payload: CreateVocabularyPayload) => ipcRenderer.invoke(IPC_CHANNELS.createVocabulary, payload),
+    createVocabulary: (payload: CreateVocabularyPayload) =>
+        ipcRenderer.invoke(IPC_CHANNELS.createVocabulary, payload),
     updateVocabulary: (payload: UpdateVocabularyPayload): Promise<AppResponse<VocabularyRecord>> =>
         ipcRenderer.invoke(IPC_CHANNELS.updateVocabulary, payload),
-    deleteVocabulary: (payload: DeleteVocabularyPayload) => ipcRenderer.invoke(IPC_CHANNELS.deleteVocabulary, payload),
+    deleteVocabulary: (payload: DeleteVocabularyPayload) =>
+        ipcRenderer.invoke(IPC_CHANNELS.deleteVocabulary, payload),
     generateMissingData: (
         payload?: GenerateMissingDataPayload
     ): Promise<AppResponse<GenerationSummary>> =>

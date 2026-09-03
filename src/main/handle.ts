@@ -54,7 +54,6 @@ export const createFlashcards = async (
 ): Promise<QuizNote[]> => {
     const dataFromOpenAI = await OpenAIService.generateFlashcardData(words)
 
-
     const pexelsToken = getRuntimeSetting('pexelsToken')
     const noteTargetsByWord = notionTargets ? createNotionTargetQueueMap(notionTargets) : undefined
 

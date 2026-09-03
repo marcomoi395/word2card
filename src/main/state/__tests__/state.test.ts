@@ -37,9 +37,16 @@ describe('state package', () => {
     })
 
     it('returns OpenAI base URL and model without exposing secrets', () => {
-        const state = createStateStore({ openaiApiKey: 'openai-key', openaiBaseUrl: 'https://custom/v1', openaiModel: 'custom-model' })
+        const state = createStateStore({
+            openaiApiKey: 'openai-key',
+            openaiBaseUrl: 'https://custom/v1',
+            openaiModel: 'custom-model'
+        })
         const snapshot = state.getRendererSnapshot()
-        expect(snapshot).toMatchObject({ openaiBaseUrl: 'https://custom/v1', openaiModel: 'custom-model' })
+        expect(snapshot).toMatchObject({
+            openaiBaseUrl: 'https://custom/v1',
+            openaiModel: 'custom-model'
+        })
         expect(JSON.stringify(snapshot)).not.toContain('openai-key')
     })
 })

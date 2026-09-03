@@ -52,8 +52,9 @@ describe('ImportService', () => {
             }
         })
         expect(result.status).toBe('success')
-        expect(result.status === 'success' ? result.data?.records?.[0].generationStatus : null).toBe('pending')
+        expect(
+            result.status === 'success' ? result.data?.records?.[0].generationStatus : null
+        ).toBe('pending')
         expect(database.vocabulary.list()).toHaveLength(0)
     })
-
 })

@@ -1,4 +1,9 @@
-import type { DatabaseRepositories, VocabularyInput, VocabularyUpdate, VocabularyRecord } from '../database'
+import type {
+    DatabaseRepositories,
+    VocabularyInput,
+    VocabularyUpdate,
+    VocabularyRecord
+} from '../database'
 
 export class CollectionService {
     constructor(private readonly database: DatabaseRepositories) {}
@@ -8,7 +13,9 @@ export class CollectionService {
     }
 
     create(word: string): VocabularyRecord {
-        const result = this.database.vocabulary.create({ word: word.trim() } satisfies VocabularyInput)
+        const result = this.database.vocabulary.create({
+            word: word.trim()
+        } satisfies VocabularyInput)
         if (!result.inserted || !result.record) throw new Error('word already exists')
         return result.record
     }

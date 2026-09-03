@@ -374,10 +374,21 @@ describe('validators', () => {
 })
 describe('import draft validation', () => {
     const validDraft = {
-        id: 'draft-1', word: 'hello', source: 'file', sourceReference: null,
-        partOfSpeech: null, cloze: null, example: null, vietnamese: null,
-        ipa: null, meaning: null, imageUrl: null, imageProvider: null,
-        audio: null, generationStatus: 'pending', generationError: null
+        id: 'draft-1',
+        word: 'hello',
+        source: 'file',
+        sourceReference: null,
+        partOfSpeech: null,
+        cloze: null,
+        example: null,
+        vietnamese: null,
+        ipa: null,
+        meaning: null,
+        imageUrl: null,
+        imageProvider: null,
+        audio: null,
+        generationStatus: 'pending',
+        generationError: null
     }
 
     it('accepts a structurally valid draft', () => {

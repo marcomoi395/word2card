@@ -93,24 +93,29 @@ const EDITABLE_FIELDS = [
     'audio'
 ] as const
 const isStringArray = (value: unknown): value is string[] =>
-    Array.isArray(value) && value.every((item) => typeof item === 'string' && item.trim().length > 0)
+    Array.isArray(value) &&
+    value.every((item) => typeof item === 'string' && item.trim().length > 0)
 
-const isNullableString = (value: unknown): value is string | null => value === null || typeof value === 'string'
+const isNullableString = (value: unknown): value is string | null =>
+    value === null || typeof value === 'string'
 export const parseCreateVocabularyPayload = (value: unknown): { word: string } | null => {
     if (!isRecord(value) || typeof value.word !== 'string') return null
     return { word: value.word.trim() }
 }
 
 export const parseDeleteVocabularyPayload = (value: unknown): { recordIds: string[] } | null => {
-    if (!isRecord(value) || !isStringArray(value.recordIds) || value.recordIds.length === 0) return null
+    if (!isRecord(value) || !isStringArray(value.recordIds) || value.recordIds.length === 0)
+        return null
     return { recordIds: value.recordIds }
 }
 
 export const parseImportDraftRecord = (value: unknown): ImportDraftRecord | null => {
     if (!isRecord(value)) return null
     if (
-        typeof value.id !== 'string' || !value.id.trim() ||
-        typeof value.word !== 'string' || !value.word.trim() ||
+        typeof value.id !== 'string' ||
+        !value.id.trim() ||
+        typeof value.word !== 'string' ||
+        !value.word.trim() ||
         (value.source !== 'file' && value.source !== 'notion') ||
         !isNullableString(value.sourceReference) ||
         !isNullableString(value.partOfSpeech) ||
@@ -124,7 +129,8 @@ export const parseImportDraftRecord = (value: unknown): ImportDraftRecord | null
         !isNullableString(value.audio) ||
         !['pending', 'generating', 'ready', 'failed'].includes(value.generationStatus as string) ||
         !isNullableString(value.generationError)
-    ) return null
+    )
+        return null
     return value as unknown as ImportDraftRecord
 }
 

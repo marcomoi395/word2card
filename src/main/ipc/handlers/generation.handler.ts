@@ -32,7 +32,9 @@ export function registerGenerationHandlers(database: DatabaseRepositories): void
                 if (parsed.records) {
                     return success(await GenerationService.generateDraftData(parsed.records))
                 }
-                return success(await GenerationService.generateMissingData(database, parsed.recordIds))
+                return success(
+                    await GenerationService.generateMissingData(database, parsed.recordIds)
+                )
             } catch (error) {
                 logger.error('generation_failed', {
                     error: error instanceof Error ? error : new Error(String(error)),

@@ -21,7 +21,9 @@ export const createCommands = (
         if (persistence) {
             try {
                 if (!persistence.save(nextSettings)) {
-                    logger.error('runtime_settings_save_failed', { error: new Error('persistence_rejected') })
+                    logger.error('runtime_settings_save_failed', {
+                        error: new Error('persistence_rejected')
+                    })
                     return false
                 }
             } catch (error) {

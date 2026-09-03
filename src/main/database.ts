@@ -80,7 +80,6 @@ export interface DatabaseRepositories {
 export const OPENAI_DEFAULT_BASE_URL = 'https://api.openai.com/v1'
 export const OPENAI_DEFAULT_MODEL = 'gpt-4o-mini'
 
-
 import type { RuntimeSettings } from './state/model'
 
 const logger = createLogger('main.database')
@@ -116,7 +115,6 @@ export function createDatabaseSettingsPersistence(
                 logger.error('database_settings_save_failed', { error })
                 return false
             }
-
         },
         delete: (key) => {
             if (!keys.includes(key)) return true
@@ -127,7 +125,6 @@ export function createDatabaseSettingsPersistence(
                 logger.error('database_settings_delete_failed', { key: String(key), error })
                 return false
             }
-
         }
     }
 }
@@ -182,7 +179,6 @@ export function createDatabase(database: Database.Database): DatabaseRepositorie
             database.exec('ROLLBACK')
             throw error
         }
-
     }
     const get = (id: string): VocabularyRecord | null => {
         const row = database.prepare('SELECT * FROM vocabulary WHERE id = ?').get(id) as
@@ -276,7 +272,9 @@ export function createDatabase(database: Database.Database): DatabaseRepositorie
             delete: (ids) => {
                 if (ids.length === 0) return 0
                 const placeholders = ids.map(() => '?').join(', ')
-                return database.prepare(`DELETE FROM vocabulary WHERE id IN (${placeholders})`).run(...ids).changes
+                return database
+                    .prepare(`DELETE FROM vocabulary WHERE id IN (${placeholders})`)
+                    .run(...ids).changes
             }
         },
         settings: {

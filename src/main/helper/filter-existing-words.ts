@@ -34,10 +34,16 @@ export async function filterExistingWords(
             const resultForWord = response.result[index]
             return resultForWord && resultForWord.length === 0
         })
-        logger.info('word_filter_completed', { inputCount: words.length, outputCount: filteredWords.length })
+        logger.info('word_filter_completed', {
+            inputCount: words.length,
+            outputCount: filteredWords.length
+        })
         return filteredWords
     } catch (error) {
-        logger.error('word_filter_failed', { error: error instanceof Error ? error : new Error(String(error)), inputCount: words.length })
+        logger.error('word_filter_failed', {
+            error: error instanceof Error ? error : new Error(String(error)),
+            inputCount: words.length
+        })
         return words
     }
 }

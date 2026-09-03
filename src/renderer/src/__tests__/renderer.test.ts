@@ -155,32 +155,66 @@ describe('Renderer UI', () => {
             await Promise.resolve()
             await Promise.resolve()
 
-            expect(document.querySelector('.connection-item[data-provider="openai"] .status-dot')?.classList.contains('disconnected')).toBe(true)
-            expect(document.querySelector('.connection-item[data-provider="notion"] .status-dot')?.classList.contains('disconnected')).toBe(true)
-            expect(document.querySelector('.connection-item[data-provider="pexels"] .status-dot')?.classList.contains('disconnected')).toBe(true)
-            expect(document.querySelector('.connection-item[data-provider="anki"] .status-dot')?.classList.contains('connected')).toBe(true)
+            expect(
+                document
+                    .querySelector('.connection-item[data-provider="openai"] .status-dot')
+                    ?.classList.contains('disconnected')
+            ).toBe(true)
+            expect(
+                document
+                    .querySelector('.connection-item[data-provider="notion"] .status-dot')
+                    ?.classList.contains('disconnected')
+            ).toBe(true)
+            expect(
+                document
+                    .querySelector('.connection-item[data-provider="pexels"] .status-dot')
+                    ?.classList.contains('disconnected')
+            ).toBe(true)
+            expect(
+                document
+                    .querySelector('.connection-item[data-provider="anki"] .status-dot')
+                    ?.classList.contains('connected')
+            ).toBe(true)
         })
     })
     it('loads and saves OpenAI base URL and model settings', async () => {
         vi.mocked(window.api.getSettingsStatus).mockResolvedValueOnce({
             status: 'success',
             data: {
-                configured: { openaiApiKey: true, openaiBaseUrl: true, openaiModel: true, azureApiKey: false, pexelsToken: false, notionToken: false, notionDatabaseId: false },
+                configured: {
+                    openaiApiKey: true,
+                    openaiBaseUrl: true,
+                    openaiModel: true,
+                    azureApiKey: false,
+                    pexelsToken: false,
+                    notionToken: false,
+                    notionDatabaseId: false
+                },
                 openaiBaseUrl: 'https://custom.example/v1',
                 openaiModel: 'custom-model'
             }
         })
         window.dispatchEvent(new Event('DOMContentLoaded'))
         await new Promise((resolve) => setTimeout(resolve, 0))
-        expect((document.getElementById('openai-base-url') as HTMLInputElement).value).toBe('https://custom.example/v1')
-        expect((document.getElementById('openai-model') as HTMLInputElement).value).toBe('custom-model')
+        expect((document.getElementById('openai-base-url') as HTMLInputElement).value).toBe(
+            'https://custom.example/v1'
+        )
+        expect((document.getElementById('openai-model') as HTMLInputElement).value).toBe(
+            'custom-model'
+        )
 
-        ;(document.getElementById('openai-base-url') as HTMLInputElement).value = 'https://another.example/v1'
+        ;(document.getElementById('openai-base-url') as HTMLInputElement).value =
+            'https://another.example/v1'
         ;(document.getElementById('openai-model') as HTMLInputElement).value = 'another-model'
         vi.mocked(window.api.saveSettings).mockResolvedValue({ status: 'success' })
         document.getElementById('btn-save-settings')?.dispatchEvent(new MouseEvent('click'))
         await new Promise((resolve) => setTimeout(resolve, 0))
-        expect(window.api.saveSettings).toHaveBeenCalledWith(expect.objectContaining({ openaiBaseUrl: 'https://another.example/v1', openaiModel: 'another-model' }))
+        expect(window.api.saveSettings).toHaveBeenCalledWith(
+            expect.objectContaining({
+                openaiBaseUrl: 'https://another.example/v1',
+                openaiModel: 'another-model'
+            })
+        )
     })
 
     describe('Settings Form', () => {
@@ -638,7 +672,9 @@ describe('Renderer UI', () => {
     describe('Add and Delete Actions', () => {
         it('adds a blank editable row in the import tab', () => {
             document.getElementById('btn-add-import-word')?.click()
-            const row = document.querySelector<HTMLTableRowElement>('#section-import tbody tr[data-id]')
+            const row = document.querySelector<HTMLTableRowElement>(
+                '#section-import tbody tr[data-id]'
+            )
             expect(row?.querySelector('.word-cell')?.textContent).toBe('')
             expect(row?.querySelector('.word-cell')?.getAttribute('contenteditable')).toBe('true')
             expect(row?.querySelector<HTMLInputElement>('.row-select')).toBeTruthy()
@@ -651,9 +687,13 @@ describe('Renderer UI', () => {
             expect(window.api.createVocabulary).toHaveBeenCalledWith({ word: '' })
 
             const body = document.querySelector('#section-collection tbody')
-            body!.innerHTML = '<tr data-id="word-1"><td><input class="row-select" type="checkbox" /></td></tr>'
+            body!.innerHTML =
+                '<tr data-id="word-1"><td><input class="row-select" type="checkbox" /></td></tr>'
             body!.querySelector<HTMLInputElement>('.row-select')!.checked = true
-            vi.mocked(window.api.deleteVocabulary).mockResolvedValue({ status: 'success', data: { deleted: 1 } })
+            vi.mocked(window.api.deleteVocabulary).mockResolvedValue({
+                status: 'success',
+                data: { deleted: 1 }
+            })
             document.getElementById('btn-delete-collection-selected')?.click()
             await Promise.resolve()
             expect(window.api.deleteVocabulary).toHaveBeenCalledWith({ recordIds: ['word-1'] })

@@ -235,8 +235,12 @@ export interface RendererApi {
     listVocabulary: () => Promise<AppResponse<VocabularyRecord[]>>
     createVocabulary: (payload: CreateVocabularyPayload) => Promise<AppResponse<VocabularyRecord>>
     updateVocabulary: (payload: UpdateVocabularyPayload) => Promise<AppResponse<VocabularyRecord>>
-    deleteVocabulary: (payload: DeleteVocabularyPayload) => Promise<AppResponse<DeleteVocabularySummary>>
-    generateMissingData: (payload?: GenerateMissingDataPayload) => Promise<AppResponse<GenerationSummary>>
+    deleteVocabulary: (
+        payload: DeleteVocabularyPayload
+    ) => Promise<AppResponse<DeleteVocabularySummary>>
+    generateMissingData: (
+        payload?: GenerateMissingDataPayload
+    ) => Promise<AppResponse<GenerationSummary>>
     submitToAnki: (payload?: SubmitToAnkiPayload) => Promise<AppResponse<AnkiSubmissionSummary>>
     saveSettings: (payload: SaveSettingsPayload) => Promise<AppResponse>
     getSettingsStatus: () => Promise<AppResponse<SettingsStatus>>

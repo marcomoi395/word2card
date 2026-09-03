@@ -31,10 +31,21 @@ export class GenerationService {
         const pending = records.filter((record) => record.generationStatus !== 'ready')
         if (!pending.length) return { processed: 0, succeeded: 0, failed: 0, results: [], records }
         try {
-            const generated = await OpenAIService.generateFlashcardData(pending.map((record) => record.word))
+            const generated = await OpenAIService.generateFlashcardData(
+                pending.map((record) => record.word)
+            )
             const updated = records.map((record) => {
-                const item = generated.find((candidate) => candidate.word?.trim().toLocaleLowerCase() === record.word.toLocaleLowerCase())
-                if (!item) return { ...record, generationStatus: 'failed' as const, generationError: 'No generated data returned for this word' }
+                const item = generated.find(
+                    (candidate) =>
+                        candidate.word?.trim().toLocaleLowerCase() ===
+                        record.word.toLocaleLowerCase()
+                )
+                if (!item)
+                    return {
+                        ...record,
+                        generationStatus: 'failed' as const,
+                        generationError: 'No generated data returned for this word'
+                    }
                 return {
                     ...record,
                     partOfSpeech: item.pos ?? null,
@@ -46,12 +57,37 @@ export class GenerationService {
                     generationError: null
                 }
             })
-            const results = updated.map((record) => ({ id: record.id, status: record.generationStatus === 'ready' ? 'ready' as const : 'failed' as const, ...(record.generationError ? { error: record.generationError } : {}) }))
-            return { processed: pending.length, succeeded: results.filter((item) => item.status === 'ready').length, failed: results.filter((item) => item.status === 'failed').length, results, records: updated }
+            const results = updated.map((record) => ({
+                id: record.id,
+                status:
+                    record.generationStatus === 'ready' ? ('ready' as const) : ('failed' as const),
+                ...(record.generationError ? { error: record.generationError } : {})
+            }))
+            return {
+                processed: pending.length,
+                succeeded: results.filter((item) => item.status === 'ready').length,
+                failed: results.filter((item) => item.status === 'failed').length,
+                results,
+                records: updated
+            }
         } catch (error) {
             const message = failureMessage(error)
-            const updated = records.map((record) => record.generationStatus === 'ready' ? record : { ...record, generationStatus: 'failed' as const, generationError: message })
-            return { processed: pending.length, succeeded: 0, failed: pending.length, results: pending.map((record) => ({ id: record.id, status: 'failed' as const, error: message })), records: updated }
+            const updated = records.map((record) =>
+                record.generationStatus === 'ready'
+                    ? record
+                    : { ...record, generationStatus: 'failed' as const, generationError: message }
+            )
+            return {
+                processed: pending.length,
+                succeeded: 0,
+                failed: pending.length,
+                results: pending.map((record) => ({
+                    id: record.id,
+                    status: 'failed' as const,
+                    error: message
+                })),
+                records: updated
+            }
         }
     }
     static async generateMissingData(
@@ -86,7 +122,6 @@ export class GenerationService {
             return { processed: pending.length, succeeded: 0, failed: pending.length, results }
         }
 
-
         const seen = new Set<string>()
         const results: GenerationResult['results'] = []
         for (const record of pending) {
@@ -97,7 +132,10 @@ export class GenerationService {
                 ? validateGenerated(item)
                 : 'No generated data returned for this word'
             if (error || !item) {
-                logger.error('generation_record_validation_failed', { id: record.id, error: new Error(error ?? 'Generation failed') })
+                logger.error('generation_record_validation_failed', {
+                    id: record.id,
+                    error: new Error(error ?? 'Generation failed')
+                })
                 database.transaction(() =>
                     database.vocabulary.update(record.id, {
                         generationStatus: 'failed',
@@ -114,7 +152,10 @@ export class GenerationService {
 
             if (seen.has(record.normalizedWord)) {
                 const duplicateError = 'Duplicate generated data returned for this word'
-                logger.error('generation_duplicate_failed', { id: record.id, error: new Error(duplicateError) })
+                logger.error('generation_duplicate_failed', {
+                    id: record.id,
+                    error: new Error(duplicateError)
+                })
                 database.transaction(() =>
                     database.vocabulary.update(record.id, {
                         generationStatus: 'failed',

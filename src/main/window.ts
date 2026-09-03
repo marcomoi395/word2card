@@ -9,7 +9,9 @@ const logger = createLogger('main.window')
 export const isAllowedExternalUrl = (rawUrl: string): boolean => {
     try {
         const allowed = new URL(rawUrl).protocol === 'https:'
-        logger.debug(allowed ? 'external_url_allowed' : 'external_url_blocked', { protocol: new URL(rawUrl).protocol })
+        logger.debug(allowed ? 'external_url_allowed' : 'external_url_blocked', {
+            protocol: new URL(rawUrl).protocol
+        })
         return allowed
     } catch {
         logger.debug('external_url_blocked', { reason: 'invalid_url' })

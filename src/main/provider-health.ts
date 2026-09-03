@@ -36,7 +36,11 @@ const checkOpenAI = async (): Promise<ProviderHealthStatus> => {
         })
         return response.ok
             ? result('openai', 'connected', 'Connected')
-            : result('openai', response.status === 401 ? 'invalid' : 'unreachable', `HTTP ${response.status}`)
+            : result(
+                  'openai',
+                  response.status === 401 ? 'invalid' : 'unreachable',
+                  `HTTP ${response.status}`
+              )
     } catch (error) {
         logger.error('openai_health_check_failed', {
             error: error instanceof Error ? error : new Error(String(error))
@@ -57,7 +61,11 @@ const checkNotion = async (): Promise<ProviderHealthStatus> => {
         )
         return response.ok
             ? result('notion', 'connected', 'Connected')
-            : result('notion', response.status === 401 ? 'invalid' : 'unreachable', `HTTP ${response.status}`)
+            : result(
+                  'notion',
+                  response.status === 401 ? 'invalid' : 'unreachable',
+                  `HTTP ${response.status}`
+              )
     } catch (error) {
         logger.error('notion_health_check_failed', {
             error: error instanceof Error ? error : new Error(String(error))
@@ -75,7 +83,11 @@ const checkPexels = async (): Promise<ProviderHealthStatus> => {
         })
         return response.ok
             ? result('pexels', 'connected', 'Connected')
-            : result('pexels', response.status === 401 ? 'invalid' : 'unreachable', `HTTP ${response.status}`)
+            : result(
+                  'pexels',
+                  response.status === 401 ? 'invalid' : 'unreachable',
+                  `HTTP ${response.status}`
+              )
     } catch (error) {
         logger.error('pexels_health_check_failed', {
             error: error instanceof Error ? error : new Error(String(error))

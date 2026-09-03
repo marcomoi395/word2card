@@ -12,8 +12,10 @@ export interface LoggerOptions {
 }
 
 const LEVEL_WEIGHT: Record<LogLevel, number> = { debug: 10, info: 20, warn: 30, error: 40 }
-const SECRET_KEY_PATTERN = /(token|secret|password|api[-_]?key|authorization|auth|credential|cookie|session|refresh|jwt|access[_-]?token|client[_-]?secret)/i
-const SENSITIVE_TEXT_PATTERN = /(bearer\s+|basic\s+)[^\s]+|((?:[?&]|\b)(?:token|key|secret|password|api[_-]?key|access[_-]?token|client[_-]?secret)=)[^&\s]+/gi
+const SECRET_KEY_PATTERN =
+    /(token|secret|password|api[-_]?key|authorization|auth|credential|cookie|session|refresh|jwt|access[_-]?token|client[_-]?secret)/i
+const SENSITIVE_TEXT_PATTERN =
+    /(bearer\s+|basic\s+)[^\s]+|((?:[?&]|\b)(?:token|key|secret|password|api[_-]?key|access[_-]?token|client[_-]?secret)=)[^&\s]+/gi
 
 const sanitizeText = (value: string): string =>
     value.replace(
@@ -74,7 +76,8 @@ const formatValue = (value: unknown): string => {
 
 export const formatLogEntry = (entry: Record<string, unknown>, color = supportsColor()): string => {
     const level = entry.level as LogLevel
-    const timestamp = typeof entry.timestamp === 'string' ? entry.timestamp.slice(11, 23) : '----------'
+    const timestamp =
+        typeof entry.timestamp === 'string' ? entry.timestamp.slice(11, 23) : '----------'
     const component = String(entry.component ?? 'logger')
     const event = String(entry.event ?? 'unknown_event')
     const details = Object.entries(entry)

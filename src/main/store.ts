@@ -69,7 +69,10 @@ export const createSecretPersistence = (manager: SecretPersistenceManager): Stat
             logger.debug('secret_persistence_deleted', { key })
             return true
         } catch (error) {
-            logger.error('secret_persistence_delete_failed', { key, error: error instanceof Error ? error : new Error(String(error)) })
+            logger.error('secret_persistence_delete_failed', {
+                key,
+                error: error instanceof Error ? error : new Error(String(error))
+            })
             return false
         }
     }
@@ -121,7 +124,10 @@ export class SecretManager {
             logger.debug('secret_saved', { key, encrypted })
             return true
         } catch (error) {
-            logger.error('secret_save_failed', { key, error: error instanceof Error ? error : new Error(String(error)) })
+            logger.error('secret_save_failed', {
+                key,
+                error: error instanceof Error ? error : new Error(String(error))
+            })
             return false
         }
     }
@@ -135,7 +141,10 @@ export class SecretManager {
 
             if (item.encrypted) {
                 if (!this.isEncryptionAvailable()) {
-                    logger.warn('secret_read_unavailable', { key, reason: 'encryption_unavailable' })
+                    logger.warn('secret_read_unavailable', {
+                        key,
+                        reason: 'encryption_unavailable'
+                    })
                     return null
                 }
 
@@ -145,7 +154,10 @@ export class SecretManager {
 
             return item.value
         } catch (error) {
-            logger.error('secret_read_failed', { key, error: error instanceof Error ? error : new Error(String(error)) })
+            logger.error('secret_read_failed', {
+                key,
+                error: error instanceof Error ? error : new Error(String(error))
+            })
             return null
         }
     }

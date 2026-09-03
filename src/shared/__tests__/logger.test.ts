@@ -34,8 +34,16 @@ describe('Logger', () => {
     it('keeps envelope fields authoritative', () => {
         const entries: Record<string, unknown>[] = []
         const logger = createLogger('test', { sink: (entry) => entries.push(entry) })
-        logger.info('expected_event', { event: 'forged_event', level: 'error', component: 'forged' })
-        expect(entries[0]).toMatchObject({ event: 'expected_event', level: 'info', component: 'test' })
+        logger.info('expected_event', {
+            event: 'forged_event',
+            level: 'error',
+            component: 'forged'
+        })
+        expect(entries[0]).toMatchObject({
+            event: 'expected_event',
+            level: 'info',
+            component: 'test'
+        })
     })
 
     it('filters entries below the configured level', () => {
@@ -89,7 +97,12 @@ describe('formatLogEntry', () => {
 
     it('wraps the complete line in the level color when enabled', () => {
         const output = formatLogEntry(
-            { timestamp: '2026-09-03T08:57:55.123Z', level: 'warn', component: 'main', event: 'slow_operation' },
+            {
+                timestamp: '2026-09-03T08:57:55.123Z',
+                level: 'warn',
+                component: 'main',
+                event: 'slow_operation'
+            },
             true
         )
         expect(output).toBe('\u001b[33m08:57:55.123 WARN  main slow_operation\u001b[0m')
