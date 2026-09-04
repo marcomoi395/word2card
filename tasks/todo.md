@@ -34,6 +34,7 @@
 
 - [ ] Task 3A: Lock post-refactor UI and IPC contract
   - Acceptance: A flow matrix covers all actual user-visible flows; missing `#btn-action-sync-source` behavior is classified as a production fix or explicit lower-level rationale; Notion source/legacy section behavior is defined; duplicate IPC declarations are resolved or explicitly blocked; Collection loading/error/recovery claims are limited to states actually rendered by source.
+  - Decision: `#btn-action-sync-source` is currently rendered but unwired, so source-switch E2E must not claim a successful sync until a production fix is approved. Legacy `#section-notion` remains a compatibility-risk path with separate IDs and no merged E2E success claim. Duplicate `GenerateMissingDataPayload`/`GenerationSummary` declarations in `src/shared/ipc.ts` are an explicit contract blocker; later tests use the effective renderer/preload shape only after reconciliation.
   - Verify: Review against `src/renderer/src/renderer.ts`, `src/preload/index.ts`, `src/shared/ipc.ts`; run `bun x playwright test --list`.
   - Files: `tasks/plan.md`, `tasks/todo.md`; `src/shared/ipc.ts` or renderer files only for separately approved contract fixes.
   - Dependencies: Task 3
