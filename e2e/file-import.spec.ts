@@ -27,7 +27,16 @@ test.describe('File Import UI', () => {
         const { window } = sharedApp
         await window.locator('#source-file').fill('')
         await window.locator('#section-import input[name="deck"]').fill(testDeckNames.fileImport)
-        await expect(window.locator('#form-import button[type="submit"]')).toBeVisible()
+        await window.locator('#form-import button[type="submit"]').click()
+        await expect(window.locator('#app-toast')).toHaveText('Please provide a source file path.')
+    })
+
+    test('should import the deterministic local fixture', async ({ sharedApp }) => {
+        const { window } = sharedApp
+        await window.locator('#source-file').fill(getTestWordsPath())
+        await window.locator('#section-import input[name="deck"]').fill(testDeckNames.fileImport)
+        await window.locator('#form-import button[type="submit"]').click()
+        await expect(window.locator('#section-import .data-grid tbody tr')).not.toHaveCount(0)
     })
 
     test('should accept valid deck name input', async ({ sharedApp }) => {
