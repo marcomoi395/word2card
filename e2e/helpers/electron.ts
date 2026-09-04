@@ -59,6 +59,7 @@ export async function resetAppState(window: Page): Promise<void> {
     })
 
     const sourceFileInput = window.locator('#source-file')
+    if ((await sourceFileInput.count()) > 0) await sourceFileInput.fill('')
 
     const deckInput = window.locator('#section-import input[name="deck"]')
     if ((await deckInput.count()) > 0) await deckInput.fill('')
