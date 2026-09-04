@@ -161,32 +161,18 @@
                                 >
                                     <div class="connection-summary notion-status">
                                         <div class="connection-title">
-                                            <span class="status-dot"></span
-                                            ><strong>Notion connected</strong>
+                                            <span
+                                                class="status-dot disconnected"
+                                                id="notion-status-dot"
+                                            ></span
+                                            ><strong id="notion-status-title"
+                                                >Checking Notion...</strong
+                                            >
                                         </div>
-                                        <span class="connection-note">Ready to sync</span>
+                                        <span class="connection-note" id="notion-status-note"
+                                            >Checking connection...</span
+                                        >
                                     </div>
-                                    <label class="field-label" for="notion-source-token"
-                                        >Integration token</label
-                                    ><input
-                                        class="text-field"
-                                        id="notion-source-token"
-                                        placeholder="ntn_xxxxx"
-                                    />
-                                    <p class="field-hint">
-                                        Use the integration token that can access your Notion
-                                        database.
-                                    </p>
-                                    <label class="field-label" for="notion-source-database-id"
-                                        >Database ID</label
-                                    ><input
-                                        class="text-field"
-                                        id="notion-source-database-id"
-                                        placeholder="xxxxxxxx..."
-                                    />
-                                    <p class="field-hint">
-                                        Paste the ID of the database you want to sync.
-                                    </p>
                                     <label class="field-label" for="notion-source-deck"
                                         >Destination deck <span>(optional)</span></label
                                     ><input
@@ -729,19 +715,7 @@
                                     <h2>Connect your database</h2>
                                 </div>
                             </div>
-                            <label class="field-label" for="notion-token">Integration token</label
-                            ><input
-                                class="text-field"
-                                id="notion-token"
-                                name="notionToken"
-                                placeholder="ntn_xxxxx"
-                            /><label class="field-label" for="notion-database-id">Database ID</label
-                            ><input
-                                class="text-field"
-                                id="notion-database-id"
-                                name="notionDatabaseId"
-                                placeholder="xxxxxxxx..."
-                            /><label class="field-label" for="notion-deck"
+                            <label class="field-label" for="notion-deck"
                                 >Deck suffix <span>(optional)</span></label
                             ><input
                                 class="text-field"
@@ -807,6 +781,23 @@
                                 name="pexelsTokenGlobal"
                                 placeholder="Pexels API Key"
                             /><span id="pexels-token-status" class="settings-status"></span
+                            ><label class="field-label" for="notion-token-global"
+                                >Notion integration token</label
+                            ><input
+                                class="text-field"
+                                type="password"
+                                id="notion-token-global"
+                                name="notionTokenGlobal"
+                                placeholder="ntn_xxxxx"
+                            /><span id="notion-token-status" class="settings-status"></span>
+                            <label class="field-label" for="notion-database-id-global"
+                                >Notion database ID</label
+                            ><input
+                                class="text-field"
+                                id="notion-database-id-global"
+                                name="notionDatabaseIdGlobal"
+                                placeholder="xxxxxxxx..."
+                            /><span id="notion-database-id-status" class="settings-status"></span
                             ><button class="submit-btn" type="button" id="btn-save-settings">
                                 Save keys <span>&gt;</span>
                             </button>

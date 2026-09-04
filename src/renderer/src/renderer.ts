@@ -5,6 +5,7 @@ import type {
     ImportRequest,
     NotionSyncRequest,
     ProviderHealthSnapshot,
+    ProviderHealthStatus,
     SaveSettingsPayload,
     VocabularyRecord
 } from '../../shared/ipc'
@@ -316,15 +317,37 @@ function renderHealth(snapshot: ProviderHealthSnapshot): void {
     const labels: Record<string, string> = {
         openai: 'AI',
         anki: 'AnkiConnect',
-        notion: 'Notion',
         pexels: 'Pexels'
     }
     list.innerHTML = Object.entries(snapshot.providers)
+        .filter(([key]) => key !== 'notion')
         .map(
             ([key, value]) =>
                 `<span class="connection-item" data-provider="${key}"><span class="status-dot ${value.state === 'connected' ? 'connected' : 'disconnected'}"></span>${labels[key] || key}: ${value.state}</span>`
         )
         .join('')
+
+    const notion = snapshot.providers.notion
+    const notionDot = document.getElementById('notion-status-dot')
+    const notionTitle = document.getElementById('notion-status-title')
+    const notionNote = document.getElementById('notion-status-note')
+    if (notion && notionDot && notionTitle && notionNote) {
+        notionDot.classList.toggle('connected', notion.state === 'connected')
+        notionDot.classList.toggle('disconnected', notion.state !== 'connected')
+        notionTitle.textContent = `Notion ${providerHealthLabel(notion)}`
+        notionNote.textContent = notion.message || providerHealthLabel(notion)
+    }
+}
+
+function providerHealthLabel(status: ProviderHealthStatus): string {
+    const labels: Record<ProviderHealthStatus['state'], string> = {
+        checking: 'checking',
+        connected: 'connected',
+        not_configured: 'not configured',
+        invalid: 'invalid',
+        unreachable: 'unreachable'
+    }
+    return labels[status.state]
 }
 
 async function loadHealth(): Promise<void> {
@@ -702,27 +725,9 @@ function initNotionForm(): void {
             return
         }
 
-        const notionTokenInput = document.getElementById('notion-token') as HTMLInputElement | null
-        const notionDatabaseIdInput = document.getElementById(
-            'notion-database-id'
-        ) as HTMLInputElement | null
         const deckInput = getInputByName(form, 'deck')
 
-        const notionToken = notionTokenInput?.value.trim() || ''
-        const notionDatabaseId = notionDatabaseIdInput?.value.trim() || ''
         const deck = deckInput?.value.trim() || ''
-
-        if (!notionToken) {
-            showToast('Please provide a Notion token.')
-            notionTokenInput?.focus()
-            return
-        }
-
-        if (!notionDatabaseId) {
-            showToast('Please provide a Notion database ID.')
-            notionDatabaseIdInput?.focus()
-            return
-        }
 
         setButtonLoading(submitButton, true, 'Syncing...')
 
@@ -730,8 +735,6 @@ function initNotionForm(): void {
             const notionData: NotionSyncRequest = {
                 type: 'NOTION_SYNC',
                 payload: {
-                    token: notionToken,
-                    notionDatabaseId,
                     deck,
                     options: {
                         quiz: false,
@@ -763,6 +766,12 @@ function initSettingsForm(): void {
     const openaiModelInput = document.getElementById('openai-model') as HTMLInputElement | null
     const azureInput = document.getElementById('azure-key-global') as HTMLInputElement | null
     const pexelsInput = document.getElementById('pexels-token-global') as HTMLInputElement | null
+    const notionTokenInput = document.getElementById(
+        'notion-token-global'
+    ) as HTMLInputElement | null
+    const notionDatabaseIdInput = document.getElementById(
+        'notion-database-id-global'
+    ) as HTMLInputElement | null
     const saveButton = document.getElementById('btn-save-settings') as HTMLButtonElement | null
 
     const loadSavedSettings = async () => {
@@ -776,6 +785,8 @@ function initSettingsForm(): void {
             const openaiStatus = document.getElementById('openai-key-status')
             const azureStatus = document.getElementById('azure-key-status')
             const pexelsStatus = document.getElementById('pexels-token-status')
+            const notionTokenStatus = document.getElementById('notion-token-status')
+            const notionDatabaseIdStatus = document.getElementById('notion-database-id-status')
             if (openaiStatus) {
                 openaiStatus.textContent = status.openaiApiKey ? 'Configured' : 'Not configured'
             }
@@ -790,6 +801,14 @@ function initSettingsForm(): void {
             }
             if (pexelsStatus) {
                 pexelsStatus.textContent = status.pexelsToken ? 'Configured' : 'Not configured'
+            }
+            if (notionTokenStatus) {
+                notionTokenStatus.textContent = status.notionToken ? 'Configured' : 'Not configured'
+            }
+            if (notionDatabaseIdStatus) {
+                notionDatabaseIdStatus.textContent = status.notionDatabaseId
+                    ? 'Configured'
+                    : 'Not configured'
             }
         } catch (error) {
             logger.error('settings_load_failed', {
@@ -811,6 +830,8 @@ function initSettingsForm(): void {
             openaiApiKey: openaiInput?.value.trim() || '',
             azureApiKey: azureInput?.value.trim() || '',
             pexelsToken: pexelsInput?.value.trim() || '',
+            notionToken: notionTokenInput?.value.trim() || '',
+            notionDatabaseId: notionDatabaseIdInput?.value.trim() || '',
             openaiBaseUrl: openaiBaseUrlInput?.value.trim() || '',
             openaiModel: openaiModelInput?.value.trim() || ''
             /* v8 ignore stop */

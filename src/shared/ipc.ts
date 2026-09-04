@@ -95,8 +95,8 @@ export interface FileImportPayload {
 }
 
 export interface NotionSyncPayload {
-    token: string
-    notionDatabaseId: string
+    token?: string
+    notionDatabaseId?: string
     deck: string
     options: ImportOptions
 }
@@ -159,6 +159,8 @@ export interface SaveSettingsPayload {
     openaiApiKey: string
     azureApiKey: string
     pexelsToken: string
+    notionToken?: string
+    notionDatabaseId?: string
     openaiBaseUrl?: string
     openaiModel?: string
 }

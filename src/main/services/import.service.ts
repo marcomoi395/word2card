@@ -1,13 +1,7 @@
 import { createLogger } from '../../shared/logger'
 import { NotionService } from '../notion'
 import { getRuntimeState } from '../state/runtime'
-import type {
-    ImportRequest,
-    AppResponse,
-    SecretKey,
-    ImportDraftRecord,
-    ImportSummary
-} from '../../shared/ipc'
+import type { ImportRequest, AppResponse, ImportDraftRecord, ImportSummary } from '../../shared/ipc'
 import { success, failure } from '../utils/response'
 import { readFileContent } from '../helper/readFile'
 import { getWordEntriesFromResponse } from '../helper/get-words-from-notion-response'
@@ -19,11 +13,6 @@ import {
 import type { DatabaseRepositories } from '../database'
 
 const logger = createLogger('main.import')
-
-const syncRuntimeSecret = (key: SecretKey, value: string): boolean => {
-    const trimmed = value.trim()
-    return Boolean(trimmed) && getRuntimeState().updateRuntimeSettings({ [key]: trimmed })
-}
 
 const createDraftRecords = (words: string[], source: 'file' | 'notion'): ImportDraftRecord[] => {
     const seen = new Set<string>()
@@ -94,13 +83,19 @@ export class ImportService {
             return success({ words: records.map((record) => record.word), records })
         }
         try {
-            if (
-                !syncRuntimeSecret('notionToken', request.payload.token) ||
-                !syncRuntimeSecret('notionDatabaseId', request.payload.notionDatabaseId)
-            ) {
-                return failure('Failed to save Notion settings.')
+            const settings = getRuntimeState().getRuntimeSettings()
+            const notionToken = request.payload.token?.trim() || settings.notionToken || ''
+            const notionDatabaseId =
+                request.payload.notionDatabaseId?.trim() || settings.notionDatabaseId || ''
+            if (!notionToken || !notionDatabaseId) {
+                return failure('Please configure the Notion token and database ID in Settings.')
             }
-            const sources = await NotionService.getPages(request.payload.notionDatabaseId)
+            if (request.payload.token || request.payload.notionDatabaseId) {
+                if (!getRuntimeState().updateRuntimeSettings({ notionToken, notionDatabaseId })) {
+                    return failure('Failed to save Notion settings.')
+                }
+            }
+            const sources = await NotionService.getPages(notionDatabaseId)
             if (!sources?.length) {
                 return failure('No pages found in the Notion database.')
             }

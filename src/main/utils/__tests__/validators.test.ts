@@ -267,7 +267,7 @@ describe('validators', () => {
                 expect(parseImportRequest(input)).toEqual(input)
             })
 
-            it('returns null when token is missing', () => {
+            it('allows token to be omitted when it is stored in Settings', () => {
                 const input = {
                     type: 'NOTION_SYNC',
                     payload: {
@@ -276,7 +276,7 @@ describe('validators', () => {
                         options: { quiz: false, flashcard: true }
                     }
                 }
-                expect(parseImportRequest(input)).toBeNull()
+                expect(parseImportRequest(input)).toEqual(input)
             })
             it('returns null when token is blank', () => {
                 expect(
@@ -306,7 +306,7 @@ describe('validators', () => {
                 ).toBeNull()
             })
 
-            it('returns null when notionDatabaseId is missing', () => {
+            it('allows notionDatabaseId to be omitted when it is stored in Settings', () => {
                 const input = {
                     type: 'NOTION_SYNC',
                     payload: {
@@ -315,7 +315,7 @@ describe('validators', () => {
                         options: { quiz: false, flashcard: true }
                     }
                 }
-                expect(parseImportRequest(input)).toBeNull()
+                expect(parseImportRequest(input)).toEqual(input)
             })
 
             it('returns null when deck is not a string', () => {

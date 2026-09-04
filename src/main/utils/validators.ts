@@ -22,11 +22,21 @@ export const parseSaveSettingsPayload = (value: unknown): SaveSettingsPayload | 
     if (!isRecord(value)) {
         return null
     }
-    const { openaiApiKey, azureApiKey, pexelsToken, openaiBaseUrl, openaiModel } = value
+    const {
+        openaiApiKey,
+        azureApiKey,
+        pexelsToken,
+        notionToken,
+        notionDatabaseId,
+        openaiBaseUrl,
+        openaiModel
+    } = value
     if (
         typeof openaiApiKey !== 'string' ||
         typeof azureApiKey !== 'string' ||
-        typeof pexelsToken !== 'string'
+        typeof pexelsToken !== 'string' ||
+        (notionToken !== undefined && typeof notionToken !== 'string') ||
+        (notionDatabaseId !== undefined && typeof notionDatabaseId !== 'string')
     ) {
         return null
     }
@@ -36,7 +46,15 @@ export const parseSaveSettingsPayload = (value: unknown): SaveSettingsPayload | 
     if (openaiModel !== undefined && typeof openaiModel !== 'string') {
         return null
     }
-    return { openaiApiKey, azureApiKey, pexelsToken, openaiBaseUrl, openaiModel }
+    return {
+        openaiApiKey,
+        azureApiKey,
+        pexelsToken,
+        ...(notionToken === undefined ? {} : { notionToken }),
+        ...(notionDatabaseId === undefined ? {} : { notionDatabaseId }),
+        openaiBaseUrl,
+        openaiModel
+    }
 }
 
 export const parseImportRequest = (value: unknown): ImportRequest | null => {
@@ -69,10 +87,9 @@ export const parseImportRequest = (value: unknown): ImportRequest | null => {
 
         const { token, notionDatabaseId, deck, options } = payload
         if (
-            typeof token !== 'string' ||
-            !token.trim() ||
-            typeof notionDatabaseId !== 'string' ||
-            !notionDatabaseId.trim() ||
+            (token !== undefined && (typeof token !== 'string' || !token.trim())) ||
+            (notionDatabaseId !== undefined &&
+                (typeof notionDatabaseId !== 'string' || !notionDatabaseId.trim())) ||
             typeof deck !== 'string' ||
             !isImportOptions(options)
         ) {
@@ -81,7 +98,12 @@ export const parseImportRequest = (value: unknown): ImportRequest | null => {
 
         return {
             type: 'NOTION_SYNC',
-            payload: { token, notionDatabaseId, deck, options }
+            payload: {
+                ...(token === undefined ? {} : { token }),
+                ...(notionDatabaseId === undefined ? {} : { notionDatabaseId }),
+                deck,
+                options
+            }
         }
     }
 
