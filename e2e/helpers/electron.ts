@@ -105,3 +105,8 @@ export async function closeElectronApp(app: ElectronApplication): Promise<void> 
         }
     }
 }
+
+export async function restartElectronApp(context: ElectronAppContext): Promise<ElectronAppContext> {
+    await closeElectronApp(context.app)
+    return launchElectronApp({ userDataPath: context.userDataPath })
+}
