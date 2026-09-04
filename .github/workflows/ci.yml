@@ -29,7 +29,17 @@ jobs:
             - run: bun run lint
             - run: bun run typecheck
             - run: bun run test
-            - run: bun audit --severity high
+            - name: Audit dependencies
+              run: |
+                  for attempt in 1 2 3; do
+                      if bun audit --severity high; then
+                          exit 0
+                      fi
+                      if [ "$attempt" -lt 3 ]; then
+                          sleep $((attempt * 10))
+                      fi
+                  done
+                  exit 1
 
     e2e-test:
         name: E2E tests
