@@ -53,9 +53,12 @@ export async function resetAppState(window: Page): Promise<void> {
 
     await window.click('#tab-import-btn')
     await window.waitForSelector('#section-import', { state: 'visible' })
+    await window.click('#source-file-btn')
+    await window.waitForSelector('#source-file-fields:not(.source-fields-hidden)', {
+        state: 'visible'
+    })
 
     const sourceFileInput = window.locator('#source-file')
-    if ((await sourceFileInput.count()) > 0) await sourceFileInput.fill('')
 
     const deckInput = window.locator('#section-import input[name="deck"]')
     if ((await deckInput.count()) > 0) await deckInput.fill('')

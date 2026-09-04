@@ -64,4 +64,21 @@ test.describe('Tab Navigation', () => {
         await window.click('#tab-import-btn')
         await expect(window.locator('#section-import')).toHaveClass(/active-section/)
     })
+
+    test('should switch to Collection tab when clicked', async ({ sharedApp }) => {
+        const { window } = sharedApp
+
+        await window.click('#tab-collection-btn')
+        await expect(window.locator('#section-collection')).toHaveClass(/active-section/)
+        await expect(window.locator('#section-import')).not.toHaveClass(/active-section/)
+    })
+
+    test('should switch the Import source to Notion', async ({ sharedApp }) => {
+        const { window } = sharedApp
+
+        await window.click('#tab-notion-btn')
+        await expect(window.locator('#source-notion-fields')).toBeVisible()
+        await expect(window.locator('#source-file-fields')).toBeHidden()
+        await expect(window.locator('#tab-notion-btn')).toHaveClass(/active-source/)
+    })
 })
