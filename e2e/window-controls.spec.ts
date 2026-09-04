@@ -3,21 +3,12 @@ import { test, expect } from './helpers/test-base'
 test.describe('Window Controls', () => {
     test('should have minimize button visible', async ({ sharedApp }) => {
         const { window } = sharedApp
-
         const minimizeButton = window.locator('#minimize-btn')
-
-        // Check if button exists
-        await expect(minimizeButton).toBeDefined()
-
-        // Check visibility based on platform
         const platform = await window.evaluate(() => window.api.platform)
 
         if (platform === 'linux') {
-            // On Linux, minimize button should be hidden
-            const isVisible = await minimizeButton.isVisible().catch(() => false)
-            expect(isVisible).toBe(false)
+            await expect(minimizeButton).toBeHidden()
         } else {
-            // On Windows/macOS, should be visible
             await expect(minimizeButton).toBeVisible()
         }
     })
