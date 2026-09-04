@@ -1,4 +1,4 @@
-import { test, expect } from './helpers/test-base'
+import { lifecycleTest, test, expect } from './helpers/test-base'
 
 test.describe('Smoke Tests', () => {
     test('should launch application successfully', async ({ sharedApp }) => {
@@ -45,4 +45,20 @@ test.describe('Smoke Tests', () => {
         await sharedApp.window.waitForSelector('body', { timeout: 5000 })
         expect(errors.filter((message) => /csp|content security policy/i.test(message))).toEqual([])
     })
+})
+
+const lifecycleTestCase = lifecycleTest
+
+lifecycleTestCase.describe('Electron lifecycle isolation', () => {
+    lifecycleTestCase(
+        'uses a dedicated user-data directory for each app launch',
+        async ({ lifecycleApp }) => {
+            const configuredUserDataPath = await lifecycleApp.app.evaluate(({ app }) =>
+                app.getPath('userData')
+            )
+
+            expect(configuredUserDataPath).toContain('word2card-e2e-')
+            expect(lifecycleApp.userDataPath).toBe(configuredUserDataPath)
+        }
+    )
 })

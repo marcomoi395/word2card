@@ -11,6 +11,10 @@ import type { RuntimeSettings } from './state/model'
 
 const logger = createLogger('main')
 
+if (process.env.NODE_ENV === 'test' && process.env.WORD2CARD_TEST_USER_DATA) {
+    app.setPath('userData', process.env.WORD2CARD_TEST_USER_DATA)
+}
+
 app.whenReady().then(() => {
     logger.info('app_ready')
     electronApp.setAppUserModelId('com.youngmarco.word2card')

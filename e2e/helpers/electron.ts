@@ -1,14 +1,26 @@
 import { _electron as electron, ElectronApplication, Page } from '@playwright/test'
-import path from 'path'
+import fs from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
 
+const TEST_USER_DATA_PREFIX = 'word2card-e2e-'
 export interface ElectronAppContext {
     app: ElectronApplication
     window: Page
+    userDataPath: string
 }
 
-export async function launchElectronApp(): Promise<ElectronAppContext> {
+export interface LaunchElectronOptions {
+    userDataPath?: string
+}
+
+export async function launchElectronApp(
+    options: LaunchElectronOptions = {}
+): Promise<ElectronAppContext> {
     const appPath = path.join(__dirname, '../../out/main/index.js')
     const isHeadless = process.env.HEADLESS !== 'false'
+    const userDataPath =
+        options.userDataPath ?? (await fs.mkdtemp(path.join(os.tmpdir(), TEST_USER_DATA_PREFIX)))
     const args = [appPath]
 
     if (isHeadless) {
@@ -19,13 +31,18 @@ export async function launchElectronApp(): Promise<ElectronAppContext> {
         args,
         env: {
             ...process.env,
-            NODE_ENV: 'test'
+            NODE_ENV: 'test',
+            WORD2CARD_TEST_USER_DATA: userDataPath
         }
     })
     const window = await app.firstWindow()
     await window.waitForLoadState('domcontentloaded')
 
-    return { app, window }
+    return { app, window, userDataPath }
+}
+
+export async function removeTestUserData(userDataPath: string): Promise<void> {
+    await fs.rm(userDataPath, { recursive: true, force: true })
 }
 
 export async function resetAppState(window: Page): Promise<void> {
