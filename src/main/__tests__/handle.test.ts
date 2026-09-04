@@ -98,24 +98,16 @@ describe('createFlashcards', () => {
         expect(result[0].fields.image).toBe('')
     })
 
-    it('updates Notion pages when targets are provided', async () => {
+    it('does not update Notion pages when targets are provided', async () => {
         vi.mocked(OpenAIService.generateFlashcardData).mockResolvedValue([
-            {
-                word: 'word1',
-                pos: 'noun',
-                vietnamese: 'từ 1',
-                ipa: '/wɜrd/'
-            }
+            { word: 'word1', pos: 'noun', vietnamese: 'từ 1', ipa: '/wɜrd/' }
         ])
         vi.mocked(State.getToken).mockReturnValue(undefined)
 
         const notionTargets = [{ pageId: 'page-1', word: 'word1', deckName: 'NotionDeck' }]
         const mockQueue = new Map([['word1', [notionTargets[0]]]])
         vi.mocked(notionSync.createNotionTargetQueueMap).mockReturnValue(mockQueue)
-        vi.mocked(notionSync.shiftNotionTarget)
-            .mockReturnValueOnce(notionTargets[0])
-            .mockReturnValueOnce(notionTargets[0])
-        vi.mocked(NotionService.update).mockResolvedValue()
+        vi.mocked(notionSync.shiftNotionTarget).mockReturnValueOnce(notionTargets[0])
 
         const result = await createFlashcards(
             ['word1'],
@@ -125,12 +117,7 @@ describe('createFlashcards', () => {
             notionTargets
         )
 
-        expect(NotionService.update).toHaveBeenCalledWith('page-1', {
-            word: 'word1',
-            pos: 'noun',
-            vietnamese: 'từ 1',
-            ipa: '/wɜrd/'
-        })
+        expect(NotionService.update).not.toHaveBeenCalled()
         expect(result[0].deckName).toBe('NotionDeck')
     })
 

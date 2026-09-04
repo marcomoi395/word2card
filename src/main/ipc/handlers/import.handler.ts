@@ -1,26 +1,34 @@
 import { ipcMain } from 'electron'
-import type { AppResponse } from '../../../shared/ipc'
+import type { AppResponse, ImportSummary } from '../../../shared/ipc'
 import { IPC_CHANNELS } from '../../../shared/ipc'
 import { failure } from '../../utils/response'
 import { parseImportRequest } from '../../utils/validators'
 import { ImportService } from '../../services/import.service'
 import { validateTextFilePath } from '../../helper/readFile'
+import { createLogger } from '../../../shared/logger'
+
+const logger = createLogger('main.ipc.import')
+
 export function registerImportHandlers(): void {
     ipcMain.handle(
         IPC_CHANNELS.sendImport,
-        async (_event, payload: unknown): Promise<AppResponse> => {
+        async (_event, payload: unknown): Promise<AppResponse<ImportSummary>> => {
             const importRequest = parseImportRequest(payload)
             if (!importRequest) {
+                logger.error('import_validation_failed', {
+                    error: new Error('Invalid import request payload')
+                })
                 return failure('Invalid import request payload')
             }
-
             if (
                 importRequest.type === 'FILE_IMPORT' &&
                 !(await validateTextFilePath(importRequest.payload.filePath))
             ) {
+                logger.error('file_import_validation_failed', {
+                    error: new Error('Invalid text file path')
+                })
                 return failure('Invalid text file path')
             }
-
             return ImportService.handleImportRequest(importRequest)
         }
     )

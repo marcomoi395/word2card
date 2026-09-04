@@ -1,19 +1,30 @@
 import type { BrowserWindow } from 'electron'
+import { setImportDatabase } from '../services/import.service'
+import { createLogger } from '../../shared/logger'
 import { registerWindowHandlers } from './handlers/window.handler'
 import { registerFileHandlers } from './handlers/file.handler'
 import { registerSettingsHandlers } from './handlers/settings.handler'
 import { registerImportHandlers } from './handlers/import.handler'
+import { registerProviderHealthHandlers } from './handlers/provider-health.handler'
+import { registerCollectionHandlers } from './handlers/collection.handler'
+import { registerGenerationHandlers } from './handlers/generation.handler'
+import { registerAnkiHandlers } from './handlers/anki.handler'
+import type { DatabaseRepositories } from '../database'
 
-let registered = false
+const logger = createLogger('main.ipc')
 
-export function registerAllIpcHandlers(_mainWindow: BrowserWindow): void {
-    if (registered) {
-        return
-    }
-
-    registered = true
+export function registerAllIpcHandlers(
+    _mainWindow: BrowserWindow,
+    database: DatabaseRepositories
+): void {
     registerWindowHandlers()
     registerFileHandlers()
     registerSettingsHandlers()
+    registerProviderHealthHandlers()
+    setImportDatabase(database)
     registerImportHandlers()
+    registerCollectionHandlers(database)
+    registerGenerationHandlers(database)
+    registerAnkiHandlers(database)
+    logger.info('ipc_handlers_registered')
 }

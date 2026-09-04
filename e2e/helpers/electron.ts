@@ -1,14 +1,26 @@
 import { _electron as electron, ElectronApplication, Page } from '@playwright/test'
-import path from 'path'
+import fs from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
 
+const TEST_USER_DATA_PREFIX = 'word2card-e2e-'
 export interface ElectronAppContext {
     app: ElectronApplication
     window: Page
+    userDataPath: string
 }
 
-export async function launchElectronApp(): Promise<ElectronAppContext> {
+export interface LaunchElectronOptions {
+    userDataPath?: string
+}
+
+export async function launchElectronApp(
+    options: LaunchElectronOptions = {}
+): Promise<ElectronAppContext> {
     const appPath = path.join(__dirname, '../../out/main/index.js')
     const isHeadless = process.env.HEADLESS !== 'false'
+    const userDataPath =
+        options.userDataPath ?? (await fs.mkdtemp(path.join(os.tmpdir(), TEST_USER_DATA_PREFIX)))
     const args = [appPath]
 
     if (isHeadless) {
@@ -19,13 +31,18 @@ export async function launchElectronApp(): Promise<ElectronAppContext> {
         args,
         env: {
             ...process.env,
-            NODE_ENV: 'test'
+            NODE_ENV: 'test',
+            WORD2CARD_TEST_USER_DATA: userDataPath
         }
     })
     const window = await app.firstWindow()
     await window.waitForLoadState('domcontentloaded')
 
-    return { app, window }
+    return { app, window, userDataPath }
+}
+
+export async function removeTestUserData(userDataPath: string): Promise<void> {
+    await fs.rm(userDataPath, { recursive: true, force: true })
 }
 
 export async function resetAppState(window: Page): Promise<void> {
@@ -36,6 +53,10 @@ export async function resetAppState(window: Page): Promise<void> {
 
     await window.click('#tab-import-btn')
     await window.waitForSelector('#section-import', { state: 'visible' })
+    await window.click('#source-file-btn')
+    await window.waitForSelector('#source-file-fields:not(.source-fields-hidden)', {
+        state: 'visible'
+    })
 
     const sourceFileInput = window.locator('#source-file')
     if ((await sourceFileInput.count()) > 0) await sourceFileInput.fill('')
@@ -43,17 +64,10 @@ export async function resetAppState(window: Page): Promise<void> {
     const deckInput = window.locator('#section-import input[name="deck"]')
     if ((await deckInput.count()) > 0) await deckInput.fill('')
 
-    for (const selector of ['#chk-flashcard-import', '#chk-quiz-import']) {
-        const checkbox = window.locator(selector)
-        if ((await checkbox.count()) > 0 && (await checkbox.isChecked())) {
-            await checkbox.uncheck()
-        }
-    }
-
     await window.click('#tab-settings-btn')
     await window.waitForSelector('#section-settings', { state: 'visible' })
 
-    for (const selector of ['#openai-key-global', '#azure-key-global', '#pexels-token-global']) {
+    for (const selector of ['#openai-key-global', '#pexels-token-global']) {
         const input = window.locator(selector)
         if ((await input.count()) > 0) await input.fill('')
     }
@@ -91,4 +105,9 @@ export async function closeElectronApp(app: ElectronApplication): Promise<void> 
             console.warn('[Test] Force kill also failed:', killError)
         }
     }
+}
+
+export async function restartElectronApp(context: ElectronAppContext): Promise<ElectronAppContext> {
+    await closeElectronApp(context.app)
+    return launchElectronApp({ userDataPath: context.userDataPath })
 }

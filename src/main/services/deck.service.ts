@@ -1,8 +1,10 @@
+import { createLogger } from '../../shared/logger'
 import { checkAnkiConnect, sendRequest, type AnkiResponse } from '../anki-connect'
 import type { QuizNote } from '../handle'
 import type { AppResponse } from '../../shared/ipc'
 import { success, failure } from '../utils/response'
 import modelFlashcardData from '../helper/model-flashcard.json'
+const logger = createLogger('main.deck')
 
 const resolveDeckName = (deckName: string): string => {
     return deckName || 'Default'
@@ -15,6 +17,9 @@ export class DeckService {
         try {
             const isConnected = await checkAnkiConnect()
             if (!isConnected) {
+                logger.error('deck_connection_failed', {
+                    error: new Error('anki_connect_unavailable')
+                })
                 return failure('Failed to connect to AnkiConnect. Please ensure Anki is running.')
             }
 
@@ -27,12 +32,14 @@ export class DeckService {
             })
 
             if (response.error) {
+                logger.error('deck_create_rejected', { error: new Error(response.error) })
                 return failure(`Anki error: ${response.error}`)
             }
 
             return success(undefined, `Deck "${resolvedName}" ready`)
         } catch (error) {
             /* v8 ignore start */
+            logger.error('deck_create_failed', { error })
             const message = error instanceof Error ? error.message : 'Unknown error creating deck'
             return failure(message)
             /* v8 ignore stop */
@@ -57,6 +64,7 @@ export class DeckService {
             })
 
             if (modelNamesResponse.error) {
+                logger.error('model_lookup_failed', { error: new Error(modelNamesResponse.error) })
                 return failure(`Anki error: ${modelNamesResponse.error}`)
             }
 
@@ -78,19 +86,23 @@ export class DeckService {
             })
 
             if (createModelResponse.error) {
+                logger.error('model_create_rejected', {
+                    error: new Error(createModelResponse.error)
+                })
                 return failure(`Failed to create Anki model: ${createModelResponse.error}`)
             }
 
             return success(undefined, `Model "${modelFlashcardData.modelName}" created`)
         } catch (error) {
             /* v8 ignore start */
+            logger.error('model_ensure_failed', { error })
             const message = error instanceof Error ? error.message : 'Unknown error creating model'
             return failure(message)
             /* v8 ignore stop */
         }
     }
 
-    public static async addNotesToAnki(notes: QuizNote[]): Promise<AppResponse> {
+    public static async addNotesToAnki(notes: QuizNote[]): Promise<AppResponse<(number | null)[]>> {
         const modelResult = await DeckService.ensureModelExists()
         if (modelResult.status === 'error') {
             return modelResult
@@ -106,12 +118,24 @@ export class DeckService {
             })
 
             if (response.error) {
+                logger.error('anki_notes_add_rejected', {
+                    count: notes.length,
+                    error: new Error(response.error)
+                })
                 return failure(`Anki error: ${response.error}`)
             }
 
-            return success()
+            if (
+                !Array.isArray(response.result) ||
+                response.result.length !== notes.length ||
+                response.result.some((id) => id !== null && typeof id !== 'number')
+            ) {
+                return failure('Invalid response from AnkiConnect while adding notes')
+            }
+            return success(response.result as (number | null)[])
         } catch (error) {
             /* v8 ignore start */
+            logger.error('anki_notes_add_failed', { count: notes.length, error })
             const message = error instanceof Error ? error.message : 'Unknown error adding notes'
             return failure(message)
             /* v8 ignore stop */

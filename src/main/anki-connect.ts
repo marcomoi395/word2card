@@ -1,3 +1,7 @@
+import { createLogger } from '../shared/logger'
+
+const logger = createLogger('main.anki_connect')
+
 export interface AnkiResponse<T> {
     result: T
     error: string | null
@@ -16,7 +20,10 @@ export const checkAnkiConnect = async () => {
     try {
         const response = await fetch(url)
         return response.status === 200
-    } catch {
+    } catch (error) {
+        logger.error('anki_health_check_failed', {
+            error: error instanceof Error ? error : new Error(String(error))
+        })
         return false
     }
 }

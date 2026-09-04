@@ -128,6 +128,10 @@ describe('DeckService', () => {
                     result: null,
                     error: null
                 })
+                .mockResolvedValueOnce({
+                    result: [123],
+                    error: null
+                })
 
             const notes = [
                 {
@@ -160,7 +164,7 @@ describe('DeckService', () => {
                     error: null
                 })
                 .mockResolvedValueOnce({
-                    result: null,
+                    result: [123],
                     error: null
                 })
             const notes = [

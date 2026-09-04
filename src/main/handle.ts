@@ -1,4 +1,3 @@
-import pLimit from 'p-limit'
 import { v4 as uuidv4 } from 'uuid'
 import {
     createNotionTargetQueueMap,
@@ -6,7 +5,6 @@ import {
     type NotionSyncTarget
 } from './helper/notion-sync'
 import { sanitizeFilename } from './helper/sanitize-filename'
-import { NotionService } from './notion'
 import { OpenAIService } from './open-ai'
 import { searchImagePexels } from './pexels'
 import { getRuntimeSetting } from './state/runtime'
@@ -36,7 +34,14 @@ export interface QuizNote {
     }[]
 }
 
-const clozeWord = (word: string): string => {
+export const normalizeIpa = (ipa: string | undefined): string | undefined => {
+    if (!ipa) {
+        return undefined
+    }
+    return ipa.trim().replace(/^\/+|\/+$/g, '') || undefined
+}
+
+export const clozeWord = (word: string): string => {
     if (word.length <= 2) {
         return '_'.repeat(word.length)
     }
@@ -55,24 +60,6 @@ export const createFlashcards = async (
     notionTargets?: NotionSyncTarget[]
 ): Promise<QuizNote[]> => {
     const dataFromOpenAI = await OpenAIService.generateFlashcardData(words)
-    const notionTargetsByWord = notionTargets
-        ? createNotionTargetQueueMap(notionTargets)
-        : undefined
-
-    if (notionTargetsByWord) {
-        const limit = pLimit(2)
-        await Promise.allSettled(
-            dataFromOpenAI.map((item) => {
-                const target = shiftNotionTarget(notionTargetsByWord, item.word)
-                if (!target) {
-                    console.log(`Not found: ${item.word}`)
-                    return Promise.resolve()
-                }
-
-                return limit(() => NotionService.update(target.pageId, item))
-            })
-        )
-    }
 
     const pexelsToken = getRuntimeSetting('pexelsToken')
     const noteTargetsByWord = notionTargets ? createNotionTargetQueueMap(notionTargets) : undefined
@@ -94,6 +81,7 @@ export const createFlashcards = async (
                 fields: {
                     ...item,
                     id: uuidv4(),
+                    ipa: normalizeIpa(item.ipa),
                     image,
                     cloze: clozeWord(item.word)
                 },

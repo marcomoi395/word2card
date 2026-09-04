@@ -1,5 +1,11 @@
 import { test as base } from '@playwright/test'
-import { launchElectronApp, closeElectronApp, ElectronAppContext, resetAppState } from './electron'
+import {
+    launchElectronApp,
+    closeElectronApp,
+    ElectronAppContext,
+    removeTestUserData,
+    resetAppState
+} from './electron'
 
 /**
  * Extended test with worker-scoped shared app and auto state reset.
@@ -8,8 +14,12 @@ export const test = base.extend<{ resetState: void }, { sharedApp: ElectronAppCo
     sharedApp: [
         async ({}, use) => {
             const context = await launchElectronApp()
-            await use(context)
-            await closeElectronApp(context.app)
+            try {
+                await use(context)
+            } finally {
+                await closeElectronApp(context.app)
+                await removeTestUserData(context.userDataPath)
+            }
         },
         { scope: 'worker', auto: true }
     ],
@@ -20,6 +30,18 @@ export const test = base.extend<{ resetState: void }, { sharedApp: ElectronAppCo
         },
         { scope: 'test', auto: true }
     ]
+})
+
+export const lifecycleTest = base.extend<{ lifecycleApp: ElectronAppContext }>({
+    lifecycleApp: async ({}, use) => {
+        const context = await launchElectronApp()
+        try {
+            await use(context)
+        } finally {
+            await closeElectronApp(context.app)
+            await removeTestUserData(context.userDataPath)
+        }
+    }
 })
 
 export { expect } from '@playwright/test'

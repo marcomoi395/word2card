@@ -21,6 +21,25 @@ describe('Renderer UI', () => {
             getFilePath: vi.fn((file: File) => `/mock/${file.name}`),
             openFileDialog: vi.fn(),
             sendImport: vi.fn(),
+            listVocabulary: vi.fn().mockResolvedValue({ status: 'success', data: [] }),
+            createVocabulary: vi.fn(),
+            updateVocabulary: vi.fn(),
+            deleteVocabulary: vi.fn(),
+            getProviderHealth: vi.fn().mockResolvedValue({
+                status: 'success',
+                data: {
+                    providers: {
+                        openai: { provider: 'openai', state: 'connected' },
+                        notion: { provider: 'notion', state: 'connected' },
+                        pexels: { provider: 'pexels', state: 'connected' },
+                        anki: { provider: 'anki', state: 'connected' }
+                    }
+                }
+            }),
+            getAnkiHealth: vi.fn().mockResolvedValue({
+                status: 'success',
+                data: { provider: 'anki', state: 'connected' }
+            }),
             saveSettings: vi.fn(),
             getSettingsStatus: vi.fn().mockResolvedValue({
                 status: 'success',
@@ -51,6 +70,21 @@ describe('Renderer UI', () => {
             expect(document.getElementById('section-import')).toBeTruthy()
             expect(document.getElementById('section-notion')).toBeTruthy()
             expect(document.getElementById('section-settings')).toBeTruthy()
+        })
+        it('omits the meaning column from import and collection tables', () => {
+            for (const selector of [
+                '#section-import .data-grid',
+                '#section-collection .data-grid'
+            ]) {
+                const table = document.querySelector<HTMLTableElement>(selector)
+                expect(table?.querySelector('th:nth-child(8)')?.textContent?.trim()).not.toBe(
+                    'Meaning'
+                )
+                expect(table?.querySelectorAll('thead th')).toHaveLength(10)
+                expect(
+                    table?.querySelector('tbody td[role="status"]')?.getAttribute('colspan')
+                ).toBe('10')
+            }
         })
         it('calls getSettingsStatus on load', () => {
             expect(window.api.getSettingsStatus).toHaveBeenCalled()
@@ -120,6 +154,82 @@ describe('Renderer UI', () => {
                 'password'
             )
         })
+        it('uses red status dots for providers that are not connected', async () => {
+            vi.mocked(window.api.getProviderHealth).mockResolvedValue({
+                status: 'success',
+                data: {
+                    providers: {
+                        openai: { provider: 'openai', state: 'unreachable' },
+                        notion: { provider: 'notion', state: 'not_configured' },
+                        pexels: { provider: 'pexels', state: 'invalid' },
+                        anki: { provider: 'anki', state: 'connected' }
+                    }
+                }
+            })
+            window.dispatchEvent(new Event('DOMContentLoaded'))
+            await Promise.resolve()
+            await Promise.resolve()
+
+            expect(
+                document
+                    .querySelector('.connection-item[data-provider="openai"] .status-dot')
+                    ?.classList.contains('disconnected')
+            ).toBe(true)
+            expect(
+                document
+                    .querySelector('.connection-item[data-provider="notion"] .status-dot')
+                    ?.classList.contains('disconnected')
+            ).toBe(true)
+            expect(
+                document
+                    .querySelector('.connection-item[data-provider="pexels"] .status-dot')
+                    ?.classList.contains('disconnected')
+            ).toBe(true)
+            expect(
+                document
+                    .querySelector('.connection-item[data-provider="anki"] .status-dot')
+                    ?.classList.contains('connected')
+            ).toBe(true)
+        })
+    })
+    it('loads and saves OpenAI base URL and model settings', async () => {
+        vi.mocked(window.api.getSettingsStatus).mockResolvedValueOnce({
+            status: 'success',
+            data: {
+                configured: {
+                    openaiApiKey: true,
+                    openaiBaseUrl: true,
+                    openaiModel: true,
+                    azureApiKey: false,
+                    pexelsToken: false,
+                    notionToken: false,
+                    notionDatabaseId: false
+                },
+                openaiBaseUrl: 'https://custom.example/v1',
+                openaiModel: 'custom-model'
+            }
+        })
+        window.dispatchEvent(new Event('DOMContentLoaded'))
+        await new Promise((resolve) => setTimeout(resolve, 0))
+        expect((document.getElementById('openai-base-url') as HTMLInputElement).value).toBe(
+            'https://custom.example/v1'
+        )
+        expect((document.getElementById('openai-model') as HTMLInputElement).value).toBe(
+            'custom-model'
+        )
+
+        ;(document.getElementById('openai-base-url') as HTMLInputElement).value =
+            'https://another.example/v1'
+        ;(document.getElementById('openai-model') as HTMLInputElement).value = 'another-model'
+        vi.mocked(window.api.saveSettings).mockResolvedValue({ status: 'success' })
+        document.getElementById('btn-save-settings')?.dispatchEvent(new MouseEvent('click'))
+        await new Promise((resolve) => setTimeout(resolve, 0))
+        expect(window.api.saveSettings).toHaveBeenCalledWith(
+            expect.objectContaining({
+                openaiBaseUrl: 'https://another.example/v1',
+                openaiModel: 'another-model'
+            })
+        )
     })
 
     describe('Settings Form', () => {
@@ -171,7 +281,9 @@ describe('Renderer UI', () => {
             expect(window.api.saveSettings).toHaveBeenCalledWith({
                 openaiApiKey: 'new-openai-key',
                 azureApiKey: 'new-azure-key',
-                pexelsToken: 'new-pexels-token'
+                pexelsToken: 'new-pexels-token',
+                openaiBaseUrl: '',
+                openaiModel: ''
             })
         })
 
@@ -193,8 +305,8 @@ describe('Renderer UI', () => {
             setTimeout(r2, 10)
             await p2
 
-            expect(window.alert).toHaveBeenCalledWith(
-                expect.stringContaining('Failed to save settings: Failed to save')
+            expect(document.getElementById('app-toast')?.textContent).toContain(
+                'Failed to save settings: Failed to save'
             )
         })
 
@@ -215,8 +327,8 @@ describe('Renderer UI', () => {
             setTimeout(r2, 10)
             await p2
 
-            expect(window.alert).toHaveBeenCalledWith(
-                expect.stringContaining('Failed to save settings: undefined')
+            expect(document.getElementById('app-toast')?.textContent).toContain(
+                'Failed to save settings: Unknown error.'
             )
         })
 
@@ -237,8 +349,8 @@ describe('Renderer UI', () => {
             await p2
 
             expect(consoleSpy).toHaveBeenCalled()
-            expect(window.alert).toHaveBeenCalledWith(
-                expect.stringContaining('An error occurred while saving settings.')
+            expect(document.getElementById('app-toast')?.textContent).toContain(
+                'An error occurred while saving settings.'
             )
             consoleSpy.mockRestore()
         })
@@ -301,11 +413,9 @@ describe('Renderer UI', () => {
             const form = document.getElementById('form-import') as HTMLFormElement
             const fileInput = document.getElementById('source-file') as HTMLInputElement
             const deckInput = form.elements.namedItem('deck') as HTMLInputElement
-            const quizCheckbox = document.getElementById('chk-quiz-import') as HTMLInputElement
 
             fileInput.value = '/path/to/file.txt'
             deckInput.value = 'TestDeck'
-            quizCheckbox.checked = true
 
             vi.mocked(window.api.sendImport).mockResolvedValue({
                 status: 'success',
@@ -324,11 +434,44 @@ describe('Renderer UI', () => {
                     filePath: '/path/to/file.txt',
                     deck: 'TestDeck',
                     options: {
-                        quiz: true,
-                        flashcard: false
+                        quiz: false,
+                        flashcard: true
                     }
                 }
             })
+        })
+        it('shows duplicate count after a file import with skipped words', async () => {
+            const form = document.getElementById('form-import') as HTMLFormElement
+            const fileInput = document.getElementById('source-file') as HTMLInputElement
+
+            fileInput.value = '/path/to/file.txt'
+            vi.mocked(window.api.sendImport).mockResolvedValue({
+                status: 'success',
+                data: { inserted: 0, skipped: 3, failed: 0, records: [] }
+            })
+
+            form.dispatchEvent(new Event('submit'))
+            await Promise.resolve()
+            await Promise.resolve()
+
+            expect(document.getElementById('app-toast')?.textContent).toContain('3 duplicate(s)')
+        })
+
+        it('does not show an alert after a fully successful file import', async () => {
+            const form = document.getElementById('form-import') as HTMLFormElement
+            const fileInput = document.getElementById('source-file') as HTMLInputElement
+
+            fileInput.value = '/path/to/file.txt'
+            vi.mocked(window.api.sendImport).mockResolvedValue({
+                status: 'success',
+                data: { inserted: 3, skipped: 0, failed: 0, records: [] }
+            })
+
+            form.dispatchEvent(new Event('submit'))
+            await Promise.resolve()
+            await Promise.resolve()
+
+            expect(document.getElementById('app-toast')?.hidden).toBe(true)
         })
 
         it('does not call sendImport when file path missing', async () => {
@@ -344,22 +487,16 @@ describe('Renderer UI', () => {
             await promise
 
             expect(window.api.sendImport).not.toHaveBeenCalled()
-            expect(window.alert).toHaveBeenCalledWith(expect.stringContaining('source file'))
+            expect(document.getElementById('app-toast')?.textContent).toContain('source file')
         })
 
-        it('does not call sendImport when both options are unchecked', async () => {
+        it('uses flashcard format without a format selection', async () => {
             const form = document.getElementById('form-import') as HTMLFormElement
             const fileInput = document.getElementById('source-file') as HTMLInputElement
             const deckInput = form.elements.namedItem('deck') as HTMLInputElement
-            const quizCheckbox = document.getElementById('chk-quiz-import') as HTMLInputElement
-            const flashcardCheckbox = document.getElementById(
-                'chk-flashcard-import'
-            ) as HTMLInputElement
 
             fileInput.value = '/path/to/file.txt'
             deckInput.value = 'TestDeck'
-            quizCheckbox.checked = false
-            flashcardCheckbox.checked = false
 
             form.dispatchEvent(new Event('submit'))
 
@@ -367,19 +504,61 @@ describe('Renderer UI', () => {
             setTimeout(res, 0)
             await promise
 
-            expect(window.api.sendImport).not.toHaveBeenCalled()
-            expect(window.alert).toHaveBeenCalledWith(
-                expect.stringContaining('Please select at least one import option')
-            )
+            expect(window.api.sendImport).toHaveBeenCalledWith({
+                type: 'FILE_IMPORT',
+                payload: {
+                    filePath: '/path/to/file.txt',
+                    deck: 'TestDeck',
+                    options: {
+                        quiz: false,
+                        flashcard: true
+                    }
+                }
+            })
+        })
+        it('shows duplicate count after a Notion import with skipped words', async () => {
+            const form = document.getElementById('form-notion') as HTMLFormElement
+            const tokenInput = document.getElementById('notion-token') as HTMLInputElement
+            const dbInput = document.getElementById('notion-database-id') as HTMLInputElement
+
+            tokenInput.value = 'token'
+            dbInput.value = 'db-id'
+            vi.mocked(window.api.sendImport).mockResolvedValue({
+                status: 'success',
+                data: { inserted: 0, skipped: 2, failed: 0, records: [] }
+            })
+
+            form.dispatchEvent(new Event('submit'))
+            await Promise.resolve()
+            await Promise.resolve()
+
+            expect(document.getElementById('app-toast')?.textContent).toContain('2 duplicate(s)')
+        })
+
+        it('does not show an alert after a fully successful Notion import', async () => {
+            const form = document.getElementById('form-notion') as HTMLFormElement
+            const tokenInput = document.getElementById('notion-token') as HTMLInputElement
+            const dbInput = document.getElementById('notion-database-id') as HTMLInputElement
+
+            tokenInput.value = 'token'
+            dbInput.value = 'db-id'
+            vi.mocked(window.api.sendImport).mockResolvedValue({
+                status: 'success',
+                data: { inserted: 2, skipped: 0, failed: 0, records: [] }
+            })
+
+            form.dispatchEvent(new Event('submit'))
+            await Promise.resolve()
+            await Promise.resolve()
+
+            expect(document.getElementById('app-toast')?.hidden).toBe(true)
         })
 
         it('shows error alert when sendImport throws error', async () => {
             const form = document.getElementById('form-import') as HTMLFormElement
             const fileInput = document.getElementById('source-file') as HTMLInputElement
-            const quizCheckbox = document.getElementById('chk-quiz-import') as HTMLInputElement
 
             fileInput.value = '/path/to/file.txt'
-            quizCheckbox.checked = true
 
             vi.mocked(window.api.sendImport).mockRejectedValue(new Error('Network error'))
             const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
@@ -391,8 +570,8 @@ describe('Renderer UI', () => {
             await promise
 
             expect(consoleSpy).toHaveBeenCalled()
-            expect(window.alert).toHaveBeenCalledWith(
-                expect.stringContaining('An error occurred during import.')
+            expect(document.getElementById('app-toast')?.textContent).toContain(
+                'An error occurred during import.'
             )
             consoleSpy.mockRestore()
         })
@@ -404,14 +583,10 @@ describe('Renderer UI', () => {
             const tokenInput = document.getElementById('notion-token') as HTMLInputElement
             const dbInput = document.getElementById('notion-database-id') as HTMLInputElement
             const deckInput = form.elements.namedItem('deck') as HTMLInputElement
-            const flashcardCheckbox = document.getElementById(
-                'chk-flashcard-notion'
-            ) as HTMLInputElement
 
             tokenInput.value = 'notion-token-123'
             dbInput.value = 'db-id-456'
             deckInput.value = 'NotionDeck'
-            flashcardCheckbox.checked = true
 
             vi.mocked(window.api.sendImport).mockResolvedValue({
                 status: 'success',
@@ -453,7 +628,7 @@ describe('Renderer UI', () => {
             await promise
 
             expect(window.api.sendImport).not.toHaveBeenCalled()
-            expect(window.alert).toHaveBeenCalledWith(expect.stringContaining('Notion token'))
+            expect(document.getElementById('app-toast')?.textContent).toContain('Notion token')
         })
 
         it('does not call sendImport when database ID missing', async () => {
@@ -471,22 +646,16 @@ describe('Renderer UI', () => {
             await promise
 
             expect(window.api.sendImport).not.toHaveBeenCalled()
-            expect(window.alert).toHaveBeenCalledWith(expect.stringContaining('database ID'))
+            expect(document.getElementById('app-toast')?.textContent).toContain('database ID')
         })
 
-        it('does not call sendImport when both options are unchecked', async () => {
+        it('uses flashcard format without a format selection', async () => {
             const form = document.getElementById('form-notion') as HTMLFormElement
             const tokenInput = document.getElementById('notion-token') as HTMLInputElement
             const dbInput = document.getElementById('notion-database-id') as HTMLInputElement
-            const quizCheckbox = document.getElementById('chk-quiz-notion') as HTMLInputElement
-            const flashcardCheckbox = document.getElementById(
-                'chk-flashcard-notion'
-            ) as HTMLInputElement
 
             tokenInput.value = 'token'
             dbInput.value = 'db-id'
-            quizCheckbox.checked = false
-            flashcardCheckbox.checked = false
 
             form.dispatchEvent(new Event('submit'))
 
@@ -494,23 +663,27 @@ describe('Renderer UI', () => {
             setTimeout(res, 0)
             await promise
 
-            expect(window.api.sendImport).not.toHaveBeenCalled()
-            expect(window.alert).toHaveBeenCalledWith(
-                expect.stringContaining('Please select at least one import option')
-            )
+            expect(window.api.sendImport).toHaveBeenCalledWith({
+                type: 'NOTION_SYNC',
+                payload: {
+                    token: 'token',
+                    notionDatabaseId: 'db-id',
+                    deck: '',
+                    options: {
+                        quiz: false,
+                        flashcard: true
+                    }
+                }
+            })
         })
 
         it('shows error alert when sendImport throws error', async () => {
             const form = document.getElementById('form-notion') as HTMLFormElement
             const tokenInput = document.getElementById('notion-token') as HTMLInputElement
             const dbInput = document.getElementById('notion-database-id') as HTMLInputElement
-            const flashcardCheckbox = document.getElementById(
-                'chk-flashcard-notion'
-            ) as HTMLInputElement
 
             tokenInput.value = 'token'
             dbInput.value = 'db-id'
-            flashcardCheckbox.checked = true
 
             vi.mocked(window.api.sendImport).mockRejectedValue(new Error('Network error'))
             const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
@@ -522,8 +695,8 @@ describe('Renderer UI', () => {
             await promise
 
             expect(consoleSpy).toHaveBeenCalled()
-            expect(window.alert).toHaveBeenCalledWith(
-                expect.stringContaining('An error occurred during sync.')
+            expect(document.getElementById('app-toast')?.textContent).toContain(
+                'An error occurred during sync.'
             )
             consoleSpy.mockRestore()
         })
@@ -572,6 +745,37 @@ describe('Renderer UI', () => {
         })
     })
 
+    describe('Add and Delete Actions', () => {
+        it('adds a blank editable row in the import tab', () => {
+            document.getElementById('btn-add-import-word')?.click()
+            const row = document.querySelector<HTMLTableRowElement>(
+                '#section-import tbody tr[data-id]'
+            )
+            expect(row?.querySelector('.word-cell')?.textContent).toBe('')
+            expect(row?.querySelector('.word-cell')?.getAttribute('contenteditable')).toBe('true')
+            expect(row?.querySelector<HTMLInputElement>('.row-select')).toBeTruthy()
+        })
+
+        it('creates and deletes selected collection words through the API', async () => {
+            vi.mocked(window.api.createVocabulary).mockResolvedValue({ status: 'success' })
+            document.getElementById('btn-add-collection-word')?.click()
+            await Promise.resolve()
+            expect(window.api.createVocabulary).toHaveBeenCalledWith({ word: '' })
+
+            const body = document.querySelector('#section-collection tbody')
+            body!.innerHTML =
+                '<tr data-id="word-1"><td><input class="row-select" type="checkbox" /></td></tr>'
+            body!.querySelector<HTMLInputElement>('.row-select')!.checked = true
+            vi.mocked(window.api.deleteVocabulary).mockResolvedValue({
+                status: 'success',
+                data: { deleted: 1 }
+            })
+            document.getElementById('btn-delete-collection-selected')?.click()
+            await Promise.resolve()
+            expect(window.api.deleteVocabulary).toHaveBeenCalledWith({ recordIds: ['word-1'] })
+        })
+    })
+
     describe('Drag and Drop', () => {
         it('prevents default on dragover', () => {
             const dropzone = document.body
@@ -612,6 +816,13 @@ describe('renderer security boundaries', () => {
 
         expect(preload).not.toContain('window.api = api')
         expect(preload).not.toContain('else {')
+    })
+    it('does not invoke remote or browser speech services', () => {
+        const renderer = readFileSync(resolve(__dirname, '../renderer.ts'), 'utf8')
+
+        expect(renderer).not.toContain('speechSynthesis')
+        expect(renderer).not.toContain('SpeechSynthesisUtterance')
+        expect(renderer).not.toContain('new Audio(')
     })
 })
 

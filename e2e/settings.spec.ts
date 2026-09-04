@@ -1,167 +1,61 @@
 import { test, expect } from './helpers/test-base'
 import { testApiKeys } from './helpers/fixtures'
+import { closeElectronApp, launchElectronApp, removeTestUserData } from './helpers/electron'
 
 test.describe('Settings Management', () => {
     test('should navigate to Settings tab', async ({ sharedApp }) => {
         const { window } = sharedApp
 
-        // Click Settings tab button
         await window.click('#tab-settings-btn')
-
-        // Wait for Settings section to be visible
-        await window.waitForSelector('#section-settings', { state: 'visible' })
-
-        // Verify Settings section is active
-        const settingsSection = window.locator('#section-settings')
-        const hasActiveClass = await settingsSection.evaluate((el) =>
-            el.classList.contains('active-section')
-        )
-        expect(hasActiveClass).toBe(true)
-
-        // Verify Import section is hidden
-        const importSection = window.locator('#section-import')
-        const importHasActiveClass = await importSection.evaluate((el) =>
-            el.classList.contains('active-section')
-        )
-        expect(importHasActiveClass).toBe(false)
+        await expect(window.locator('#section-settings')).toHaveClass(/active-section/)
+        await expect(window.locator('#section-import')).not.toHaveClass(/active-section/)
     })
 
-    test('should have all API key input fields', async ({ sharedApp }) => {
+    test('should expose only visible editable API key controls', async ({ sharedApp }) => {
         const { window } = sharedApp
 
-        // Navigate to Settings
         await window.click('#tab-settings-btn')
-        await window.waitForSelector('#section-settings', { state: 'visible' })
-
-        // Verify OpenAI key field exists
-        const openaiInput = window.locator('#openai-key-global')
-        await expect(openaiInput).toBeVisible()
-
-        // Verify Azure key field exists
-        const azureInput = window.locator('#azure-key-global')
-        await expect(azureInput).toBeVisible()
-
-        // Verify Pexels token field exists
-        const pexelsInput = window.locator('#pexels-token-global')
-        await expect(pexelsInput).toBeVisible()
-
-        // Verify Save button exists
-        const saveButton = window.locator('#btn-save-settings')
-        await expect(saveButton).toBeVisible()
+        await expect(window.locator('#openai-key-global')).toBeVisible()
+        await expect(window.locator('#pexels-token-global')).toBeVisible()
+        await expect(window.locator('#azure-key-global')).toBeHidden()
+        await expect(window.locator('#btn-save-settings')).toBeVisible()
     })
 
-    test('should save new API keys successfully', async ({ sharedApp }) => {
+    test('should save visible API keys successfully', async ({ sharedApp }) => {
         const { window } = sharedApp
 
-        // Navigate to Settings
         await window.click('#tab-settings-btn')
-        await window.waitForSelector('#section-settings', { state: 'visible' })
-
-        // Fill in API keys
         await window.fill('#openai-key-global', testApiKeys.openai)
-        await window.fill('#azure-key-global', testApiKeys.azure)
         await window.fill('#pexels-token-global', testApiKeys.pexels)
-
-        // Verify fields are populated
-        const openaiValue = await window.inputValue('#openai-key-global')
-        expect(openaiValue).toBe(testApiKeys.openai)
-
-        const azureValue = await window.inputValue('#azure-key-global')
-        expect(azureValue).toBe(testApiKeys.azure)
-
-        const pexelsValue = await window.inputValue('#pexels-token-global')
-        expect(pexelsValue).toBe(testApiKeys.pexels)
-
-        // Click Save button
-        const saveButton = window.locator('#btn-save-settings')
-        await saveButton.click()
-
-        // Verify button shows loading state briefly
-        await window.waitForTimeout(500)
-
-        // Verify form is still functional after save attempt
-        const title = await window.title()
-        expect(title).toContain('Word2Card')
-    })
-
-    // TODO: This test is incompatible with shared app pattern (requires app restart)
-    // Need to either: 1) move to separate test file without shared app, or 2) test persistence differently
-    test.skip('should load saved settings on startup', async ({ sharedApp }) => {
-        const { window } = sharedApp
-
-        // First, save some settings
-        await window.click('#tab-settings-btn')
-        await window.waitForSelector('#section-settings', { state: 'visible' })
-
-        await window.fill('#openai-key-global', testApiKeys.openai)
-        await window.fill('#azure-key-global', testApiKeys.azure)
-        await window.fill('#pexels-token-global', testApiKeys.pexels)
-
-        // Click save button (don't wait for dialog)
         await window.click('#btn-save-settings')
-        await window.waitForTimeout(1000)
-
-        // This test requires app restart which is incompatible with shared app pattern
-        // Original test: close and relaunch app, then verify settings persist
-        // With shared app: can't restart mid-test
+        await expect(window.locator('#btn-save-settings')).toBeEnabled()
     })
 
-    test('should update existing settings', async ({ sharedApp }) => {
+    test('should update visible settings without changing other values', async ({ sharedApp }) => {
         const { window } = sharedApp
 
-        // Save initial settings
         await window.click('#tab-settings-btn')
-        await window.waitForSelector('#section-settings', { state: 'visible' })
-
         await window.fill('#openai-key-global', testApiKeys.openai)
-        await window.fill('#azure-key-global', testApiKeys.azure)
         await window.fill('#pexels-token-global', testApiKeys.pexels)
-
-        await window.click('#btn-save-settings')
-        await window.waitForTimeout(1000)
-
-        // Update OpenAI key
-        const newOpenAIKey = 'sk-test-updated-key-99999'
-        await window.fill('#openai-key-global', newOpenAIKey)
-
-        // Verify updated value in form
-        const openaiValue = await window.inputValue('#openai-key-global')
-        expect(openaiValue).toBe(newOpenAIKey)
-
-        // Verify other values unchanged
-        const azureValue = await window.inputValue('#azure-key-global')
-        expect(azureValue).toBe(testApiKeys.azure)
-
-        const pexelsValue = await window.inputValue('#pexels-token-global')
-        expect(pexelsValue).toBe(testApiKeys.pexels)
+        await window.fill('#openai-key-global', 'sk-test-updated-key-99999')
+        await expect(window.locator('#openai-key-global')).toHaveValue('sk-test-updated-key-99999')
+        await expect(window.locator('#pexels-token-global')).toHaveValue(testApiKeys.pexels)
     })
 
-    test('should handle empty settings fields gracefully', async ({ sharedApp }) => {
+    test('should handle empty visible settings fields gracefully', async ({ sharedApp }) => {
         const { window } = sharedApp
 
-        // Navigate to Settings
         await window.click('#tab-settings-btn')
-        await window.waitForSelector('#section-settings', { state: 'visible' })
-
-        // Leave all fields empty
         await window.fill('#openai-key-global', '')
-        await window.fill('#azure-key-global', '')
         await window.fill('#pexels-token-global', '')
-
-        // Try to save
         await window.click('#btn-save-settings')
-        await window.waitForTimeout(1000)
-
-        // Verify form is still functional
-        const title = await window.title()
-        expect(title).toContain('Word2Card')
+        await expect(window.locator('#btn-save-settings')).toBeEnabled()
     })
 
     test('shows configuration status without rendering stored secrets', async ({ sharedApp }) => {
         const { window } = sharedApp
 
         await window.click('#tab-settings-btn')
-        await window.waitForSelector('#section-settings', { state: 'visible' })
         await expect(window.locator('#openai-key-status')).toContainText(
             /Configured|Not configured/
         )
@@ -170,7 +64,37 @@ test.describe('Settings Management', () => {
             /Configured|Not configured/
         )
         await expect(window.locator('#openai-key-global')).toHaveValue('')
-        await expect(window.locator('#azure-key-global')).toHaveValue('')
         await expect(window.locator('#pexels-token-global')).toHaveValue('')
+    })
+})
+
+test.describe('Settings restart persistence', () => {
+    test('persists visible settings after restarting with the same user data path', async () => {
+        const first = await launchElectronApp()
+        const userDataPath = first.userDataPath
+
+        try {
+            await first.window.click('#tab-settings-btn')
+            await first.window.fill('#openai-key-global', testApiKeys.openai)
+            await first.window.fill('#pexels-token-global', testApiKeys.pexels)
+            await first.window.click('#btn-save-settings')
+            await expect(first.window.locator('#btn-save-settings')).toBeEnabled()
+            await closeElectronApp(first.app)
+
+            const second = await launchElectronApp({ userDataPath })
+            try {
+                await second.window.click('#tab-settings-btn')
+                await expect(second.window.locator('#openai-key-status')).toContainText(
+                    'Configured'
+                )
+                await expect(second.window.locator('#pexels-token-status')).toContainText(
+                    'Configured'
+                )
+            } finally {
+                await closeElectronApp(second.app)
+            }
+        } finally {
+            await removeTestUserData(userDataPath)
+        }
     })
 })

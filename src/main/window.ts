@@ -2,20 +2,29 @@ import { join } from 'path'
 import { BrowserWindow, shell } from 'electron'
 import { is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { createLogger } from '../shared/logger'
+
+const logger = createLogger('main.window')
 
 export const isAllowedExternalUrl = (rawUrl: string): boolean => {
     try {
-        return new URL(rawUrl).protocol === 'https:'
+        const allowed = new URL(rawUrl).protocol === 'https:'
+        logger.debug(allowed ? 'external_url_allowed' : 'external_url_blocked', {
+            protocol: new URL(rawUrl).protocol
+        })
+        return allowed
     } catch {
+        logger.debug('external_url_blocked', { reason: 'invalid_url' })
         return false
     }
 }
+
 export function createWindow(): BrowserWindow {
     const mainWindow = new BrowserWindow({
-        width: 400,
-        height: 600,
+        width: 1180,
+        height: 760,
         show: false,
-        resizable: false,
+        resizable: true,
         movable: true,
         autoHideMenuBar: true,
         icon,
@@ -28,9 +37,11 @@ export function createWindow(): BrowserWindow {
             webSecurity: true
         }
     })
+    logger.info('window_created')
 
     mainWindow.on('ready-to-show', () => {
         mainWindow.show()
+        logger.info('window_shown')
     })
 
     mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -41,9 +52,11 @@ export function createWindow(): BrowserWindow {
     })
 
     if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-        mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+        void mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+        logger.debug('window_renderer_loading', { mode: 'development' })
     } else {
-        mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+        void mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+        logger.debug('window_renderer_loading', { mode: 'production' })
     }
 
     return mainWindow

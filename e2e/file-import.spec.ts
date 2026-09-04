@@ -17,55 +17,26 @@ test.describe('File Import UI', () => {
         expect(await deckInput.getAttribute('placeholder')).toBeTruthy()
     })
 
-    test('should display card type checkboxes', async ({ sharedApp }) => {
+    test('should use flashcards by default', async ({ sharedApp }) => {
         const { window } = sharedApp
-        const flashcardCheckbox = window.locator('#chk-flashcard-import')
-        const quizCheckbox = window.locator('#chk-quiz-import')
-        await expect(flashcardCheckbox).toBeVisible()
-        await expect(quizCheckbox).toBeVisible()
-        expect(typeof (await flashcardCheckbox.isChecked())).toBe('boolean')
-        expect(typeof (await quizCheckbox.isChecked())).toBe('boolean')
-    })
-
-    test('should allow checking Flashcard option', async ({ sharedApp }) => {
-        const checkbox = sharedApp.window.locator('#chk-flashcard-import')
-        await checkbox.check()
-        await expect(checkbox).toBeChecked()
-    })
-
-    test('should allow checking Quiz option', async ({ sharedApp }) => {
-        const checkbox = sharedApp.window.locator('#chk-quiz-import')
-        await checkbox.check()
-        await expect(checkbox).toBeChecked()
-    })
-
-    test('should allow checking both Flashcard and Quiz options', async ({ sharedApp }) => {
-        const { window } = sharedApp
-        const flashcardCheckbox = window.locator('#chk-flashcard-import')
-        const quizCheckbox = window.locator('#chk-quiz-import')
-        await flashcardCheckbox.check()
-        await quizCheckbox.check()
-        await expect(flashcardCheckbox).toBeChecked()
-        await expect(quizCheckbox).toBeChecked()
+        await expect(window.locator('#source-file-fields #chk-flashcard-import')).toHaveCount(0)
+        await expect(window.locator('#source-file-fields #chk-quiz-import')).toHaveCount(0)
     })
 
     test('should show validation error when file is missing', async ({ sharedApp }) => {
         const { window } = sharedApp
         await window.locator('#source-file').fill('')
         await window.locator('#section-import input[name="deck"]').fill(testDeckNames.fileImport)
-        await window.locator('#chk-flashcard-import').check()
-        await expect(window.locator('#form-import button[type="submit"]')).toBeVisible()
+        await window.locator('#form-import button[type="submit"]').click()
+        await expect(window.locator('#app-toast')).toHaveText('Please provide a source file path.')
     })
 
-    test('should show validation error when no card type is selected', async ({ sharedApp }) => {
+    test('should import the deterministic local fixture', async ({ sharedApp }) => {
         const { window } = sharedApp
         await window.locator('#source-file').fill(getTestWordsPath())
         await window.locator('#section-import input[name="deck"]').fill(testDeckNames.fileImport)
-        const flashcardCheckbox = window.locator('#chk-flashcard-import')
-        const quizCheckbox = window.locator('#chk-quiz-import')
-        if (await flashcardCheckbox.isChecked()) await flashcardCheckbox.uncheck()
-        if (await quizCheckbox.isChecked()) await quizCheckbox.uncheck()
-        await expect(window.locator('#form-import button[type="submit"]')).toBeVisible()
+        await window.locator('#form-import button[type="submit"]').click()
+        await expect(window.locator('#section-import .data-grid tbody tr')).not.toHaveCount(0)
     })
 
     test('should accept valid deck name input', async ({ sharedApp }) => {
@@ -86,7 +57,6 @@ test.describe('File Import UI', () => {
         const { window } = sharedApp
         await window.locator('#source-file').fill(getTestWordsPath())
         await window.locator('#section-import input[name="deck"]').fill(testDeckNames.fileImport)
-        await window.locator('#chk-flashcard-import').check()
         await expect(window.locator('#form-import button[type="submit"]')).toBeEnabled()
     })
 })
