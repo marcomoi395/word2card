@@ -152,11 +152,10 @@ jobs:
               run: |
                   VERSION=$(bun -e "console.log(require('./package.json').version)")
                   test -f "dist/word2card-${VERSION}-setup.exe"
-                  test -f dist/latest.yml
             - name: Generate Windows checksums
               shell: bash
               working-directory: dist
-              run: sha256sum *.exe *.blockmap latest.yml > SHA256SUMS-windows.txt
+              run: sha256sum *.exe *.blockmap > SHA256SUMS-windows.txt
             - name: Upload Windows artifacts
               uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
               with:
@@ -164,7 +163,6 @@ jobs:
                   path: |
                       dist/*.exe
                       dist/*.blockmap
-                      dist/latest.yml
                       dist/SHA256SUMS-windows.txt
                   if-no-files-found: error
                   retention-days: 1
@@ -174,7 +172,6 @@ jobs:
                   subject-path: |
                       dist/*.exe
                       dist/*.blockmap
-                      dist/latest.yml
 
     create-release:
         name: Create GitHub release
@@ -206,7 +203,6 @@ jobs:
                   test -f "dist/word2card-${VERSION}.AppImage"
                   test -f "dist/word2card_${VERSION}_amd64.deb"
                   test -f "dist/word2card-${VERSION}-setup.exe"
-                  test -f dist/latest.yml
                   test -f dist/SHA256SUMS-linux.txt
                   test -f dist/SHA256SUMS-windows.txt
                   (cd dist && sha256sum -c SHA256SUMS-linux.txt && sha256sum -c SHA256SUMS-windows.txt)
