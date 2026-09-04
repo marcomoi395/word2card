@@ -76,14 +76,16 @@ describe('OpenAIService', () => {
                 pos: 'noun',
                 vietnamese: 'ngân hàng',
                 ipa: '/bæŋk/',
-                example: 'I went to the bank.'
+                example: 'I went to the bank.',
+                imageQuery: 'bank building exterior'
             },
             {
                 word: 'run',
                 pos: 'verb',
                 vietnamese: 'chạy',
                 ipa: '/rʌn/',
-                example: 'She runs every morning.'
+                example: 'She runs every morning.',
+                imageQuery: 'person running outdoors'
             }
         ]
 
@@ -151,6 +153,8 @@ describe('OpenAIService', () => {
             expect(systemMessage?.content).toContain('word')
             expect(systemMessage?.content).toContain('pos')
             expect(systemMessage?.content).toContain('vietnamese')
+            expect(systemMessage?.content).toContain('imageQuery')
+            expect(systemMessage?.content).toContain('2-5 words')
             expect(systemMessage?.content).toContain('ipa')
             expect(systemMessage?.content).toContain('example')
         })

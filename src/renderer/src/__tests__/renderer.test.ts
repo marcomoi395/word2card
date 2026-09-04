@@ -786,6 +786,7 @@ describe('renderer CSP', () => {
         expect(html).toContain('Content-Security-Policy')
         expect(html).toContain("default-src 'self'")
         expect(html).not.toContain('cdnjs.cloudflare.com')
+        expect(html).toContain('https://images.pexels.com')
         expect(html).not.toContain('fonts.googleapis.com')
     })
 })

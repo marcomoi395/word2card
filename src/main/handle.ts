@@ -19,6 +19,16 @@ interface Flashcard {
     image?: string
     audio_word?: string
 }
+interface ImageSearchInput {
+    word: string
+    pos?: string
+    imageQuery?: string
+}
+
+export const imageSearchQueries = ({ word, pos, imageQuery }: ImageSearchInput): string[] =>
+    [imageQuery, pos ? `${word} ${pos}` : undefined, word].filter((query): query is string =>
+        Boolean(query?.trim())
+    )
 
 export interface QuizNote {
     deckName: string
@@ -66,11 +76,15 @@ export const createFlashcards = async (
 
     const notes = await Promise.all(
         dataFromOpenAI.map(async (item) => {
+            const { imageQuery, ...flashcard } = item
             let image: string | undefined
             if (pexelsToken) {
-                image = (await searchImagePexels(pexelsToken, item.word)) || ''
+                image =
+                    (await searchImagePexels(
+                        pexelsToken,
+                        imageSearchQueries({ ...flashcard, imageQuery })
+                    )) || ''
             }
-
             const target = noteTargetsByWord
                 ? shiftNotionTarget(noteTargetsByWord, item.word)
                 : undefined
@@ -79,7 +93,7 @@ export const createFlashcards = async (
                 deckName: target?.deckName ?? deckName,
                 modelName: 'AnkiVNModel_Flashcard',
                 fields: {
-                    ...item,
+                    ...flashcard,
                     id: uuidv4(),
                     ipa: normalizeIpa(item.ipa),
                     image,

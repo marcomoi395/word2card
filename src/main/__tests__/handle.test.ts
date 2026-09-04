@@ -70,15 +70,19 @@ describe('createFlashcards', () => {
                 word: 'cat',
                 pos: 'noun',
                 vietnamese: 'mèo',
-                ipa: '/kæt/'
+                ipa: '/kæt/',
+                imageQuery: 'sleeping cat indoors'
             }
         ])
         vi.mocked(State.getToken).mockReturnValue('pexels-token-123')
         vi.mocked(searchImagePexels).mockResolvedValue('https://example.com/cat.jpg')
 
         const result = await createFlashcards(['cat'], '/audio', 'TestDeck', false)
-
-        expect(searchImagePexels).toHaveBeenCalledWith('pexels-token-123', 'cat')
+        expect(searchImagePexels).toHaveBeenCalledWith('pexels-token-123', [
+            'sleeping cat indoors',
+            'cat noun',
+            'cat'
+        ])
         expect(result[0].fields.image).toBe('https://example.com/cat.jpg')
     })
 
