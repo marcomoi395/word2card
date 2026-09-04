@@ -4,15 +4,19 @@
 node_modules/
 
 
-# testing
+# testing artifacts (generated locally and excluded from version control)
 coverage/
 playwright-report/
 test-results/
 
+# Project planning artifacts are intentionally tracked.
+!SPEC.md
+!tasks/
+!tasks/**
+
 # production
 dist/
 out/
-tasks
 
 # misc
 .DS_Store
@@ -27,8 +31,6 @@ yarn-error.log*
 # local env files
 .env
 .env*.local
-SPEC.md
-tasks/
 
 # typescript
 *.tsbuildinfo
