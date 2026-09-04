@@ -56,6 +56,10 @@ Relevant runtime boundaries discovered during planning:
 
 The matrix is a discovery baseline plus explicit contract decisions. It does not authorize tests for absent UI or unwired controls.
 
+### Collections implementation note
+
+The isolated E2E store starts with no persisted vocabulary rows, so the current renderer exposes the collection navigation, action controls, and empty status row but no deterministic seeded records. CRUD/edit assertions are deferred until a supported seed boundary is added; loading/error/recovery states remain deferred because the renderer has no user-visible states for them.
+
 ## Task List
 
 ### Phase 0: Planning Hygiene
