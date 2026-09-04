@@ -20,7 +20,8 @@ export const test = base.extend<{ resetState: void }, { sharedApp: ElectronAppCo
                 await closeElectronApp(context.app)
                 await removeTestUserData(context.userDataPath)
             }
-        }
+        },
+        { scope: 'worker', auto: true }
     ],
     resetState: [
         async ({ sharedApp }, use) => {

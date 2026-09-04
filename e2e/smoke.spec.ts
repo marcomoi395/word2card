@@ -47,6 +47,14 @@ test.describe('Smoke Tests', () => {
     })
 })
 
+test('reset state returns to editable Import controls', async ({ sharedApp }) => {
+    const { window } = sharedApp
+
+    await expect(window.locator('#section-import')).toHaveClass(/active-section/)
+    await expect(window.locator('#source-file')).toHaveValue('')
+    await expect(window.locator('#section-import input[name="deck"]')).toHaveValue('')
+})
+
 const lifecycleTestCase = lifecycleTest
 
 lifecycleTestCase.describe('Electron lifecycle isolation', () => {

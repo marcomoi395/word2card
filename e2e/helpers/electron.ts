@@ -63,7 +63,7 @@ export async function resetAppState(window: Page): Promise<void> {
     await window.click('#tab-settings-btn')
     await window.waitForSelector('#section-settings', { state: 'visible' })
 
-    for (const selector of ['#openai-key-global', '#azure-key-global', '#pexels-token-global']) {
+    for (const selector of ['#openai-key-global', '#pexels-token-global']) {
         const input = window.locator(selector)
         if ((await input.count()) > 0) await input.fill('')
     }
