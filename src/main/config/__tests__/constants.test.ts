@@ -6,14 +6,9 @@ vi.mock('electron', () => ({
     }
 }))
 
-import { AUDIO_DIR, MODEL_NAME, QUIZ_MODEL_NAME } from '../constants'
-import { join } from 'path'
+import { MODEL_NAME, QUIZ_MODEL_NAME } from '../constants'
 
 describe('constants', () => {
-    it('exports AUDIO_DIR based on userData path', () => {
-        expect(AUDIO_DIR).toBe(join('/mock/user/data', 'audio'))
-    })
-
     it('exports MODEL_NAME as English', () => {
         expect(MODEL_NAME).toBe('English')
     })

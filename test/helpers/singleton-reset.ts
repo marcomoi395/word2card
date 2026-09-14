@@ -24,16 +24,10 @@ export function resetOpenAIService(OpenAIServiceClass: unknown): void {
     resetSingletonInstance(OpenAIServiceClass, 'currentKey', null)
 }
 
-export function resetSpeechService(SpeechServiceClass: unknown): void {
-    resetSingletonInstance(SpeechServiceClass, 'instance', null)
-    resetSingletonInstance(SpeechServiceClass, 'currentKey', null)
-}
-
 export function verifySingletonsReset(singletons: {
     SecretManager?: unknown
     NotionService?: unknown
     OpenAIService?: unknown
-    SpeechService?: unknown
 }): void {
     const failures: string[] = []
 
@@ -52,12 +46,6 @@ export function verifySingletonsReset(singletons: {
         const cls = singletons.OpenAIService as SingletonClass
         if (cls['instance'] !== null) failures.push('OpenAIService.instance is not null')
         if (cls['currentKey'] !== null) failures.push('OpenAIService.currentKey is not null')
-    }
-
-    if (singletons.SpeechService) {
-        const cls = singletons.SpeechService as SingletonClass
-        if (cls['instance'] !== null) failures.push('SpeechService.instance is not null')
-        if (cls['currentKey'] !== null) failures.push('SpeechService.currentKey is not null')
     }
 
     if (failures.length > 0) {

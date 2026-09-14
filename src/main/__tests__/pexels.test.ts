@@ -63,6 +63,29 @@ describe('Pexels service', () => {
 
             expect(result).toBe('https://images.pexels.com/photos/first.jpg')
         })
+        it('tries contextual fallbacks until a result is found', async () => {
+            mockPhotosSearch.mockResolvedValueOnce({ photos: [] }).mockResolvedValueOnce({
+                photos: [{ src: { medium: 'https://images.pexels.com/photos/fallback.jpg' } }]
+            })
+
+            const result = await searchImagePexels('test-token', [
+                'river bank landscape',
+                'bank noun',
+                'bank'
+            ])
+
+            expect(result).toBe('https://images.pexels.com/photos/fallback.jpg')
+            expect(mockPhotosSearch).toHaveBeenNthCalledWith(1, {
+                query: 'river bank landscape',
+                per_page: 1,
+                orientation: 'landscape'
+            })
+            expect(mockPhotosSearch).toHaveBeenNthCalledWith(2, {
+                query: 'bank noun',
+                per_page: 1,
+                orientation: 'landscape'
+            })
+        })
     })
 
     describe('no results scenarios', () => {

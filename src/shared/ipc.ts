@@ -19,7 +19,6 @@ export type SecretKey =
     | 'openaiApiKey'
     | 'openaiBaseUrl'
     | 'openaiModel'
-    | 'azureApiKey'
     | 'pexelsToken'
     | 'notionToken'
     | 'notionDatabaseId'
@@ -34,6 +33,7 @@ export interface VocabularyRecord {
     normalizedWord: string
     source: SourceType
     sourceReference: string | null
+    deckName: string
     partOfSpeech: string | null
     cloze: string | null
     example: string | null
@@ -42,7 +42,6 @@ export interface VocabularyRecord {
     meaning: string | null
     imageUrl: string | null
     imageProvider: string | null
-    audio: string | null
     generationStatus: GenerationStatus
     generationError: string | null
     ankiStatus: AnkiStatus
@@ -61,7 +60,6 @@ export type VocabularyEditableField =
     | 'meaning'
     | 'imageUrl'
     | 'imageProvider'
-    | 'audio'
 export type VocabularyEdit = Partial<Pick<VocabularyRecord, VocabularyEditableField>>
 
 export interface CreateVocabularyPayload {
@@ -95,8 +93,8 @@ export interface FileImportPayload {
 }
 
 export interface NotionSyncPayload {
-    token: string
-    notionDatabaseId: string
+    token?: string
+    notionDatabaseId?: string
     deck: string
     options: ImportOptions
 }
@@ -118,6 +116,7 @@ export interface ImportDraftRecord {
     word: string
     source: SourceType
     sourceReference: string | null
+    deckName: string
     partOfSpeech: string | null
     cloze: string | null
     example: string | null
@@ -126,7 +125,6 @@ export interface ImportDraftRecord {
     meaning: string | null
     imageUrl: string | null
     imageProvider: string | null
-    audio: string | null
     generationStatus: GenerationStatus
     generationError: string | null
 }
@@ -157,8 +155,9 @@ export interface SubmitToAnkiPayload {
 
 export interface SaveSettingsPayload {
     openaiApiKey: string
-    azureApiKey: string
     pexelsToken: string
+    notionToken?: string
+    notionDatabaseId?: string
     openaiBaseUrl?: string
     openaiModel?: string
 }

@@ -1,108 +1,88 @@
 # Word2Card
 
-This is an Electron-based desktop application that automates the creation of high-quality Anki flashcards. Whether you have a list of words in a text file or a database in Notion, Word2Card uses the power of AI to generate rich content, syncs it to Anki, and even updates your Notion database status.
+Word2Card is an Electron desktop app that turns word lists or Notion vocabulary pages into Anki flashcards. It generates dictionary content with OpenAI, optionally finds an image with Pexels, and submits the result to Anki through AnkiConnect.
 
-|                 Home / File Import                  |                  Notion Sync Setup                  |               Settings (API Keys)               |
-| :-------------------------------------------------: | :-------------------------------------------------: | :---------------------------------------------: |
-| <img src="./resources/File Import.png" width="200"> | <img src="./resources/Notion Sync.png" width="200"> | <img src="./resources/Setting.png" width="200"> |
+## Features
 
-## Key Features
+- Import words from a `.txt` file or a Notion database.
+- Generate part of speech, Vietnamese meaning, IPA, examples, and image queries with OpenAI.
+- Optionally attach images from Pexels.
+- Create and submit cards directly to Anki.
+- Use Anki's built-in text-to-speech (TTS) for pronunciation. Word2Card does not call a speech API or create MP3 files.
+- Mark synced Notion pages after cards are submitted.
 
-- **Flexible Input:** Import words via a simple `.txt` file or sync directly from a **Notion Database**.
-- **AI-Powered Content:**
-    - **OpenAI:** Automatically generates definitions, translations, examples, and IPA transcriptions.
-    - **Azure Speech:** Generates high-quality, natural-sounding audio pronunciations.
-    - **Pexels:** Fetches relevant, high-quality images to visualize the vocabulary.
+## Requirements
 
-- **Seamless Anki Integration:** Pushes cards directly to Anki via AnkiConnect.
-- **Notion Sync-Back:** Automatically updates your Notion rows (e.g., marks them as "Done") after the card is successfully created.
+1. **Anki Desktop** must be installed and running.
+2. **AnkiConnect** must be installed and enabled in Anki. Use shared add-on code `2055492159`, then restart Anki.
+3. An **OpenAI API key** is required for card content generation.
+4. A **Pexels API key** is optional and only needed for images.
+5. Notion credentials are optional and only needed for Notion Sync.
 
-## Prerequisites
+## Pronunciation and platform support
 
-Before using the app, make sure you have the following ready:
+New cards use the Anki template tag `{{tts en_US:word}}`. Audio is synthesized when the card is reviewed, using voices available to Anki on that device. No audio provider key, generated media file, or extra Word2Card service is required.
 
-1. **Anki Desktop:** Must be installed and **RUNNING** while using Word2Card.
-2. **AnkiConnect Extension:** This is required for the app to communicate with Anki.
-    - Download here: [AnkiConnect (Code: 2055492159)](https://ankiweb.net/shared/info/2055492159)
-    - _Note: Restart Anki after installation._
+| Platform | TTS support | What the user needs to do |
+| --- | --- | --- |
+| Windows | Built in | Install an English system voice if none is available. |
+| macOS / iOS | Built in | Install or enable an English system voice if needed. |
+| Android (AnkiDroid) | Supported by AnkiDroid | Make sure an English Android TTS engine/voice is installed. |
+| Linux | No voice is bundled with Anki | Install a compatible Anki TTS add-on/voice provider, then restart Anki. |
 
-3. **API Keys:** Configure keys in Settings. Existing values are never displayed; password fields accept newly entered values, and configured/not-configured status is shown separately.
-    - `OpenAI API Key` (for content generation).
-    - `Azure Speech API Key` & `Region` (for audio).
-    - `Pexels API Key` (for images).
+The TTS tag requires Anki 2.1.20+, AnkiMobile 2.0.56+, or AnkiDroid 2.17+. Voice availability and pronunciation can differ between operating systems. Anki's official documentation has the [TTS template reference](https://docs.ankiweb.net/templates/fields.html#text-to-speech-for-individual-fields).
 
-_(Go to Settings, enter new values when needed, and hit "Save Keys".)_
+Word2Card creates the note type `AnkiVNModel_Flashcard_TTS`. Existing note types and cards are not overwritten, so the first sync after upgrading may create this additional note type.
 
-## Installation & Usage
+## Setup
 
-1. Download the installer from your project release channel, or build one locally using the commands in [For Developers](#for-developers).
-2. Install and launch the application.
-3. Open **Settings** (gear icon) and configure your API keys.
-4. **Start Creating Cards:**
-    - **File Import:** Upload a `.txt` file (one word per line), choose a Deck name, and click Submit.
-    - **Notion Sync:** Enter your Notion details to fetch words directly (see guide below).
+1. Start Anki and confirm that AnkiConnect is available.
+2. Start Word2Card and open **Settings**.
+3. Enter the OpenAI API key. Add Pexels or Notion credentials only if you use those features.
+4. Save the settings and check the provider status indicators.
 
-## Notion Setup Guide
+## Usage
 
-To use the Notion Sync feature effectively, please follow these steps:
+### File import
 
-1. **Duplicate the Template:**
-    - I've prepared a Notion template compatible with this app. Duplicate it to your workspace: [Vocabulary Book](https://ym19.notion.site/2f08dbf4be72815ab996d6cb491ef10b?v=2f08dbf4be7281c08c71000c404fb391)
+1. Prepare a UTF-8 text file with one English word per line.
+2. Open **File Import**, choose the file and an Anki deck, and submit it.
+3. Review the generated rows and submit the ready cards to Anki.
 
-2. **Create an Integration:**
-    - Go to [Notion My Integrations](https://www.notion.so/my-integrations).
-    - Create a new integration (e.g., named "Word2Card").
-    - Copy the **Internal Integration Token** (starts with `secret_...`).
+### Notion Sync
 
-3. **Connect Database:**
-    - Open your duplicated database page.
-    - Click `...` (top right) -> `Connections` -> Add your new Integration.
+1. Duplicate the [Vocabulary Book template](https://ym19.notion.site/2f08dbf4be72815ab996d6cb491ef10b?v=2f08dbf4be7281c08c71000c404fb391).
+2. Create a Notion integration at [Notion My Integrations](https://www.notion.so/my-integrations).
+3. Share the database with that integration and copy the database ID from its URL.
+4. Enter the token, database ID, and target deck in **Notion Sync**.
 
-4. **Get Database ID:**
-    - Open the database as a full page.
-    - The ID is the string of characters in the URL between `notion.so/` and `?`.
-
-5. **Sync:**
-    - Paste the Token and Database ID into the app's Notion Sync tab.
-
-## Result
-
-|                 Review(Front)                  |                   Review(Back)                   |                 Typing(Front)                  | Typing(Back)                                     |
-| :--------------------------------------------: | :----------------------------------------------: | :--------------------------------------------: | ------------------------------------------------ |
-| <img src="./resources/review.png" width="200"> | <img src="./resources/review-2.png" width="200"> | <img src="./resources/typing.png" width="200"> | <img src="./resources/typing-2.png" width="200"> |
-
-## Notes
-
-- This app uses 3rd party APIs (OpenAI, Azure). Please be aware of your usage quotas and billing on those platforms.
-- Pexels API has a rate limit (usually 20,000 requests per month), so take it easy!
-
-- Auto-update publishing is not configured in this repository yet. Distribute installers manually until a real update endpoint is set up.
-
-## For Developers
-
-If you want to contribute or build the app from source, here is how to get started. The stack is **Electron + TypeScript**.
-
-### Install
+## Development
 
 ```bash
 bun install
-```
-
-### Development
-
-```bash
 bun run dev
 ```
 
-### Build
+Run checks:
 
 ```bash
-# For windows
-$ bun run build:win
-
-# For macOS
-$ bun run build:mac
-
-# For Linux
-$ bun run build:linux
+bun run test
+bun run typecheck
+bun run build
 ```
+
+Build installers:
+
+```bash
+bun run build:win
+bun run build:mac
+bun run build:linux
+```
+
+## Privacy and costs
+
+Word2Card sends imported words to the configured OpenAI-compatible endpoint for content generation. Pexels and Notion are contacted only when those features are used. Pronunciation is handled locally by Anki and the operating system (or an Anki TTS add-on on Linux); there is no Azure Speech integration and no separate audio billing.
+
+## License
+
+See [LICENSE](LICENSE).

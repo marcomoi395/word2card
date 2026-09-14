@@ -6,7 +6,6 @@ export function getTestWordsPath(): string {
 
 export const testApiKeys = {
     openai: 'sk-test-openai-key-12345',
-    azure: 'test-azure-speech-key-67890',
     pexels: 'test-pexels-api-token-abcdef'
 }
 

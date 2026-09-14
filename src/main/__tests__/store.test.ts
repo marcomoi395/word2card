@@ -175,25 +175,25 @@ describe('typed state persistence adapter', () => {
         const persistence = createSecretPersistence(manager)
 
         expect(persistence.load()).toEqual({ openaiApiKey: 'existing-key' })
-        expect(persistence.save({ openaiApiKey: 'new-key', azureApiKey: 'azure-key' })).toBe(true)
+        expect(persistence.save({ openaiApiKey: 'new-key', pexelsToken: 'pexels-key' })).toBe(true)
         expect(manager.saveSecret).toHaveBeenCalledWith('openaiApiKey', 'new-key')
-        expect(manager.saveSecret).toHaveBeenCalledWith('azureApiKey', 'azure-key')
+        expect(manager.saveSecret).toHaveBeenCalledWith('pexelsToken', 'pexels-key')
     })
 
     it('restores earlier writes when a later setting fails', () => {
-        const values: Partial<Record<'openaiApiKey' | 'azureApiKey', string>> = {
+        const values: Partial<Record<'openaiApiKey' | 'pexelsToken', string>> = {
             openaiApiKey: 'old-key'
         }
         const manager = {
-            getSecret: vi.fn((key: 'openaiApiKey' | 'azureApiKey') => values[key] ?? null),
-            saveSecret: vi.fn((key: 'openaiApiKey' | 'azureApiKey', value: string) => {
-                if (key === 'azureApiKey') {
+            getSecret: vi.fn((key: 'openaiApiKey' | 'pexelsToken') => values[key] ?? null),
+            saveSecret: vi.fn((key: 'openaiApiKey' | 'pexelsToken', value: string) => {
+                if (key === 'pexelsToken') {
                     return false
                 }
                 values[key] = value
                 return true
             }),
-            deleteSecret: vi.fn((key: 'openaiApiKey' | 'azureApiKey') => {
+            deleteSecret: vi.fn((key: 'openaiApiKey' | 'pexelsToken') => {
                 delete values[key]
             })
         }
@@ -201,7 +201,7 @@ describe('typed state persistence adapter', () => {
         expect(
             createSecretPersistence(manager).save({
                 openaiApiKey: 'new-key',
-                azureApiKey: 'azure-key'
+                pexelsToken: 'pexels-key'
             })
         ).toBe(false)
         expect(values.openaiApiKey).toBe('old-key')
@@ -210,14 +210,14 @@ describe('typed state persistence adapter', () => {
     it('deletes newly written keys during rollback when no prior value exists', () => {
         const manager = {
             getSecret: vi.fn(() => null),
-            saveSecret: vi.fn((key: string) => key !== 'azureApiKey'),
+            saveSecret: vi.fn((key: string) => key !== 'pexelsToken'),
             deleteSecret: vi.fn()
         }
 
         expect(
             createSecretPersistence(manager).save({
                 openaiApiKey: 'new-key',
-                azureApiKey: 'azure-key'
+                pexelsToken: 'pexels-key'
             })
         ).toBe(false)
         expect(manager.deleteSecret).toHaveBeenCalledWith('openaiApiKey')

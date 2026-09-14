@@ -12,8 +12,8 @@ const missingFields = (record: VocabularyRecord): string[] =>
         return typeof value !== 'string' || value.trim() === ''
     }).map(String)
 const toNote = (record: VocabularyRecord): QuizNote => ({
-    deckName: 'Default',
-    modelName: 'AnkiVNModel_Flashcard',
+    deckName: record.deckName,
+    modelName: 'AnkiVNModel_Flashcard_TTS',
     fields: {
         id: record.id,
         word: record.word,
@@ -21,11 +21,9 @@ const toNote = (record: VocabularyRecord): QuizNote => ({
         cloze: record.cloze ?? undefined,
         vietnamese: record.vietnamese ?? '',
         ipa: normalizeIpa(record.ipa ?? undefined),
-        image: record.imageUrl ?? undefined,
-        audio_word: record.audio ?? undefined
+        image: record.imageUrl ?? undefined
     },
-    options: { allowDuplicate: false },
-    audio: []
+    options: { allowDuplicate: false }
 })
 
 export class AnkiService {

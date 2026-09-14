@@ -108,6 +108,13 @@ export class DeckService {
             return modelResult
         }
 
+        const deckResult = await DeckService.createDecksIfNotExist([
+            ...new Set(notes.map((note) => note.deckName))
+        ])
+        if (deckResult.status === 'error') {
+            return deckResult
+        }
+
         try {
             const response: AnkiResponse<unknown> = await sendRequest({
                 action: 'addNotes',

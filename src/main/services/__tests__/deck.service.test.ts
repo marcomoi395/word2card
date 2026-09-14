@@ -10,6 +10,16 @@ vi.mock('../../anki-connect', () => ({
 describe('DeckService', () => {
     beforeEach(() => {
         vi.clearAllMocks()
+        vi.mocked(ankiConnect.checkAnkiConnect).mockResolvedValue(true)
+        vi.mocked(ankiConnect.sendRequest).mockImplementation(async (request) => {
+            if (request.action === 'modelNames') {
+                return { result: ['AnkiVNModel_Flashcard_TTS'], error: null }
+            }
+            if (request.action === 'addNotes') {
+                return { result: [123], error: null }
+            }
+            return { result: 123, error: null }
+        })
     })
 
     describe('createDeckIfNotExist', () => {
@@ -118,6 +128,33 @@ describe('DeckService', () => {
     })
 
     describe('addNotesToAnki', () => {
+        it('creates the destination deck before adding notes', async () => {
+            vi.mocked(ankiConnect.sendRequest)
+                .mockResolvedValueOnce({
+                    result: ['AnkiVNModel_Flashcard_TTS'],
+                    error: null
+                })
+                .mockResolvedValueOnce({
+                    result: 123,
+                    error: null
+                })
+
+            await DeckService.addNotesToAnki([
+                {
+                    deckName: 'Vocabulary::Imported::2026-09-14',
+                    modelName: 'AnkiVNModel_Flashcard_TTS',
+                    fields: { word: 'test' } as any,
+                    options: { allowDuplicate: false }
+                }
+            ])
+
+            expect(ankiConnect.sendRequest).toHaveBeenCalledWith({
+                action: 'createDeck',
+                version: 6,
+                params: { deck: 'Vocabulary::Imported::2026-09-14' }
+            })
+        })
+
         it('ensures model exists before adding notes', async () => {
             vi.mocked(ankiConnect.sendRequest)
                 .mockResolvedValueOnce({
@@ -153,6 +190,19 @@ describe('DeckService', () => {
                 expect.objectContaining({ action: 'createModel' })
             )
             expect(ankiConnect.sendRequest).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    params: expect.objectContaining({
+                        modelName: 'AnkiVNModel_Flashcard_TTS',
+                        cardTemplates: expect.arrayContaining([
+                            expect.objectContaining({
+                                Front: expect.stringContaining('{{tts en_US:word}}'),
+                                Back: expect.stringContaining('{{tts en_US:word}}')
+                            })
+                        ])
+                    })
+                })
+            )
+            expect(ankiConnect.sendRequest).toHaveBeenCalledWith(
                 expect.objectContaining({ action: 'addNotes' })
             )
         })
@@ -160,7 +210,7 @@ describe('DeckService', () => {
         it('skips model creation if model already exists', async () => {
             vi.mocked(ankiConnect.sendRequest)
                 .mockResolvedValueOnce({
-                    result: ['Basic', 'AnkiVNModel_Flashcard', 'Cloze'],
+                    result: ['Basic', 'AnkiVNModel_Flashcard_TTS', 'Cloze'],
                     error: null
                 })
                 .mockResolvedValueOnce({
@@ -180,12 +230,15 @@ describe('DeckService', () => {
             const result = await DeckService.addNotesToAnki(notes)
 
             expect(result.status).toBe('success')
-            expect(ankiConnect.sendRequest).toHaveBeenCalledTimes(2)
+            expect(ankiConnect.sendRequest).toHaveBeenCalledTimes(3)
             expect(ankiConnect.sendRequest).toHaveBeenCalledWith(
                 expect.objectContaining({ action: 'modelNames' })
             )
             expect(ankiConnect.sendRequest).toHaveBeenCalledWith(
                 expect.objectContaining({ action: 'addNotes' })
+            )
+            expect(ankiConnect.sendRequest).toHaveBeenCalledWith(
+                expect.objectContaining({ action: 'createDeck' })
             )
         })
 
@@ -241,9 +294,10 @@ describe('DeckService', () => {
         it('returns failure when addNotes fails', async () => {
             vi.mocked(ankiConnect.sendRequest)
                 .mockResolvedValueOnce({
-                    result: ['AnkiVNModel_Flashcard'],
+                    result: ['AnkiVNModel_Flashcard_TTS'],
                     error: null
                 })
+                .mockResolvedValueOnce({ result: 123, error: null })
                 .mockResolvedValueOnce({
                     result: null,
                     error: 'Failed to add notes'
@@ -268,9 +322,10 @@ describe('DeckService', () => {
         it('handles thrown errors during note addition', async () => {
             vi.mocked(ankiConnect.sendRequest)
                 .mockResolvedValueOnce({
-                    result: ['Word2Card'],
+                    result: ['AnkiVNModel_Flashcard_TTS'],
                     error: null
                 })
+                .mockResolvedValueOnce({ result: 123, error: null })
                 .mockRejectedValueOnce(new Error('Network error'))
 
             const notes = [
@@ -292,9 +347,10 @@ describe('DeckService', () => {
         it('handles non-Error objects thrown during note addition', async () => {
             vi.mocked(ankiConnect.sendRequest)
                 .mockResolvedValueOnce({
-                    result: ['AnkiVNModel_Flashcard'],
+                    result: ['AnkiVNModel_Flashcard_TTS'],
                     error: null
                 })
+                .mockResolvedValueOnce({ result: 123, error: null })
                 .mockRejectedValueOnce('String error')
 
             const notes = [

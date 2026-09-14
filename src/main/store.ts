@@ -13,13 +13,7 @@ export interface SecretPersistenceManager {
     deleteSecret(key: SecretKey): void
 }
 
-const SECRET_KEYS: SecretKey[] = [
-    'openaiApiKey',
-    'azureApiKey',
-    'pexelsToken',
-    'notionToken',
-    'notionDatabaseId'
-]
+const SECRET_KEYS: SecretKey[] = ['openaiApiKey', 'pexelsToken', 'notionToken', 'notionDatabaseId']
 
 export const createSecretPersistence = (manager: SecretPersistenceManager): StatePersistence => ({
     load: () =>

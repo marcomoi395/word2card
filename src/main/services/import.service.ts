@@ -1,31 +1,20 @@
 import { createLogger } from '../../shared/logger'
+import { resolveImportedDeckName } from '../../shared/deck'
 import { NotionService } from '../notion'
 import { getRuntimeState } from '../state/runtime'
-import type {
-    ImportRequest,
-    AppResponse,
-    SecretKey,
-    ImportDraftRecord,
-    ImportSummary
-} from '../../shared/ipc'
+import type { ImportRequest, AppResponse, ImportDraftRecord, ImportSummary } from '../../shared/ipc'
 import { success, failure } from '../utils/response'
 import { readFileContent } from '../helper/readFile'
 import { getWordEntriesFromResponse } from '../helper/get-words-from-notion-response'
-import {
-    filterNotionTargetsByWords,
-    resolveNotionDeckName,
-    type NotionSyncTarget
-} from '../helper/notion-sync'
 import type { DatabaseRepositories } from '../database'
 
 const logger = createLogger('main.import')
 
-const syncRuntimeSecret = (key: SecretKey, value: string): boolean => {
-    const trimmed = value.trim()
-    return Boolean(trimmed) && getRuntimeState().updateRuntimeSettings({ [key]: trimmed })
-}
-
-const createDraftRecords = (words: string[], source: 'file' | 'notion'): ImportDraftRecord[] => {
+const createDraftRecords = (
+    words: string[],
+    source: 'file' | 'notion',
+    deckName: string
+): ImportDraftRecord[] => {
     const seen = new Set<string>()
     return words.flatMap((rawWord, index) => {
         const word = rawWord.trim()
@@ -40,6 +29,7 @@ const createDraftRecords = (words: string[], source: 'file' | 'notion'): ImportD
                 word,
                 source,
                 sourceReference: null,
+                deckName,
                 partOfSpeech: null,
                 cloze: null,
                 example: null,
@@ -48,7 +38,6 @@ const createDraftRecords = (words: string[], source: 'file' | 'notion'): ImportD
                 meaning: null,
                 imageUrl: null,
                 imageProvider: null,
-                audio: null,
                 generationStatus: 'pending' as const,
                 generationError: null
             }
@@ -69,7 +58,6 @@ export class ImportService {
         AppResponse<{
             words: string[]
             records: ImportDraftRecord[]
-            notionTargets?: NotionSyncTarget[]
         }>
     > {
         if (request.type === 'FILE_IMPORT') {
@@ -78,7 +66,11 @@ export class ImportService {
                 return failure('Failed to read words from the source.')
             }
             const nonEmptyWords = raw.filter((word) => word.trim()).length
-            const drafts = createDraftRecords(raw, 'file')
+            const drafts = createDraftRecords(
+                raw,
+                'file',
+                resolveImportedDeckName(request.payload.deck)
+            )
             const existingWords = new Set(
                 importDatabase?.vocabulary.list().map((record) => record.normalizedWord) ?? []
             )
@@ -94,27 +86,30 @@ export class ImportService {
             return success({ words: records.map((record) => record.word), records })
         }
         try {
-            if (
-                !syncRuntimeSecret('notionToken', request.payload.token) ||
-                !syncRuntimeSecret('notionDatabaseId', request.payload.notionDatabaseId)
-            ) {
-                return failure('Failed to save Notion settings.')
+            const settings = getRuntimeState().getRuntimeSettings()
+            const notionToken = request.payload.token?.trim() || settings.notionToken || ''
+            const notionDatabaseId =
+                request.payload.notionDatabaseId?.trim() || settings.notionDatabaseId || ''
+            if (!notionToken || !notionDatabaseId) {
+                return failure('Please configure the Notion token and database ID in Settings.')
             }
-            const sources = await NotionService.getPages(request.payload.notionDatabaseId)
+            if (request.payload.token || request.payload.notionDatabaseId) {
+                if (!getRuntimeState().updateRuntimeSettings({ notionToken, notionDatabaseId })) {
+                    return failure('Failed to save Notion settings.')
+                }
+            }
+            const sources = await NotionService.getPages(notionDatabaseId)
             if (!sources?.length) {
                 return failure('No pages found in the Notion database.')
             }
-            const targets = sources.flatMap((source) =>
-                getWordEntriesFromResponse(source.pages).map((entry) => ({
-                    pageId: entry.pageId,
-                    word: entry.word,
-                    deckName: resolveNotionDeckName(request.payload.deck, source.dataSourceName)
-                }))
+            const words = sources.flatMap((source) =>
+                getWordEntriesFromResponse(source.pages).map((entry) => entry.word)
             )
-            const sourceWords = targets.filter((target) => target.word.trim()).length
+            const sourceWords = words.filter((word) => word.trim()).length
             const drafts = createDraftRecords(
-                targets.map((target) => target.word),
-                'notion'
+                words,
+                'notion',
+                resolveImportedDeckName(request.payload.deck)
             )
             const existingWords = new Set(
                 importDatabase?.vocabulary.list().map((record) => record.normalizedWord) ?? []
@@ -130,11 +125,7 @@ export class ImportService {
             }
             return success({
                 words: records.map((record) => record.word),
-                records,
-                notionTargets: filterNotionTargetsByWords(
-                    targets,
-                    records.map((record) => record.word)
-                )
+                records
             })
         } catch (error) {
             logger.error('notion_import_failed', { source: 'notion', error })

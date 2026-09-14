@@ -1,10 +1,12 @@
 import { createLogger } from '../../shared/logger'
+import { defaultImportedDeckName } from '../../shared/deck'
 import type {
     AppResponse,
     ImportDraftRecord,
     ImportRequest,
     NotionSyncRequest,
     ProviderHealthSnapshot,
+    ProviderHealthStatus,
     SaveSettingsPayload,
     VocabularyRecord
 } from '../../shared/ipc'
@@ -67,7 +69,7 @@ function recordRow(
     const image = record.imageUrl
         ? `<a class="image-link" href="${escapeHtml(record.imageUrl)}" target="_blank" rel="noreferrer"><img src="${escapeHtml(record.imageUrl)}" alt="Preview for ${escapeHtml(record.word)}" /></a>`
         : '<span aria-label="No image">—</span>'
-    return `<tr data-id="${record.id}"><td class="select-col"><input class="row-select" type="checkbox" aria-label="Select ${escapeHtml(record.word || 'new word')}" /></td><td class="index-col">${String(index + 1).padStart(2, '0')}</td>${wordCell}${editableCells}<td class="asset-cell">${image}</td><td class="asset-cell"><button class="audio-preview" type="button" data-audio-url="" data-word="${escapeHtml(record.word)}">Play</button></td><td><span class="status-pill ${record.generationStatus === 'ready' ? 'ready' : 'pending'}">${statusLabel(record)}</span></td></tr>`
+    return `<tr data-id="${record.id}"><td class="select-col"><input class="row-select" type="checkbox" aria-label="Select ${escapeHtml(record.word || 'new word')}" /></td><td class="index-col">${String(index + 1).padStart(2, '0')}</td>${wordCell}${editableCells}<td class="asset-cell">${image}</td><td><span class="status-pill ${record.generationStatus === 'ready' ? 'ready' : 'pending'}">${statusLabel(record)}</span></td></tr>`
 }
 
 function updateSelectAllState(table: HTMLTableElement): void {
@@ -112,7 +114,7 @@ function initSelectionControls(): void {
 function renderRecords(): void {
     const previewBody = document.querySelector('#section-import .data-grid tbody')
     const collectionBody = document.querySelector('#section-collection .data-grid tbody')
-    const empty = '<tr><td colspan="10" role="status">No words in this import yet.</td></tr>'
+    const empty = '<tr><td colspan="9" role="status">No words in this import yet.</td></tr>'
     if (previewBody) {
         previewBody.innerHTML = importDraftRecords.length
             ? importDraftRecords.map((record, i) => recordRow(record, true, i)).join('')
@@ -135,7 +137,6 @@ function renderRecords(): void {
     if (stat) {
         stat.textContent = String(importDraftRecords.length)
     }
-    initAudioPreview()
 }
 async function loadCollection(): Promise<void> {
     const response = await window.api.listVocabulary()
@@ -162,6 +163,7 @@ function draftRecord(word = ''): ImportDraftRecord {
         word,
         source: 'file',
         sourceReference: null,
+        deckName: defaultImportedDeckName(),
         partOfSpeech: null,
         cloze: null,
         example: null,
@@ -170,7 +172,6 @@ function draftRecord(word = ''): ImportDraftRecord {
         meaning: null,
         imageUrl: null,
         imageProvider: null,
-        audio: null,
         generationStatus: 'pending',
         generationError: null
     }
@@ -316,15 +317,37 @@ function renderHealth(snapshot: ProviderHealthSnapshot): void {
     const labels: Record<string, string> = {
         openai: 'AI',
         anki: 'AnkiConnect',
-        notion: 'Notion',
         pexels: 'Pexels'
     }
     list.innerHTML = Object.entries(snapshot.providers)
+        .filter(([key]) => key !== 'notion')
         .map(
             ([key, value]) =>
                 `<span class="connection-item" data-provider="${key}"><span class="status-dot ${value.state === 'connected' ? 'connected' : 'disconnected'}"></span>${labels[key] || key}: ${value.state}</span>`
         )
         .join('')
+
+    const notion = snapshot.providers.notion
+    const notionDot = document.getElementById('notion-status-dot')
+    const notionTitle = document.getElementById('notion-status-title')
+    const notionNote = document.getElementById('notion-status-note')
+    if (notion && notionDot && notionTitle && notionNote) {
+        notionDot.classList.toggle('connected', notion.state === 'connected')
+        notionDot.classList.toggle('disconnected', notion.state !== 'connected')
+        notionTitle.textContent = `Notion ${providerHealthLabel(notion)}`
+        notionNote.textContent = notion.message || providerHealthLabel(notion)
+    }
+}
+
+function providerHealthLabel(status: ProviderHealthStatus): string {
+    const labels: Record<ProviderHealthStatus['state'], string> = {
+        checking: 'checking',
+        connected: 'connected',
+        not_configured: 'not configured',
+        invalid: 'invalid',
+        unreachable: 'unreachable'
+    }
+    return labels[status.state]
 }
 
 async function loadHealth(): Promise<void> {
@@ -634,6 +657,11 @@ function initImportForm(): void {
         /* v8 ignore stop */
     }
 
+    const deckInput = getInputByName(form, 'deck')
+    if (deckInput && !deckInput.value.trim()) {
+        deckInput.value = defaultImportedDeckName()
+    }
+
     form.addEventListener('submit', async (event) => {
         event.preventDefault()
 
@@ -687,51 +715,23 @@ function initImportForm(): void {
 }
 
 function initNotionForm(): void {
-    /* v8 ignore start */
     const form = document.getElementById('form-notion') as HTMLFormElement | null
-    if (!form) {
-        return
-        /* v8 ignore stop */
-    }
+    const sourceDeckInput = document.getElementById('notion-source-deck') as HTMLInputElement | null
+    const sourceButton = document.getElementById(
+        'btn-action-sync-source'
+    ) as HTMLButtonElement | null
 
-    form.addEventListener('submit', async (event) => {
-        event.preventDefault()
-
-        const submitButton = form.querySelector('button[type="submit"]') as HTMLButtonElement | null
-        if (submitButton?.disabled) {
+    const syncNotion = async (button: HTMLButtonElement | null, deck: string): Promise<void> => {
+        if (button?.disabled) {
             return
         }
 
-        const notionTokenInput = document.getElementById('notion-token') as HTMLInputElement | null
-        const notionDatabaseIdInput = document.getElementById(
-            'notion-database-id'
-        ) as HTMLInputElement | null
-        const deckInput = getInputByName(form, 'deck')
-
-        const notionToken = notionTokenInput?.value.trim() || ''
-        const notionDatabaseId = notionDatabaseIdInput?.value.trim() || ''
-        const deck = deckInput?.value.trim() || ''
-
-        if (!notionToken) {
-            showToast('Please provide a Notion token.')
-            notionTokenInput?.focus()
-            return
-        }
-
-        if (!notionDatabaseId) {
-            showToast('Please provide a Notion database ID.')
-            notionDatabaseIdInput?.focus()
-            return
-        }
-
-        setButtonLoading(submitButton, true, 'Syncing...')
+        setButtonLoading(button, true, 'Syncing...')
 
         try {
             const notionData: NotionSyncRequest = {
                 type: 'NOTION_SYNC',
                 payload: {
-                    token: notionToken,
-                    notionDatabaseId,
                     deck,
                     options: {
                         quiz: false,
@@ -752,8 +752,25 @@ function initNotionForm(): void {
             })
             showToast('An error occurred during sync.')
         } finally {
-            setButtonLoading(submitButton, false)
+            setButtonLoading(button, false)
         }
+    }
+
+    const deckInput = form ? getInputByName(form, 'deck') : null
+    for (const input of [deckInput, sourceDeckInput]) {
+        if (input && !input.value.trim()) {
+            input.value = defaultImportedDeckName()
+        }
+    }
+
+    form?.addEventListener('submit', (event) => {
+        event.preventDefault()
+        const submitButton = form.querySelector('button[type="submit"]') as HTMLButtonElement | null
+        void syncNotion(submitButton, deckInput?.value.trim() || '')
+    })
+
+    sourceButton?.addEventListener('click', () => {
+        void syncNotion(sourceButton, sourceDeckInput?.value.trim() || '')
     })
 }
 
@@ -761,8 +778,13 @@ function initSettingsForm(): void {
     const openaiInput = document.getElementById('openai-key-global') as HTMLInputElement | null
     const openaiBaseUrlInput = document.getElementById('openai-base-url') as HTMLInputElement | null
     const openaiModelInput = document.getElementById('openai-model') as HTMLInputElement | null
-    const azureInput = document.getElementById('azure-key-global') as HTMLInputElement | null
     const pexelsInput = document.getElementById('pexels-token-global') as HTMLInputElement | null
+    const notionTokenInput = document.getElementById(
+        'notion-token-global'
+    ) as HTMLInputElement | null
+    const notionDatabaseIdInput = document.getElementById(
+        'notion-database-id-global'
+    ) as HTMLInputElement | null
     const saveButton = document.getElementById('btn-save-settings') as HTMLButtonElement | null
 
     const loadSavedSettings = async () => {
@@ -774,13 +796,11 @@ function initSettingsForm(): void {
 
             const status = savedData.data.configured
             const openaiStatus = document.getElementById('openai-key-status')
-            const azureStatus = document.getElementById('azure-key-status')
             const pexelsStatus = document.getElementById('pexels-token-status')
+            const notionTokenStatus = document.getElementById('notion-token-status')
+            const notionDatabaseIdStatus = document.getElementById('notion-database-id-status')
             if (openaiStatus) {
                 openaiStatus.textContent = status.openaiApiKey ? 'Configured' : 'Not configured'
-            }
-            if (azureStatus) {
-                azureStatus.textContent = status.azureApiKey ? 'Configured' : 'Not configured'
             }
             if (openaiBaseUrlInput && savedData.data.openaiBaseUrl) {
                 openaiBaseUrlInput.value = savedData.data.openaiBaseUrl
@@ -790,6 +810,14 @@ function initSettingsForm(): void {
             }
             if (pexelsStatus) {
                 pexelsStatus.textContent = status.pexelsToken ? 'Configured' : 'Not configured'
+            }
+            if (notionTokenStatus) {
+                notionTokenStatus.textContent = status.notionToken ? 'Configured' : 'Not configured'
+            }
+            if (notionDatabaseIdStatus) {
+                notionDatabaseIdStatus.textContent = status.notionDatabaseId
+                    ? 'Configured'
+                    : 'Not configured'
             }
         } catch (error) {
             logger.error('settings_load_failed', {
@@ -809,8 +837,9 @@ function initSettingsForm(): void {
         const settingsData: SaveSettingsPayload = {
             /* v8 ignore start */
             openaiApiKey: openaiInput?.value.trim() || '',
-            azureApiKey: azureInput?.value.trim() || '',
             pexelsToken: pexelsInput?.value.trim() || '',
+            notionToken: notionTokenInput?.value.trim() || '',
+            notionDatabaseId: notionDatabaseIdInput?.value.trim() || '',
             openaiBaseUrl: openaiBaseUrlInput?.value.trim() || '',
             openaiModel: openaiModelInput?.value.trim() || ''
             /* v8 ignore stop */
@@ -837,15 +866,6 @@ function initSettingsForm(): void {
     })
 }
 
-function initAudioPreview(): void {
-    document.querySelectorAll<HTMLButtonElement>('.audio-preview').forEach((button) => {
-        button.addEventListener('click', () => {
-            // Audio is intentionally unavailable; retain the button as a harmless placeholder.
-            button.blur()
-        })
-    })
-}
-
 function init(): void {
     window.addEventListener('DOMContentLoaded', () => {
         void loadCollection().catch((error) => {
@@ -859,7 +879,6 @@ function init(): void {
         initImportForm()
         initNotionForm()
         initSettingsForm()
-        initAudioPreview()
         initVocabularyActions()
         initAddDeleteActions()
         initSelectionControls()

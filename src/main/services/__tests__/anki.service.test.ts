@@ -9,6 +9,7 @@ const record = (patch: Partial<VocabularyRecord> = {}): VocabularyRecord => ({
     word: 'hello',
     source: 'file',
     sourceReference: null,
+    deckName: 'Vocabulary::Imported::2026-09-14',
     partOfSpeech: 'noun',
     cloze: null,
     example: 'hello world',
@@ -17,7 +18,6 @@ const record = (patch: Partial<VocabularyRecord> = {}): VocabularyRecord => ({
     meaning: null,
     imageUrl: null,
     imageProvider: null,
-    audio: null,
     normalizedWord: 'hello',
     generationStatus: 'ready',
     generationError: null,
@@ -68,6 +68,9 @@ describe('AnkiService', () => {
             ankiStatus: 'submitted',
             ankiError: null
         })
+        expect(DeckService.addNotesToAnki).toHaveBeenCalledWith([
+            expect.objectContaining({ deckName: 'Vocabulary::Imported::2026-09-14' })
+        ])
     })
     it('does not mark cards submitted when Anki fails', async () => {
         vi.mocked(DeckService.addNotesToAnki).mockResolvedValue({
@@ -89,6 +92,7 @@ describe('AnkiService', () => {
             word: 'hello',
             source: 'file' as const,
             sourceReference: null,
+            deckName: 'Vocabulary::Imported::2026-09-14',
             partOfSpeech: 'noun',
             cloze: null,
             example: null,
@@ -97,7 +101,6 @@ describe('AnkiService', () => {
             meaning: null,
             imageUrl: null,
             imageProvider: null,
-            audio: null,
             generationStatus: 'ready' as const,
             generationError: null
         }

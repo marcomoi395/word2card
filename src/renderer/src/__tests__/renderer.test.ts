@@ -46,7 +46,6 @@ describe('Renderer UI', () => {
                 data: {
                     configured: {
                         openaiApiKey: true,
-                        azureApiKey: true,
                         pexelsToken: true,
                         notionToken: true,
                         notionDatabaseId: true
@@ -80,10 +79,10 @@ describe('Renderer UI', () => {
                 expect(table?.querySelector('th:nth-child(8)')?.textContent?.trim()).not.toBe(
                     'Meaning'
                 )
-                expect(table?.querySelectorAll('thead th')).toHaveLength(10)
+                expect(table?.querySelectorAll('thead th')).toHaveLength(9)
                 expect(
                     table?.querySelector('tbody td[role="status"]')?.getAttribute('colspan')
-                ).toBe('10')
+                ).toBe('9')
             }
         })
         it('calls getSettingsStatus on load', () => {
@@ -98,7 +97,6 @@ describe('Renderer UI', () => {
             expect((document.getElementById('openai-key-global') as HTMLInputElement).value).toBe(
                 ''
             )
-            expect((document.getElementById('azure-key-global') as HTMLInputElement).value).toBe('')
             expect((document.getElementById('pexels-token-global') as HTMLInputElement).value).toBe(
                 ''
             )
@@ -139,15 +137,11 @@ describe('Renderer UI', () => {
             await promise
 
             expect(document.getElementById('openai-key-status')?.textContent).toBe('Configured')
-            expect(document.getElementById('azure-key-status')?.textContent).toBe('Configured')
             expect(document.getElementById('pexels-token-status')?.textContent).toBe('Configured')
         })
 
         it('uses password controls for secret inputs', () => {
             expect((document.getElementById('openai-key-global') as HTMLInputElement).type).toBe(
-                'password'
-            )
-            expect((document.getElementById('azure-key-global') as HTMLInputElement).type).toBe(
                 'password'
             )
             expect((document.getElementById('pexels-token-global') as HTMLInputElement).type).toBe(
@@ -176,10 +170,8 @@ describe('Renderer UI', () => {
                     ?.classList.contains('disconnected')
             ).toBe(true)
             expect(
-                document
-                    .querySelector('.connection-item[data-provider="notion"] .status-dot')
-                    ?.classList.contains('disconnected')
-            ).toBe(true)
+                document.querySelector('.connection-item[data-provider="notion"] .status-dot')
+            ).toBeNull()
             expect(
                 document
                     .querySelector('.connection-item[data-provider="pexels"] .status-dot')
@@ -189,6 +181,15 @@ describe('Renderer UI', () => {
                 document
                     .querySelector('.connection-item[data-provider="anki"] .status-dot')
                     ?.classList.contains('connected')
+            ).toBe(true)
+            expect(document.getElementById('notion-status-title')?.textContent).toBe(
+                'Notion not configured'
+            )
+            expect(document.getElementById('notion-status-note')?.textContent).toBe(
+                'not configured'
+            )
+            expect(
+                document.getElementById('notion-status-dot')?.classList.contains('disconnected')
             ).toBe(true)
         })
     })
@@ -200,7 +201,6 @@ describe('Renderer UI', () => {
                     openaiApiKey: true,
                     openaiBaseUrl: true,
                     openaiModel: true,
-                    azureApiKey: false,
                     pexelsToken: false,
                     notionToken: false,
                     notionDatabaseId: false
@@ -259,13 +259,19 @@ describe('Renderer UI', () => {
             await promise
 
             const openaiInput = document.getElementById('openai-key-global') as HTMLInputElement
-            const azureInput = document.getElementById('azure-key-global') as HTMLInputElement
             const pexelsInput = document.getElementById('pexels-token-global') as HTMLInputElement
+            const notionTokenInput = document.getElementById(
+                'notion-token-global'
+            ) as HTMLInputElement
+            const notionDatabaseIdInput = document.getElementById(
+                'notion-database-id-global'
+            ) as HTMLInputElement
             const saveButton = document.getElementById('btn-save-settings') as HTMLButtonElement
 
             openaiInput.value = 'new-openai-key'
-            azureInput.value = 'new-azure-key'
             pexelsInput.value = 'new-pexels-token'
+            notionTokenInput.value = 'new-notion-token'
+            notionDatabaseIdInput.value = 'new-notion-database-id'
 
             vi.mocked(window.api.saveSettings).mockResolvedValue({
                 status: 'success',
@@ -280,8 +286,9 @@ describe('Renderer UI', () => {
 
             expect(window.api.saveSettings).toHaveBeenCalledWith({
                 openaiApiKey: 'new-openai-key',
-                azureApiKey: 'new-azure-key',
                 pexelsToken: 'new-pexels-token',
+                notionToken: 'new-notion-token',
+                notionDatabaseId: 'new-notion-database-id',
                 openaiBaseUrl: '',
                 openaiModel: ''
             })
@@ -518,11 +525,6 @@ describe('Renderer UI', () => {
         })
         it('shows duplicate count after a Notion import with skipped words', async () => {
             const form = document.getElementById('form-notion') as HTMLFormElement
-            const tokenInput = document.getElementById('notion-token') as HTMLInputElement
-            const dbInput = document.getElementById('notion-database-id') as HTMLInputElement
-
-            tokenInput.value = 'token'
-            dbInput.value = 'db-id'
             vi.mocked(window.api.sendImport).mockResolvedValue({
                 status: 'success',
                 data: { inserted: 0, skipped: 2, failed: 0, records: [] }
@@ -537,11 +539,6 @@ describe('Renderer UI', () => {
 
         it('does not show an alert after a fully successful Notion import', async () => {
             const form = document.getElementById('form-notion') as HTMLFormElement
-            const tokenInput = document.getElementById('notion-token') as HTMLInputElement
-            const dbInput = document.getElementById('notion-database-id') as HTMLInputElement
-
-            tokenInput.value = 'token'
-            dbInput.value = 'db-id'
             vi.mocked(window.api.sendImport).mockResolvedValue({
                 status: 'success',
                 data: { inserted: 2, skipped: 0, failed: 0, records: [] }
@@ -578,14 +575,34 @@ describe('Renderer UI', () => {
     })
 
     describe('Notion Sync Flow', () => {
+        it('syncs from the Import screen into the selected destination deck', async () => {
+            const deckInput = document.getElementById('notion-source-deck') as HTMLInputElement
+            const button = document.getElementById('btn-action-sync-source') as HTMLButtonElement
+            deckInput.value = 'NotionDeck'
+            vi.mocked(window.api.sendImport).mockResolvedValue({
+                status: 'success',
+                data: { inserted: 1, skipped: 0, failed: 0, records: [] }
+            })
+
+            button.click()
+
+            const { promise, resolve: res } = Promise.withResolvers<void>()
+            setTimeout(res, 0)
+            await promise
+
+            expect(window.api.sendImport).toHaveBeenCalledWith({
+                type: 'NOTION_SYNC',
+                payload: {
+                    deck: 'NotionDeck',
+                    options: { quiz: false, flashcard: true }
+                }
+            })
+        })
+
         it('calls sendImport with NOTION_SYNC when form submitted', async () => {
             const form = document.getElementById('form-notion') as HTMLFormElement
-            const tokenInput = document.getElementById('notion-token') as HTMLInputElement
-            const dbInput = document.getElementById('notion-database-id') as HTMLInputElement
             const deckInput = form.elements.namedItem('deck') as HTMLInputElement
 
-            tokenInput.value = 'notion-token-123'
-            dbInput.value = 'db-id-456'
             deckInput.value = 'NotionDeck'
 
             vi.mocked(window.api.sendImport).mockResolvedValue({
@@ -602,8 +619,6 @@ describe('Renderer UI', () => {
             expect(window.api.sendImport).toHaveBeenCalledWith({
                 type: 'NOTION_SYNC',
                 payload: {
-                    token: 'notion-token-123',
-                    notionDatabaseId: 'db-id-456',
                     deck: 'NotionDeck',
                     options: {
                         quiz: false,
@@ -613,49 +628,8 @@ describe('Renderer UI', () => {
             })
         })
 
-        it('does not call sendImport when token missing', async () => {
-            const form = document.getElementById('form-notion') as HTMLFormElement
-            const tokenInput = document.getElementById('notion-token') as HTMLInputElement
-            const dbInput = document.getElementById('notion-database-id') as HTMLInputElement
-
-            tokenInput.value = ''
-            dbInput.value = 'db-id'
-
-            form.dispatchEvent(new Event('submit'))
-
-            const { promise, resolve: res } = Promise.withResolvers<void>()
-            setTimeout(res, 0)
-            await promise
-
-            expect(window.api.sendImport).not.toHaveBeenCalled()
-            expect(document.getElementById('app-toast')?.textContent).toContain('Notion token')
-        })
-
-        it('does not call sendImport when database ID missing', async () => {
-            const form = document.getElementById('form-notion') as HTMLFormElement
-            const tokenInput = document.getElementById('notion-token') as HTMLInputElement
-            const dbInput = document.getElementById('notion-database-id') as HTMLInputElement
-
-            tokenInput.value = 'token'
-            dbInput.value = ''
-
-            form.dispatchEvent(new Event('submit'))
-
-            const { promise, resolve: res } = Promise.withResolvers<void>()
-            setTimeout(res, 0)
-            await promise
-
-            expect(window.api.sendImport).not.toHaveBeenCalled()
-            expect(document.getElementById('app-toast')?.textContent).toContain('database ID')
-        })
-
         it('uses flashcard format without a format selection', async () => {
             const form = document.getElementById('form-notion') as HTMLFormElement
-            const tokenInput = document.getElementById('notion-token') as HTMLInputElement
-            const dbInput = document.getElementById('notion-database-id') as HTMLInputElement
-
-            tokenInput.value = 'token'
-            dbInput.value = 'db-id'
 
             form.dispatchEvent(new Event('submit'))
 
@@ -666,9 +640,7 @@ describe('Renderer UI', () => {
             expect(window.api.sendImport).toHaveBeenCalledWith({
                 type: 'NOTION_SYNC',
                 payload: {
-                    token: 'token',
-                    notionDatabaseId: 'db-id',
-                    deck: '',
+                    deck: expect.stringMatching(/^Vocabulary::Imported::\d{4}-\d{2}-\d{2}$/),
                     options: {
                         quiz: false,
                         flashcard: true
@@ -679,11 +651,6 @@ describe('Renderer UI', () => {
 
         it('shows error alert when sendImport throws error', async () => {
             const form = document.getElementById('form-notion') as HTMLFormElement
-            const tokenInput = document.getElementById('notion-token') as HTMLInputElement
-            const dbInput = document.getElementById('notion-database-id') as HTMLInputElement
-
-            tokenInput.value = 'token'
-            dbInput.value = 'db-id'
 
             vi.mocked(window.api.sendImport).mockRejectedValue(new Error('Network error'))
             const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
@@ -833,6 +800,7 @@ describe('renderer CSP', () => {
         expect(html).toContain('Content-Security-Policy')
         expect(html).toContain("default-src 'self'")
         expect(html).not.toContain('cdnjs.cloudflare.com')
+        expect(html).toContain('https://images.pexels.com')
         expect(html).not.toContain('fonts.googleapis.com')
     })
 })

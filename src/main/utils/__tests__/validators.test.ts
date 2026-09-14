@@ -85,10 +85,9 @@ describe('validators', () => {
     })
 
     describe('parseSaveSettingsPayload', () => {
-        it('returns valid payload when all three keys are strings', () => {
+        it('returns valid payload when required keys are strings', () => {
             const input = {
                 openaiApiKey: 'sk-123',
-                azureApiKey: 'azure-456',
                 pexelsToken: 'pexels-789'
             }
             expect(parseSaveSettingsPayload(input)).toEqual(input)
@@ -97,23 +96,20 @@ describe('validators', () => {
         it('returns valid payload with empty strings', () => {
             const input = {
                 openaiApiKey: '',
-                azureApiKey: '',
                 pexelsToken: ''
             }
             expect(parseSaveSettingsPayload(input)).toEqual(input)
         })
 
-        it('ignores extra keys and returns only the three required keys', () => {
+        it('ignores extra keys and returns only the required keys', () => {
             const input = {
                 openaiApiKey: 'sk-123',
-                azureApiKey: 'azure-456',
                 pexelsToken: 'pexels-789',
                 extraKey: 'ignored',
                 anotherKey: 42
             }
             expect(parseSaveSettingsPayload(input)).toEqual({
                 openaiApiKey: 'sk-123',
-                azureApiKey: 'azure-456',
                 pexelsToken: 'pexels-789'
             })
         })
@@ -121,16 +117,6 @@ describe('validators', () => {
         it('returns null when openaiApiKey is missing', () => {
             expect(
                 parseSaveSettingsPayload({
-                    azureApiKey: 'azure-456',
-                    pexelsToken: 'pexels-789'
-                })
-            ).toBeNull()
-        })
-
-        it('returns null when azureApiKey is missing', () => {
-            expect(
-                parseSaveSettingsPayload({
-                    openaiApiKey: 'sk-123',
                     pexelsToken: 'pexels-789'
                 })
             ).toBeNull()
@@ -139,8 +125,7 @@ describe('validators', () => {
         it('returns null when pexelsToken is missing', () => {
             expect(
                 parseSaveSettingsPayload({
-                    openaiApiKey: 'sk-123',
-                    azureApiKey: 'azure-456'
+                    openaiApiKey: 'sk-123'
                 })
             ).toBeNull()
         })
@@ -149,17 +134,6 @@ describe('validators', () => {
             expect(
                 parseSaveSettingsPayload({
                     openaiApiKey: 123,
-                    azureApiKey: 'azure-456',
-                    pexelsToken: 'pexels-789'
-                })
-            ).toBeNull()
-        })
-
-        it('returns null when azureApiKey is null', () => {
-            expect(
-                parseSaveSettingsPayload({
-                    openaiApiKey: 'sk-123',
-                    azureApiKey: null,
                     pexelsToken: 'pexels-789'
                 })
             ).toBeNull()
@@ -169,7 +143,6 @@ describe('validators', () => {
             expect(
                 parseSaveSettingsPayload({
                     openaiApiKey: 'sk-123',
-                    azureApiKey: 'azure-456',
                     pexelsToken: true
                 })
             ).toBeNull()
@@ -267,7 +240,7 @@ describe('validators', () => {
                 expect(parseImportRequest(input)).toEqual(input)
             })
 
-            it('returns null when token is missing', () => {
+            it('allows token to be omitted when it is stored in Settings', () => {
                 const input = {
                     type: 'NOTION_SYNC',
                     payload: {
@@ -276,7 +249,7 @@ describe('validators', () => {
                         options: { quiz: false, flashcard: true }
                     }
                 }
-                expect(parseImportRequest(input)).toBeNull()
+                expect(parseImportRequest(input)).toEqual(input)
             })
             it('returns null when token is blank', () => {
                 expect(
@@ -306,7 +279,7 @@ describe('validators', () => {
                 ).toBeNull()
             })
 
-            it('returns null when notionDatabaseId is missing', () => {
+            it('allows notionDatabaseId to be omitted when it is stored in Settings', () => {
                 const input = {
                     type: 'NOTION_SYNC',
                     payload: {
@@ -315,7 +288,7 @@ describe('validators', () => {
                         options: { quiz: false, flashcard: true }
                     }
                 }
-                expect(parseImportRequest(input)).toBeNull()
+                expect(parseImportRequest(input)).toEqual(input)
             })
 
             it('returns null when deck is not a string', () => {
@@ -378,6 +351,7 @@ describe('import draft validation', () => {
         word: 'hello',
         source: 'file',
         sourceReference: null,
+        deckName: 'Vocabulary::Imported::2026-09-14',
         partOfSpeech: null,
         cloze: null,
         example: null,
@@ -386,7 +360,6 @@ describe('import draft validation', () => {
         meaning: null,
         imageUrl: null,
         imageProvider: null,
-        audio: null,
         generationStatus: 'pending',
         generationError: null
     }
