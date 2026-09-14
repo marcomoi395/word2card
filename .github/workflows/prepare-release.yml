@@ -24,15 +24,15 @@ jobs:
         timeout-minutes: 10
         steps:
             - name: Check source branch
-              if: github.ref_name != 'develop'
+              if: github.ref_name != 'main'
               run: |
-                  echo "Prepare Release must be run from develop, not ${GITHUB_REF_NAME}."
+                  echo "Prepare Release must be run from main, not ${GITHUB_REF_NAME}."
                   exit 1
 
-            - name: Checkout develop
+            - name: Checkout main
               uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
               with:
-                  ref: develop
+                  ref: main
                   fetch-depth: 0
 
             - name: Setup Bun
