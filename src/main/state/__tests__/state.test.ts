@@ -9,7 +9,6 @@ describe('state package', () => {
         expect(state.getRendererSnapshot()).toEqual({
             configured: {
                 openaiApiKey: false,
-                azureApiKey: false,
                 pexelsToken: false,
                 notionToken: false,
                 notionDatabaseId: false
@@ -23,8 +22,8 @@ describe('state package', () => {
         state.updateRuntimeSettings({ openaiApiKey: 'openai-key' })
 
         expect(state.getRuntimeSettings()).toEqual({ openaiApiKey: 'openai-key' })
-        expect(state.getMissingRuntimeSettings(['openaiApiKey', 'azureApiKey'])).toEqual([
-            'azureApiKey'
+        expect(state.getMissingRuntimeSettings(['openaiApiKey', 'pexelsToken'])).toEqual([
+            'pexelsToken'
         ])
     })
 
@@ -72,7 +71,7 @@ describe('persistent state store', () => {
         }
         const state = createStateStore({ openaiApiKey: 'existing-key' }, persistence)
 
-        expect(state.updateRuntimeSettings({ azureApiKey: 'azure-key' })).toBe(false)
+        expect(state.updateRuntimeSettings({ pexelsToken: 'pexels-key' })).toBe(false)
         expect(state.getRuntimeSettings()).toEqual({ openaiApiKey: 'existing-key' })
     })
 
@@ -102,7 +101,7 @@ describe('persistent state store', () => {
             }
         )
 
-        expect(state.updateRuntimeSettings({ azureApiKey: 'azure-key' })).toBe(false)
+        expect(state.updateRuntimeSettings({ pexelsToken: 'pexels-key' })).toBe(false)
         expect(state.clearRuntimeSetting('openaiApiKey')).toBe(false)
     })
 })

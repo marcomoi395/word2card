@@ -9,7 +9,6 @@ Shared utilities for test cleanup and common testing patterns.
 - `SecretManager`
 - `NotionService`
 - `OpenAIService`
-- `SpeechService`
 
 These helpers are test-only. Production state uses the internal state package in `src/main/state/`.
 

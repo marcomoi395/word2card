@@ -4,7 +4,6 @@ import {
     shiftNotionTarget,
     type NotionSyncTarget
 } from './helper/notion-sync'
-import { sanitizeFilename } from './helper/sanitize-filename'
 import { OpenAIService } from './open-ai'
 import { searchImagePexels } from './pexels'
 import { getRuntimeSetting } from './state/runtime'
@@ -17,7 +16,6 @@ interface Flashcard {
     vietnamese: string
     ipa?: string
     image?: string
-    audio_word?: string
 }
 interface ImageSearchInput {
     word: string
@@ -37,11 +35,6 @@ export interface QuizNote {
     options: {
         allowDuplicate: boolean
     }
-    audio?: {
-        path: string
-        filename: string
-        fields: string[]
-    }[]
 }
 
 export const normalizeIpa = (ipa: string | undefined): string | undefined => {
@@ -64,9 +57,7 @@ export const clozeWord = (word: string): string => {
 
 export const createFlashcards = async (
     words: string[],
-    audioDir: string,
     deckName: string,
-    isAudio: boolean,
     notionTargets?: NotionSyncTarget[]
 ): Promise<QuizNote[]> => {
     const dataFromOpenAI = await OpenAIService.generateFlashcardData(words)
@@ -91,7 +82,7 @@ export const createFlashcards = async (
 
             return {
                 deckName: target?.deckName ?? deckName,
-                modelName: 'AnkiVNModel_Flashcard',
+                modelName: 'AnkiVNModel_Flashcard_TTS',
                 fields: {
                     ...flashcard,
                     id: uuidv4(),
@@ -101,16 +92,7 @@ export const createFlashcards = async (
                 },
                 options: {
                     allowDuplicate: false
-                },
-                audio: isAudio
-                    ? [
-                          {
-                              path: `${audioDir}/${sanitizeFilename(item.word)}.mp3`,
-                              filename: `${sanitizeFilename(item.word)}.mp3`,
-                              fields: ['audio_word']
-                          }
-                      ]
-                    : []
+                }
             }
         })
     )

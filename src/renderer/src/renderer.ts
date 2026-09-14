@@ -68,7 +68,7 @@ function recordRow(
     const image = record.imageUrl
         ? `<a class="image-link" href="${escapeHtml(record.imageUrl)}" target="_blank" rel="noreferrer"><img src="${escapeHtml(record.imageUrl)}" alt="Preview for ${escapeHtml(record.word)}" /></a>`
         : '<span aria-label="No image">—</span>'
-    return `<tr data-id="${record.id}"><td class="select-col"><input class="row-select" type="checkbox" aria-label="Select ${escapeHtml(record.word || 'new word')}" /></td><td class="index-col">${String(index + 1).padStart(2, '0')}</td>${wordCell}${editableCells}<td class="asset-cell">${image}</td><td class="asset-cell"><button class="audio-preview" type="button" data-audio-url="" data-word="${escapeHtml(record.word)}">Play</button></td><td><span class="status-pill ${record.generationStatus === 'ready' ? 'ready' : 'pending'}">${statusLabel(record)}</span></td></tr>`
+    return `<tr data-id="${record.id}"><td class="select-col"><input class="row-select" type="checkbox" aria-label="Select ${escapeHtml(record.word || 'new word')}" /></td><td class="index-col">${String(index + 1).padStart(2, '0')}</td>${wordCell}${editableCells}<td class="asset-cell">${image}</td><td><span class="status-pill ${record.generationStatus === 'ready' ? 'ready' : 'pending'}">${statusLabel(record)}</span></td></tr>`
 }
 
 function updateSelectAllState(table: HTMLTableElement): void {
@@ -113,7 +113,7 @@ function initSelectionControls(): void {
 function renderRecords(): void {
     const previewBody = document.querySelector('#section-import .data-grid tbody')
     const collectionBody = document.querySelector('#section-collection .data-grid tbody')
-    const empty = '<tr><td colspan="10" role="status">No words in this import yet.</td></tr>'
+    const empty = '<tr><td colspan="9" role="status">No words in this import yet.</td></tr>'
     if (previewBody) {
         previewBody.innerHTML = importDraftRecords.length
             ? importDraftRecords.map((record, i) => recordRow(record, true, i)).join('')
@@ -136,7 +136,6 @@ function renderRecords(): void {
     if (stat) {
         stat.textContent = String(importDraftRecords.length)
     }
-    initAudioPreview()
 }
 async function loadCollection(): Promise<void> {
     const response = await window.api.listVocabulary()
@@ -171,7 +170,6 @@ function draftRecord(word = ''): ImportDraftRecord {
         meaning: null,
         imageUrl: null,
         imageProvider: null,
-        audio: null,
         generationStatus: 'pending',
         generationError: null
     }
@@ -764,7 +762,6 @@ function initSettingsForm(): void {
     const openaiInput = document.getElementById('openai-key-global') as HTMLInputElement | null
     const openaiBaseUrlInput = document.getElementById('openai-base-url') as HTMLInputElement | null
     const openaiModelInput = document.getElementById('openai-model') as HTMLInputElement | null
-    const azureInput = document.getElementById('azure-key-global') as HTMLInputElement | null
     const pexelsInput = document.getElementById('pexels-token-global') as HTMLInputElement | null
     const notionTokenInput = document.getElementById(
         'notion-token-global'
@@ -783,15 +780,11 @@ function initSettingsForm(): void {
 
             const status = savedData.data.configured
             const openaiStatus = document.getElementById('openai-key-status')
-            const azureStatus = document.getElementById('azure-key-status')
             const pexelsStatus = document.getElementById('pexels-token-status')
             const notionTokenStatus = document.getElementById('notion-token-status')
             const notionDatabaseIdStatus = document.getElementById('notion-database-id-status')
             if (openaiStatus) {
                 openaiStatus.textContent = status.openaiApiKey ? 'Configured' : 'Not configured'
-            }
-            if (azureStatus) {
-                azureStatus.textContent = status.azureApiKey ? 'Configured' : 'Not configured'
             }
             if (openaiBaseUrlInput && savedData.data.openaiBaseUrl) {
                 openaiBaseUrlInput.value = savedData.data.openaiBaseUrl
@@ -828,7 +821,6 @@ function initSettingsForm(): void {
         const settingsData: SaveSettingsPayload = {
             /* v8 ignore start */
             openaiApiKey: openaiInput?.value.trim() || '',
-            azureApiKey: azureInput?.value.trim() || '',
             pexelsToken: pexelsInput?.value.trim() || '',
             notionToken: notionTokenInput?.value.trim() || '',
             notionDatabaseId: notionDatabaseIdInput?.value.trim() || '',
@@ -858,15 +850,6 @@ function initSettingsForm(): void {
     })
 }
 
-function initAudioPreview(): void {
-    document.querySelectorAll<HTMLButtonElement>('.audio-preview').forEach((button) => {
-        button.addEventListener('click', () => {
-            // Audio is intentionally unavailable; retain the button as a harmless placeholder.
-            button.blur()
-        })
-    })
-}
-
 function init(): void {
     window.addEventListener('DOMContentLoaded', () => {
         void loadCollection().catch((error) => {
@@ -880,7 +863,6 @@ function init(): void {
         initImportForm()
         initNotionForm()
         initSettingsForm()
-        initAudioPreview()
         initVocabularyActions()
         initAddDeleteActions()
         initSelectionControls()

@@ -46,7 +46,6 @@ describe('Renderer UI', () => {
                 data: {
                     configured: {
                         openaiApiKey: true,
-                        azureApiKey: true,
                         pexelsToken: true,
                         notionToken: true,
                         notionDatabaseId: true
@@ -80,10 +79,10 @@ describe('Renderer UI', () => {
                 expect(table?.querySelector('th:nth-child(8)')?.textContent?.trim()).not.toBe(
                     'Meaning'
                 )
-                expect(table?.querySelectorAll('thead th')).toHaveLength(10)
+                expect(table?.querySelectorAll('thead th')).toHaveLength(9)
                 expect(
                     table?.querySelector('tbody td[role="status"]')?.getAttribute('colspan')
-                ).toBe('10')
+                ).toBe('9')
             }
         })
         it('calls getSettingsStatus on load', () => {
@@ -98,7 +97,6 @@ describe('Renderer UI', () => {
             expect((document.getElementById('openai-key-global') as HTMLInputElement).value).toBe(
                 ''
             )
-            expect((document.getElementById('azure-key-global') as HTMLInputElement).value).toBe('')
             expect((document.getElementById('pexels-token-global') as HTMLInputElement).value).toBe(
                 ''
             )
@@ -139,15 +137,11 @@ describe('Renderer UI', () => {
             await promise
 
             expect(document.getElementById('openai-key-status')?.textContent).toBe('Configured')
-            expect(document.getElementById('azure-key-status')?.textContent).toBe('Configured')
             expect(document.getElementById('pexels-token-status')?.textContent).toBe('Configured')
         })
 
         it('uses password controls for secret inputs', () => {
             expect((document.getElementById('openai-key-global') as HTMLInputElement).type).toBe(
-                'password'
-            )
-            expect((document.getElementById('azure-key-global') as HTMLInputElement).type).toBe(
                 'password'
             )
             expect((document.getElementById('pexels-token-global') as HTMLInputElement).type).toBe(
@@ -207,7 +201,6 @@ describe('Renderer UI', () => {
                     openaiApiKey: true,
                     openaiBaseUrl: true,
                     openaiModel: true,
-                    azureApiKey: false,
                     pexelsToken: false,
                     notionToken: false,
                     notionDatabaseId: false
@@ -266,7 +259,6 @@ describe('Renderer UI', () => {
             await promise
 
             const openaiInput = document.getElementById('openai-key-global') as HTMLInputElement
-            const azureInput = document.getElementById('azure-key-global') as HTMLInputElement
             const pexelsInput = document.getElementById('pexels-token-global') as HTMLInputElement
             const notionTokenInput = document.getElementById(
                 'notion-token-global'
@@ -277,7 +269,6 @@ describe('Renderer UI', () => {
             const saveButton = document.getElementById('btn-save-settings') as HTMLButtonElement
 
             openaiInput.value = 'new-openai-key'
-            azureInput.value = 'new-azure-key'
             pexelsInput.value = 'new-pexels-token'
             notionTokenInput.value = 'new-notion-token'
             notionDatabaseIdInput.value = 'new-notion-database-id'
@@ -295,7 +286,6 @@ describe('Renderer UI', () => {
 
             expect(window.api.saveSettings).toHaveBeenCalledWith({
                 openaiApiKey: 'new-openai-key',
-                azureApiKey: 'new-azure-key',
                 pexelsToken: 'new-pexels-token',
                 notionToken: 'new-notion-token',
                 notionDatabaseId: 'new-notion-database-id',

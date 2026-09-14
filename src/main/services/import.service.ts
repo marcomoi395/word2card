@@ -37,7 +37,6 @@ const createDraftRecords = (words: string[], source: 'file' | 'notion'): ImportD
                 meaning: null,
                 imageUrl: null,
                 imageProvider: null,
-                audio: null,
                 generationStatus: 'pending' as const,
                 generationError: null
             }

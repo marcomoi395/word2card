@@ -526,11 +526,6 @@ body {
     width: 105px;
     max-width: 105px;
 }
-.data-grid th:nth-child(10),
-.data-grid td:nth-child(10) {
-    width: 100px;
-    max-width: 100px;
-}
 .word-cell {
     color: var(--ink) !important;
     font-size: 12px !important;
@@ -577,6 +572,23 @@ body {
     color: #79916d;
     font-size: 10px;
     font-weight: 800;
+}
+.settings-note {
+    margin: 0 0 18px;
+    padding: 12px 14px;
+    border: 2px dashed var(--ink);
+    background: #effbdd;
+    color: var(--ink);
+    font-size: 11px;
+    line-height: 1.5;
+}
+.settings-note strong {
+    display: block;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+}
+.settings-note p {
+    margin: 0;
 }
 .settings-nav.active-btn {
     background: var(--ink);
@@ -1052,11 +1064,6 @@ body {
     width: 105px;
     max-width: 105px;
 }
-.collection-grid th:nth-child(10),
-.collection-grid td:nth-child(10) {
-    width: 100px;
-    max-width: 100px;
-}
 .collection-footer {
     border-top: 2px solid var(--ink);
 }
@@ -1143,25 +1150,6 @@ body {
     width: 60px;
     height: 38px;
     object-fit: cover;
-}
-.audio-preview {
-    border: 2px solid var(--ink);
-    border-radius: 0;
-    background: #f05d5e;
-    color: #fff8dc;
-    padding: 6px 8px;
-    font:
-        900 9px 'Courier New',
-        monospace;
-    text-transform: uppercase;
-    cursor: pointer;
-    box-shadow: 2px 2px 0 var(--ink);
-}
-.audio-preview:hover {
-    background: #184e77;
-}
-.legacy-setting {
-    display: none;
 }
 #section-import,
 #section-collection,
@@ -1458,16 +1446,9 @@ body {
     max-width: 100px;
 }
 .data-grid th:nth-child(9),
-.data-grid td:nth-child(9),
-.data-grid th:nth-child(10),
-.data-grid td:nth-child(10) {
+.data-grid td:nth-child(9) {
     width: 105px;
     max-width: 105px;
-}
-.data-grid th:nth-child(11),
-.data-grid td:nth-child(11) {
-    width: 100px;
-    max-width: 100px;
 }
 .collection-actions {
     display: flex;
@@ -1525,16 +1506,9 @@ body {
     max-width: 100px;
 }
 .collection-grid th:nth-child(9),
-.collection-grid td:nth-child(9),
-.collection-grid th:nth-child(10),
-.collection-grid td:nth-child(10) {
+.collection-grid td:nth-child(9) {
     width: 105px;
     max-width: 105px;
-}
-.collection-grid th:nth-child(11),
-.collection-grid td:nth-child(11) {
-    width: 100px;
-    max-width: 100px;
 }
 #section-import .data-grid {
     min-width: 0;
@@ -1585,11 +1559,6 @@ body {
 #section-import .data-grid td:nth-child(9) {
     width: 86px;
     max-width: 86px;
-}
-#section-import .data-grid th:nth-child(10),
-#section-import .data-grid td:nth-child(10) {
-    width: 90px;
-    max-width: 90px;
 }
 @media (max-width: 820px) {
     .data-grid {

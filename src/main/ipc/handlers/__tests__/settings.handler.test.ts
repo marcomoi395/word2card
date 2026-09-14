@@ -12,7 +12,6 @@ vi.mock('../../../state/runtime', () => {
     const getRendererSnapshot = vi.fn(() => ({
         configured: {
             openaiApiKey: true,
-            azureApiKey: false,
             pexelsToken: true,
             notionToken: true,
             notionDatabaseId: true
@@ -49,7 +48,6 @@ describe('registerSettingsHandlers', () => {
     it('saves trimmed settings atomically', async () => {
         vi.mocked(parseSaveSettingsPayload).mockReturnValue({
             openaiApiKey: '  openai-key  ',
-            azureApiKey: '  ',
             pexelsToken: 'pexels-token'
         })
         registerSettingsHandlers()
@@ -58,7 +56,6 @@ describe('registerSettingsHandlers', () => {
 
         expect(getRuntimeState().updateRuntimeSettings).toHaveBeenCalledWith({
             openaiApiKey: 'openai-key',
-            azureApiKey: '',
             pexelsToken: 'pexels-token'
         })
         expect(result).toEqual({ status: 'success', message: 'Settings saved successfully' })
@@ -67,7 +64,6 @@ describe('registerSettingsHandlers', () => {
     it('returns failure without publishing state when atomic save fails', async () => {
         vi.mocked(parseSaveSettingsPayload).mockReturnValue({
             openaiApiKey: 'openai-key',
-            azureApiKey: 'azure-key',
             pexelsToken: 'pexels-token'
         })
         vi.mocked(getRuntimeState().updateRuntimeSettings).mockReturnValue(false)
@@ -88,7 +84,6 @@ describe('registerSettingsHandlers', () => {
             data: {
                 configured: {
                     openaiApiKey: true,
-                    azureApiKey: false,
                     pexelsToken: true,
                     notionToken: true,
                     notionDatabaseId: true

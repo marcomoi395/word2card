@@ -17,7 +17,6 @@ const record = (patch: Partial<VocabularyRecord> = {}): VocabularyRecord => ({
     meaning: null,
     imageUrl: null,
     imageProvider: null,
-    audio: null,
     normalizedWord: 'hello',
     generationStatus: 'ready',
     generationError: null,
@@ -97,7 +96,6 @@ describe('AnkiService', () => {
             meaning: null,
             imageUrl: null,
             imageProvider: null,
-            audio: null,
             generationStatus: 'ready' as const,
             generationError: null
         }

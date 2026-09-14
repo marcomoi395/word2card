@@ -17,7 +17,6 @@ test.describe('Settings Management', () => {
         await window.click('#tab-settings-btn')
         await expect(window.locator('#openai-key-global')).toBeVisible()
         await expect(window.locator('#pexels-token-global')).toBeVisible()
-        await expect(window.locator('#azure-key-global')).toBeHidden()
         await expect(window.locator('#btn-save-settings')).toBeVisible()
     })
 
@@ -59,7 +58,6 @@ test.describe('Settings Management', () => {
         await expect(window.locator('#openai-key-status')).toContainText(
             /Configured|Not configured/
         )
-        await expect(window.locator('#azure-key-status')).toContainText(/Configured|Not configured/)
         await expect(window.locator('#pexels-token-status')).toContainText(
             /Configured|Not configured/
         )

@@ -264,7 +264,6 @@
 
                                                 <th>IPA</th>
                                                 <th>Image</th>
-                                                <th>Audio word</th>
                                                 <th>Status</th>
                                             </tr>
                                         </thead>
@@ -302,16 +301,6 @@
                                                             src="./assets/background-image/image 1.png"
                                                             alt="Preview for serendipity"
                                                     /></a>
-                                                </td>
-                                                <td class="asset-cell">
-                                                    <button
-                                                        class="audio-preview"
-                                                        type="button"
-                                                        data-audio-url=""
-                                                        data-word="serendipity"
-                                                    >
-                                                        Play
-                                                    </button>
                                                 </td>
                                                 <td>
                                                     <span class="status-pill pending"
@@ -353,16 +342,6 @@
                                                             alt="Preview for resilient"
                                                     /></a>
                                                 </td>
-                                                <td class="asset-cell">
-                                                    <button
-                                                        class="audio-preview"
-                                                        type="button"
-                                                        data-audio-url=""
-                                                        data-word="resilient"
-                                                    >
-                                                        Play
-                                                    </button>
-                                                </td>
                                                 <td>
                                                     <span class="status-pill pending"
                                                         >Needs data</span
@@ -403,16 +382,6 @@
                                                             alt="Preview for meticulous"
                                                     /></a>
                                                 </td>
-                                                <td class="asset-cell">
-                                                    <button
-                                                        class="audio-preview"
-                                                        type="button"
-                                                        data-audio-url=""
-                                                        data-word="meticulous"
-                                                    >
-                                                        Play
-                                                    </button>
-                                                </td>
                                                 <td>
                                                     <span class="status-pill pending"
                                                         >Needs data</span
@@ -452,16 +421,6 @@
                                                             src="./assets/background-image/image 1.png"
                                                             alt="Preview for flourish"
                                                     /></a>
-                                                </td>
-                                                <td class="asset-cell">
-                                                    <button
-                                                        class="audio-preview"
-                                                        type="button"
-                                                        data-audio-url=""
-                                                        data-word="flourish"
-                                                    >
-                                                        Play
-                                                    </button>
                                                 </td>
                                                 <td>
                                                     <span class="status-pill pending"
@@ -535,7 +494,6 @@
                                             <th>Vietnamese</th>
                                             <th>IPA</th>
                                             <th>Image</th>
-                                            <th>Audio word</th>
                                             <th>Status</th>
                                         </tr>
                                     </thead>
@@ -564,16 +522,6 @@
                                                         src="./assets/background-image/image 1.png"
                                                         alt="Preview for serendipity"
                                                 /></a>
-                                            </td>
-                                            <td class="asset-cell">
-                                                <button
-                                                    class="audio-preview"
-                                                    type="button"
-                                                    data-audio-url=""
-                                                    data-word="serendipity"
-                                                >
-                                                    Play
-                                                </button>
                                             </td>
                                             <td>
                                                 <span class="status-pill pending">Needs data</span>
@@ -604,16 +552,6 @@
                                                         alt="Preview for resilient"
                                                 /></a>
                                             </td>
-                                            <td class="asset-cell">
-                                                <button
-                                                    class="audio-preview"
-                                                    type="button"
-                                                    data-audio-url=""
-                                                    data-word="resilient"
-                                                >
-                                                    Play
-                                                </button>
-                                            </td>
                                             <td>
                                                 <span class="status-pill pending">Needs data</span>
                                             </td>
@@ -643,16 +581,6 @@
                                                         alt="Preview for meticulous"
                                                 /></a>
                                             </td>
-                                            <td class="asset-cell">
-                                                <button
-                                                    class="audio-preview"
-                                                    type="button"
-                                                    data-audio-url=""
-                                                    data-word="meticulous"
-                                                >
-                                                    Play
-                                                </button>
-                                            </td>
                                             <td>
                                                 <span class="status-pill pending">Needs data</span>
                                             </td>
@@ -681,16 +609,6 @@
                                                         src="./assets/background-image/image 1.png"
                                                         alt="Preview for flourish"
                                                 /></a>
-                                            </td>
-                                            <td class="asset-cell">
-                                                <button
-                                                    class="audio-preview"
-                                                    type="button"
-                                                    data-audio-url=""
-                                                    data-word="flourish"
-                                                >
-                                                    Play
-                                                </button>
                                             </td>
                                             <td>
                                                 <span class="status-pill pending">Needs data</span>
@@ -737,6 +655,14 @@
                                     <h2>Connection keys</h2>
                                 </div>
                             </div>
+                            <div class="settings-note">
+                                <strong>Pronunciation uses Anki TTS</strong>
+                                <p>
+                                    New cards speak the word with the voice installed on the review
+                                    device. No speech API key or audio file is generated. Linux
+                                    users need a compatible Anki TTS add-on or voice provider.
+                                </p>
+                            </div>
                             <label class="field-label" for="openai-base-url">OpenAI Base URL</label
                             ><input
                                 class="text-field"
@@ -761,17 +687,6 @@
                                 name="openaiModel"
                                 placeholder="gpt-4o-mini"
                             />
-                            <div class="legacy-setting" aria-hidden="true">
-                                <label class="field-label" for="azure-key-global"
-                                    >Azure Speech key</label
-                                ><input
-                                    class="text-field"
-                                    type="password"
-                                    id="azure-key-global"
-                                    name="azureKeyGlobal"
-                                    placeholder="Azure Speech Key"
-                                /><span id="azure-key-status" class="settings-status"></span>
-                            </div>
                             <label class="field-label" for="pexels-token-global"
                                 >Pexels API key</label
                             ><input

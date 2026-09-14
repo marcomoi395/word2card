@@ -18,7 +18,6 @@ export interface VocabularyInput {
     meaning?: string | null
     imageUrl?: string | null
     imageProvider?: string | null
-    audio?: string | null
 }
 
 export interface VocabularyUpdate {
@@ -33,7 +32,6 @@ export interface VocabularyUpdate {
     meaning?: string | null
     imageUrl?: string | null
     imageProvider?: string | null
-    audio?: string | null
     generationStatus?: GenerationStatus
     generationError?: string | null
     ankiStatus?: AnkiStatus
@@ -54,7 +52,6 @@ export interface VocabularyRecord {
     meaning: string | null
     imageUrl: string | null
     imageProvider: string | null
-    audio: string | null
     generationStatus: GenerationStatus
     generationError: string | null
     ankiStatus: AnkiStatus
@@ -140,7 +137,7 @@ CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, appli
 CREATE TABLE IF NOT EXISTS vocabulary (
  id TEXT PRIMARY KEY, word TEXT NOT NULL, normalized_word TEXT NOT NULL UNIQUE,
  source TEXT NOT NULL DEFAULT 'file', source_reference TEXT, part_of_speech TEXT, cloze TEXT,
- example TEXT, vietnamese TEXT, ipa TEXT, meaning TEXT, image_url TEXT, image_provider TEXT, audio TEXT,
+ example TEXT, vietnamese TEXT, ipa TEXT, meaning TEXT, image_url TEXT, image_provider TEXT,
  generation_status TEXT NOT NULL DEFAULT 'pending', generation_error TEXT,
  anki_status TEXT NOT NULL DEFAULT 'not_submitted', anki_error TEXT,
  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -163,7 +160,6 @@ function toRecord(row: Record<string, unknown>): VocabularyRecord {
         meaning: row.meaning as string | null,
         imageUrl: row.image_url as string | null,
         imageProvider: row.image_provider as string | null,
-        audio: row.audio as string | null,
         generationStatus: row.generation_status as GenerationStatus,
         generationError: row.generation_error as string | null,
         ankiStatus: row.anki_status as AnkiStatus,
@@ -202,7 +198,7 @@ export function createDatabase(database: Database.Database): DatabaseRepositorie
                 const normalizedWord = word ? word.toLocaleLowerCase() : `__draft_${id}`
                 const result = database
                     .prepare(
-                        `INSERT OR IGNORE INTO vocabulary (id, word, normalized_word, source, source_reference, part_of_speech, cloze, example, vietnamese, ipa, meaning, image_url, image_provider, audio) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+                        `INSERT OR IGNORE INTO vocabulary (id, word, normalized_word, source, source_reference, part_of_speech, cloze, example, vietnamese, ipa, meaning, image_url, image_provider) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
                     )
                     .run(
                         id,
@@ -217,8 +213,7 @@ export function createDatabase(database: Database.Database): DatabaseRepositorie
                         input.ipa ?? null,
                         input.meaning ?? null,
                         input.imageUrl ?? null,
-                        input.imageProvider ?? null,
-                        input.audio ?? null
+                        input.imageProvider ?? null
                     )
                 return result.changes === 0
                     ? { inserted: false, record: null }
@@ -247,7 +242,6 @@ export function createDatabase(database: Database.Database): DatabaseRepositorie
                     meaning: 'meaning',
                     imageUrl: 'image_url',
                     imageProvider: 'image_provider',
-                    audio: 'audio',
                     generationStatus: 'generation_status',
                     generationError: 'generation_error',
                     ankiStatus: 'anki_status',

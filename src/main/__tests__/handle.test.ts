@@ -18,7 +18,7 @@ describe('createFlashcards', () => {
         vi.clearAllMocks()
     })
 
-    it('creates flashcards from OpenAI data without audio', async () => {
+    it('creates flashcards with the Anki TTS note type', async () => {
         vi.mocked(OpenAIService.generateFlashcardData).mockResolvedValue([
             {
                 word: 'test',
@@ -29,39 +29,16 @@ describe('createFlashcards', () => {
         ])
         vi.mocked(getRuntimeSetting).mockReturnValue(undefined)
 
-        const result = await createFlashcards(['test'], '/audio', 'TestDeck', false)
+        const result = await createFlashcards(['test'], 'TestDeck')
 
         expect(result).toHaveLength(1)
         expect(result[0].deckName).toBe('TestDeck')
-        expect(result[0].modelName).toBe('AnkiVNModel_Flashcard')
+        expect(result[0].modelName).toBe('AnkiVNModel_Flashcard_TTS')
         expect(result[0].fields.word).toBe('test')
         expect(result[0].fields.vietnamese).toBe('thử nghiệm')
         expect(result[0].fields.id).toBeTruthy()
         expect(result[0].fields.cloze).toBe('t__t')
-        expect(result[0].audio).toEqual([])
         expect(result[0].options.allowDuplicate).toBe(false)
-    })
-
-    it('includes audio paths when audio is enabled', async () => {
-        vi.mocked(OpenAIService.generateFlashcardData).mockResolvedValue([
-            {
-                word: 'hello',
-                pos: 'noun',
-                vietnamese: 'xin chào',
-                ipa: '/heˈloʊ/'
-            }
-        ])
-        vi.mocked(State.getToken).mockReturnValue(undefined)
-
-        const result = await createFlashcards(['hello'], '/mock/audio', 'TestDeck', true)
-
-        expect(result).toHaveLength(1)
-        expect(result[0].audio).toHaveLength(1)
-        expect(result[0].audio?.[0]).toEqual({
-            path: '/mock/audio/hello.mp3',
-            filename: 'hello.mp3',
-            fields: ['audio_word']
-        })
     })
 
     it('fetches images from Pexels when token is available', async () => {
@@ -77,7 +54,7 @@ describe('createFlashcards', () => {
         vi.mocked(State.getToken).mockReturnValue('pexels-token-123')
         vi.mocked(searchImagePexels).mockResolvedValue('https://example.com/cat.jpg')
 
-        const result = await createFlashcards(['cat'], '/audio', 'TestDeck', false)
+        const result = await createFlashcards(['cat'], 'TestDeck')
         expect(searchImagePexels).toHaveBeenCalledWith('pexels-token-123', [
             'sleeping cat indoors',
             'cat noun',
@@ -97,7 +74,7 @@ describe('createFlashcards', () => {
         ])
         vi.mocked(State.getToken).mockReturnValue('pexels-token-123')
         vi.mocked(searchImagePexels).mockResolvedValue(null)
-        const result = await createFlashcards(['test'], '/audio', 'TestDeck', false)
+        const result = await createFlashcards(['test'], 'TestDeck')
 
         expect(result[0].fields.image).toBe('')
     })
@@ -113,13 +90,7 @@ describe('createFlashcards', () => {
         vi.mocked(notionSync.createNotionTargetQueueMap).mockReturnValue(mockQueue)
         vi.mocked(notionSync.shiftNotionTarget).mockReturnValueOnce(notionTargets[0])
 
-        const result = await createFlashcards(
-            ['word1'],
-            '/audio',
-            'DefaultDeck',
-            false,
-            notionTargets
-        )
+        const result = await createFlashcards(['word1'], 'DefaultDeck', notionTargets)
 
         expect(NotionService.update).not.toHaveBeenCalled()
         expect(result[0].deckName).toBe('NotionDeck')
@@ -140,7 +111,7 @@ describe('createFlashcards', () => {
         vi.mocked(notionSync.createNotionTargetQueueMap).mockReturnValue(mockQueue)
         vi.mocked(notionSync.shiftNotionTarget).mockReturnValue(undefined)
 
-        const result = await createFlashcards(['word1'], '/audio', 'DefaultDeck', false, [
+        const result = await createFlashcards(['word1'], 'DefaultDeck', [
             { pageId: 'page-1', word: 'other', deckName: 'NotionDeck' }
         ])
 
@@ -179,13 +150,7 @@ describe('createFlashcards', () => {
             .mockReturnValueOnce(notionTargets[0])
             .mockReturnValueOnce(notionTargets[1])
 
-        const result = await createFlashcards(
-            ['word1', 'word2'],
-            '/audio',
-            'DefaultDeck',
-            false,
-            notionTargets
-        )
+        const result = await createFlashcards(['word1', 'word2'], 'DefaultDeck', notionTargets)
 
         expect(result).toHaveLength(2)
         expect(result[0].deckName).toBe('Deck1')
@@ -203,7 +168,7 @@ describe('createFlashcards', () => {
         ])
         vi.mocked(State.getToken).mockReturnValue(undefined)
 
-        const result = await createFlashcards(['a'], '/audio', 'TestDeck', false)
+        const result = await createFlashcards(['a'], 'TestDeck')
 
         expect(result[0].fields.cloze).toBe('_')
     })
@@ -219,7 +184,7 @@ describe('createFlashcards', () => {
         ])
         vi.mocked(State.getToken).mockReturnValue(undefined)
 
-        const result = await createFlashcards(['go'], '/audio', 'TestDeck', false)
+        const result = await createFlashcards(['go'], 'TestDeck')
 
         expect(result[0].fields.cloze).toBe('__')
     })
@@ -235,7 +200,7 @@ describe('createFlashcards', () => {
         ])
         vi.mocked(State.getToken).mockReturnValue(undefined)
 
-        const result = await createFlashcards(['wonderful'], '/audio', 'TestDeck', false)
+        const result = await createFlashcards(['wonderful'], 'TestDeck')
 
         expect(result[0].fields.cloze).toBe('w_______l')
     })
@@ -244,26 +209,9 @@ describe('createFlashcards', () => {
         vi.mocked(OpenAIService.generateFlashcardData).mockResolvedValue([])
         vi.mocked(State.getToken).mockReturnValue(undefined)
 
-        const result = await createFlashcards([], '/audio', 'TestDeck', false)
+        const result = await createFlashcards([], 'TestDeck')
 
         expect(result).toEqual([])
         expect(OpenAIService.generateFlashcardData).toHaveBeenCalledWith([])
-    })
-
-    it('sanitizes filename for audio path', async () => {
-        vi.mocked(OpenAIService.generateFlashcardData).mockResolvedValue([
-            {
-                word: 'test/word',
-                pos: 'noun',
-                vietnamese: 'từ thử',
-                ipa: '/test/'
-            }
-        ])
-        vi.mocked(State.getToken).mockReturnValue(undefined)
-
-        const result = await createFlashcards(['test/word'], '/audio', 'TestDeck', true)
-
-        expect(result[0].audio?.[0].path).toBe('/audio/test-word.mp3')
-        expect(result[0].audio?.[0].filename).toBe('test-word.mp3')
     })
 })
