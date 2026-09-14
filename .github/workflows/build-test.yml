@@ -1,0 +1,106 @@
+name: Build Test Installers
+
+on:
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: build-test-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    build-linux:
+        name: Build Linux test installers
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
+              with:
+                  persist-credentials: false
+            - name: Setup Bun
+              uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+              with:
+                  bun-version-file: package.json
+            - name: Install dependencies
+              run: bun install --frozen-lockfile
+            - name: Build application
+              run: bun run build
+            - name: Build Linux packages
+              run: bun x electron-builder --linux AppImage deb --publish never
+            - name: Validate Linux artifacts
+              shell: bash
+              run: |
+                  VERSION=$(node -p "require('./package.json').version")
+                  test -f "dist/word2card-${VERSION}.AppImage"
+                  test -f "dist/word2card_${VERSION}_amd64.deb"
+            - name: Packaged Linux smoke test
+              run: |
+                  chmod +x dist/*.AppImage
+                  xvfb-run -a timeout 20s dist/*.AppImage --appimage-extract-and-run --no-sandbox >/tmp/word2card.log 2>&1 &
+                  pid=$!
+                  sleep 8
+                  if ! kill -0 "$pid" 2>/dev/null; then
+                    if wait "$pid"; then status=0; else status=$?; fi
+                    cat /tmp/word2card.log
+                    echo "Packaged application exited before smoke-test window: $status"
+                    exit 1
+                  fi
+                  kill "$pid" 2>/dev/null || true
+                  wait "$pid" || true
+            - name: Generate Linux checksums
+              working-directory: dist
+              run: sha256sum *.AppImage *.deb > SHA256SUMS-linux.txt
+            - name: Upload Linux test artifacts
+              uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
+              with:
+                  name: test-linux-packages
+                  path: |
+                      dist/*.AppImage
+                      dist/*.deb
+                      dist/SHA256SUMS-linux.txt
+                  if-no-files-found: error
+                  retention-days: 7
+
+    build-windows:
+        name: Build Windows test installer
+        runs-on: windows-latest
+        timeout-minutes: 30
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
+              with:
+                  persist-credentials: false
+            - name: Setup Bun
+              uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+              with:
+                  bun-version-file: package.json
+            - name: Install dependencies
+              run: bun install --frozen-lockfile
+            - name: Build application
+              run: bun run build
+            - name: Build Windows installer
+              env:
+                  CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+              run: bun x electron-builder --windows nsis --publish never
+            - name: Validate Windows artifacts
+              shell: bash
+              run: |
+                  VERSION=$(bun -e "console.log(require('./package.json').version)")
+                  test -f "dist/word2card-${VERSION}-setup.exe"
+            - name: Generate Windows checksums
+              shell: bash
+              working-directory: dist
+              run: sha256sum *.exe *.blockmap > SHA256SUMS-windows.txt
+            - name: Upload Windows test artifacts
+              uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
+              with:
+                  name: test-windows-installer
+                  path: |
+                      dist/*.exe
+                      dist/*.blockmap
+                      dist/SHA256SUMS-windows.txt
+                  if-no-files-found: error
+                  retention-days: 7
