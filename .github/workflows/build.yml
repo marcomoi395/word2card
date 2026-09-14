@@ -57,8 +57,10 @@ jobs:
                   if (!semver.test(version)) throw new Error(`Invalid package.json version: ${version}`);
                   if (branch !== `release/v${version}`) throw new Error(`Branch ${branch} does not match package.json version ${version}`);
                   console.log(`Release version: ${version}`);
-                  await Bun.write(process.env.GITHUB_OUTPUT!, `version=${version}\ntag=v${version}\n`);
                   BUN
+                  VERSION=$(node -p "require('./package.json').version")
+                  echo "version=$version" >> "$GITHUB_OUTPUT"
+                  echo "tag=v$version" >> "$GITHUB_OUTPUT"
 
     build_linux:
         name: Build Linux assets
