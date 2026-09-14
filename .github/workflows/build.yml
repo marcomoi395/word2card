@@ -1,4 +1,4 @@
-name: Build and Release
+name: Release
 
 on:
     pull_request:
@@ -6,69 +6,74 @@ on:
             - closed
         branches:
             - main
-    push:
-        tags:
-            - 'v*'
+
 permissions:
     contents: read
 
+concurrency:
+    group: release-${{ github.event.pull_request.merge_commit_sha || github.run_id }}
+    cancel-in-progress: false
+
 jobs:
-    release-quality:
+    release_quality:
         name: Release quality gate
         runs-on: ubuntu-latest
         timeout-minutes: 30
-        if: (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && github.base_ref == 'main') || startsWith(github.ref, 'refs/tags/v')
+        if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/')
+        outputs:
+            release_tag: ${{ steps.release_version.outputs.tag }}
         steps:
-            - name: Checkout code
+            - name: Checkout merge commit
               uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
               with:
+                  ref: ${{ github.event.pull_request.merge_commit_sha }}
+                  fetch-depth: 0
                   persist-credentials: false
-
             - name: Setup Bun
               uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
               with:
                   bun-version-file: package.json
-
             - name: Install dependencies
               run: bun install --frozen-lockfile
-
             - name: Run quality checks
               run: |
+                  bun x prettier --check .
                   bun run lint
                   bun run typecheck
                   bun run test
-                  bun run build
                   bun audit --severity high
-
             - name: Validate release version
-              if: startsWith(github.ref, 'refs/tags/v')
+              id: release_version
               env:
-                  RELEASE_TAG: ${{ github.ref_name }}
+                  RELEASE_BRANCH: ${{ github.event.pull_request.head.ref }}
               run: |
                   bun <<'BUN'
                   import { readFileSync } from 'node:fs';
-                  const tag = process.env.RELEASE_TAG;
-                  const semver = /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/;
-                  if (!semver.test(tag)) throw new Error(`Invalid release tag: ${tag}`);
-                  const expected = tag.slice(1);
-                  const actual = JSON.parse(readFileSync('package.json', 'utf8')).version;
-                  if (actual !== expected) throw new Error(`Tag ${tag} does not match package.json version ${actual}`);
+
+                  const version = JSON.parse(readFileSync('package.json', 'utf8')).version;
+                  const branch = process.env.RELEASE_BRANCH!;
+                  const semver = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
+
+                  if (!semver.test(version)) throw new Error(`Invalid package.json version: ${version}`);
+                  if (branch !== `release/v${version}`) throw new Error(`Branch ${branch} does not match package.json version ${version}`);
+                  console.log(`Release version: ${version}`);
+                  await Bun.write(process.env.GITHUB_OUTPUT!, `version=${version}\ntag=v${version}\n`);
                   BUN
 
-    build-linux:
+    build_linux:
         name: Build Linux assets
         runs-on: ubuntu-latest
         timeout-minutes: 30
-        needs: release-quality
-        if: (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && github.base_ref == 'main') || startsWith(github.ref, 'refs/tags/v')
+        needs: release_quality
         permissions:
             contents: read
             id-token: write
             attestations: write
         steps:
-            - name: Checkout code
+            - name: Checkout merge commit
               uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
               with:
+                  ref: ${{ github.event.pull_request.merge_commit_sha }}
                   persist-credentials: false
             - name: Setup Bun
               uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
@@ -112,7 +117,7 @@ jobs:
                       dist/*.deb
                       dist/SHA256SUMS-linux.txt
                   if-no-files-found: error
-                  retention-days: 1
+                  retention-days: 7
             - name: Attest Linux artifacts
               uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2
               with:
@@ -120,20 +125,20 @@ jobs:
                       dist/*.AppImage
                       dist/*.deb
 
-    build-windows:
+    build_windows:
         name: Build Windows assets
         runs-on: windows-latest
         timeout-minutes: 30
-        needs: release-quality
-        if: (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && github.base_ref == 'main') || startsWith(github.ref, 'refs/tags/v')
+        needs: release_quality
         permissions:
             contents: read
             id-token: write
             attestations: write
         steps:
-            - name: Checkout code
+            - name: Checkout merge commit
               uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
               with:
+                  ref: ${{ github.event.pull_request.merge_commit_sha }}
                   persist-credentials: false
             - name: Setup Bun
               uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
@@ -165,7 +170,7 @@ jobs:
                       dist/*.blockmap
                       dist/SHA256SUMS-windows.txt
                   if-no-files-found: error
-                  retention-days: 1
+                  retention-days: 7
             - name: Attest Windows artifacts
               uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2
               with:
@@ -177,12 +182,10 @@ jobs:
         name: Create GitHub release
         runs-on: ubuntu-latest
         timeout-minutes: 10
-        needs: [release-quality, build-linux, build-windows]
-        if: startsWith(github.ref, 'refs/tags/v')
+        needs: [release_quality, build_linux, build_windows]
+        if: needs.release_quality.result == 'success'
         permissions:
             contents: write
-            id-token: write
-            attestations: write
         steps:
             - name: Download Linux artifacts
               uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
@@ -197,7 +200,7 @@ jobs:
             - name: Validate release artifacts
               shell: bash
               env:
-                  RELEASE_TAG: ${{ github.ref_name }}
+                  RELEASE_TAG: ${{ needs.release_quality.outputs.release_tag }}
               run: |
                   VERSION="${RELEASE_TAG#v}"
                   test -f "dist/word2card-${VERSION}.AppImage"
@@ -209,7 +212,7 @@ jobs:
             - name: Generate release body
               shell: bash
               env:
-                  RELEASE_TAG: ${{ github.ref_name }}
+                  RELEASE_TAG: ${{ needs.release_quality.outputs.release_tag }}
                   REPOSITORY: ${{ github.repository }}
               run: |
                   cat > /tmp/release-body.md <<EOF
@@ -232,11 +235,12 @@ jobs:
                   EOF
             - name: Create draft release and upload assets
               uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
-              with:
-                  tag_name: ${{ github.ref_name }}
-                  draft: true
-                  prerelease: ${{ contains(github.ref, 'RC') || contains(github.ref, 'beta') || contains(github.ref, 'alpha') }}
-                  body_path: /tmp/release-body.md
-                  files: dist/*
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  tag_name: ${{ needs.release_quality.outputs.release_tag }}
+                  target_commitish: ${{ github.event.pull_request.merge_commit_sha }}
+                  draft: true
+                  prerelease: ${{ contains(needs.release_quality.outputs.release_tag, 'RC') || contains(needs.release_quality.outputs.release_tag, 'beta') || contains(needs.release_quality.outputs.release_tag, 'alpha') }}
+                  body_path: /tmp/release-body.md
+                  files: dist/*

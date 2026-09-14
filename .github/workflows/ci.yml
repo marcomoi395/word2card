@@ -5,7 +5,7 @@ on:
         branches: [main, develop]
         paths-ignore: ['**/*.md', 'docs/**']
     push:
-        branches: [main, develop]
+        branches: [develop]
         paths-ignore: ['**/*.md', 'docs/**']
     workflow_dispatch:
 
