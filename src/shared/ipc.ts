@@ -33,6 +33,7 @@ export interface VocabularyRecord {
     normalizedWord: string
     source: SourceType
     sourceReference: string | null
+    deckName: string
     partOfSpeech: string | null
     cloze: string | null
     example: string | null
@@ -115,6 +116,7 @@ export interface ImportDraftRecord {
     word: string
     source: SourceType
     sourceReference: string | null
+    deckName: string
     partOfSpeech: string | null
     cloze: string | null
     example: string | null

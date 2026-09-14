@@ -38,7 +38,9 @@ test('reset state returns to editable Import controls', async ({ sharedApp }) =>
 
     await expect(window.locator('#section-import')).toHaveClass(/active-section/)
     await expect(window.locator('#source-file')).toHaveValue('')
-    await expect(window.locator('#section-import input[name="deck"]')).toHaveValue('')
+    await expect(window.locator('#section-import input[name="deck"]')).toHaveValue(
+        /^Vocabulary::Imported::\d{4}-\d{2}-\d{2}$/
+    )
 })
 
 const lifecycleTestCase = lifecycleTest

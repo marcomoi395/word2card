@@ -12,7 +12,7 @@ const missingFields = (record: VocabularyRecord): string[] =>
         return typeof value !== 'string' || value.trim() === ''
     }).map(String)
 const toNote = (record: VocabularyRecord): QuizNote => ({
-    deckName: 'Default',
+    deckName: record.deckName,
     modelName: 'AnkiVNModel_Flashcard_TTS',
     fields: {
         id: record.id,

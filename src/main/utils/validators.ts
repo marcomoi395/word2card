@@ -142,6 +142,8 @@ export const parseImportDraftRecord = (value: unknown): ImportDraftRecord | null
         !value.word.trim() ||
         (value.source !== 'file' && value.source !== 'notion') ||
         !isNullableString(value.sourceReference) ||
+        typeof value.deckName !== 'string' ||
+        !value.deckName.trim() ||
         !isNullableString(value.partOfSpeech) ||
         !isNullableString(value.cloze) ||
         !isNullableString(value.example) ||

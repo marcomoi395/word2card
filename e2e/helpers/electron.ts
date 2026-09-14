@@ -2,6 +2,7 @@ import { _electron as electron, ElectronApplication, Page } from '@playwright/te
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
+import { defaultImportedDeckName } from '../../src/shared/deck'
 
 const TEST_USER_DATA_PREFIX = 'word2card-e2e-'
 export interface ElectronAppContext {
@@ -62,7 +63,7 @@ export async function resetAppState(window: Page): Promise<void> {
     if ((await sourceFileInput.count()) > 0) await sourceFileInput.fill('')
 
     const deckInput = window.locator('#section-import input[name="deck"]')
-    if ((await deckInput.count()) > 0) await deckInput.fill('')
+    if ((await deckInput.count()) > 0) await deckInput.fill(defaultImportedDeckName())
 
     await window.click('#tab-settings-btn')
     await window.waitForSelector('#section-settings', { state: 'visible' })

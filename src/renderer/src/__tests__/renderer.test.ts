@@ -575,6 +575,30 @@ describe('Renderer UI', () => {
     })
 
     describe('Notion Sync Flow', () => {
+        it('syncs from the Import screen into the selected destination deck', async () => {
+            const deckInput = document.getElementById('notion-source-deck') as HTMLInputElement
+            const button = document.getElementById('btn-action-sync-source') as HTMLButtonElement
+            deckInput.value = 'NotionDeck'
+            vi.mocked(window.api.sendImport).mockResolvedValue({
+                status: 'success',
+                data: { inserted: 1, skipped: 0, failed: 0, records: [] }
+            })
+
+            button.click()
+
+            const { promise, resolve: res } = Promise.withResolvers<void>()
+            setTimeout(res, 0)
+            await promise
+
+            expect(window.api.sendImport).toHaveBeenCalledWith({
+                type: 'NOTION_SYNC',
+                payload: {
+                    deck: 'NotionDeck',
+                    options: { quiz: false, flashcard: true }
+                }
+            })
+        })
+
         it('calls sendImport with NOTION_SYNC when form submitted', async () => {
             const form = document.getElementById('form-notion') as HTMLFormElement
             const deckInput = form.elements.namedItem('deck') as HTMLInputElement
@@ -616,7 +640,7 @@ describe('Renderer UI', () => {
             expect(window.api.sendImport).toHaveBeenCalledWith({
                 type: 'NOTION_SYNC',
                 payload: {
-                    deck: '',
+                    deck: expect.stringMatching(/^Vocabulary::Imported::\d{4}-\d{2}-\d{2}$/),
                     options: {
                         quiz: false,
                         flashcard: true

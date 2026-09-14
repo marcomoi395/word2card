@@ -2,47 +2,22 @@ import { describe, it, expect } from 'vitest'
 import {
     createNotionTargetQueueMap,
     filterNotionTargetsByWords,
-    resolveNotionDeckName,
     shiftNotionTarget,
     type NotionSyncTarget
 } from '../notion-sync'
+import { defaultImportedDeckName, resolveImportedDeckName } from '../../../shared/deck'
 
 describe('notion-sync helpers', () => {
-    describe('resolveNotionDeckName', () => {
-        it('uses datasource name when input is blank', () => {
-            const deckName = resolveNotionDeckName(
-                '',
-                'Cambridge IELTS',
-                new Date('2026-05-06T09:00:00.000Z')
-            )
-            expect(deckName).toBe('Vocabulary::Imported::Cambridge IELTS::2026-05-06')
+    describe('import deck names', () => {
+        const date = new Date(2026, 4, 6)
+
+        it('uses the date-based imported deck when input is blank', () => {
+            expect(defaultImportedDeckName(date)).toBe('Vocabulary::Imported::2026-05-06')
+            expect(resolveImportedDeckName('   ', date)).toBe('Vocabulary::Imported::2026-05-06')
         })
 
-        it('prefixes custom input and appends date with separator', () => {
-            const deckName = resolveNotionDeckName(
-                'IELTS',
-                'Ignored',
-                new Date('2026-05-06T09:00:00.000Z')
-            )
-            expect(deckName).toBe('Vocabulary::Imported::IELTS::2026-05-06')
-        })
-
-        it('trims whitespace-only deckInput and uses datasource name', () => {
-            const deckName = resolveNotionDeckName(
-                '   ',
-                'Cambridge IELTS',
-                new Date('2026-05-06T09:00:00.000Z')
-            )
-            expect(deckName).toBe('Vocabulary::Imported::Cambridge IELTS::2026-05-06')
-        })
-
-        it('trims whitespace from dataSourceName before concatenation', () => {
-            const deckName = resolveNotionDeckName(
-                '',
-                '  Cambridge IELTS  ',
-                new Date('2026-05-06T09:00:00.000Z')
-            )
-            expect(deckName).toBe('Vocabulary::Imported::Cambridge IELTS::2026-05-06')
+        it('uses a custom destination deck exactly as entered', () => {
+            expect(resolveImportedDeckName('  IELTS  ', date)).toBe('IELTS')
         })
     })
 

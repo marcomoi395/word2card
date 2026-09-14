@@ -1,4 +1,5 @@
 import { createLogger } from '../../shared/logger'
+import { defaultImportedDeckName } from '../../shared/deck'
 import type {
     AppResponse,
     ImportDraftRecord,
@@ -162,6 +163,7 @@ function draftRecord(word = ''): ImportDraftRecord {
         word,
         source: 'file',
         sourceReference: null,
+        deckName: defaultImportedDeckName(),
         partOfSpeech: null,
         cloze: null,
         example: null,
@@ -655,6 +657,11 @@ function initImportForm(): void {
         /* v8 ignore stop */
     }
 
+    const deckInput = getInputByName(form, 'deck')
+    if (deckInput && !deckInput.value.trim()) {
+        deckInput.value = defaultImportedDeckName()
+    }
+
     form.addEventListener('submit', async (event) => {
         event.preventDefault()
 
@@ -708,26 +715,18 @@ function initImportForm(): void {
 }
 
 function initNotionForm(): void {
-    /* v8 ignore start */
     const form = document.getElementById('form-notion') as HTMLFormElement | null
-    if (!form) {
-        return
-        /* v8 ignore stop */
-    }
+    const sourceDeckInput = document.getElementById('notion-source-deck') as HTMLInputElement | null
+    const sourceButton = document.getElementById(
+        'btn-action-sync-source'
+    ) as HTMLButtonElement | null
 
-    form.addEventListener('submit', async (event) => {
-        event.preventDefault()
-
-        const submitButton = form.querySelector('button[type="submit"]') as HTMLButtonElement | null
-        if (submitButton?.disabled) {
+    const syncNotion = async (button: HTMLButtonElement | null, deck: string): Promise<void> => {
+        if (button?.disabled) {
             return
         }
 
-        const deckInput = getInputByName(form, 'deck')
-
-        const deck = deckInput?.value.trim() || ''
-
-        setButtonLoading(submitButton, true, 'Syncing...')
+        setButtonLoading(button, true, 'Syncing...')
 
         try {
             const notionData: NotionSyncRequest = {
@@ -753,8 +752,25 @@ function initNotionForm(): void {
             })
             showToast('An error occurred during sync.')
         } finally {
-            setButtonLoading(submitButton, false)
+            setButtonLoading(button, false)
         }
+    }
+
+    const deckInput = form ? getInputByName(form, 'deck') : null
+    for (const input of [deckInput, sourceDeckInput]) {
+        if (input && !input.value.trim()) {
+            input.value = defaultImportedDeckName()
+        }
+    }
+
+    form?.addEventListener('submit', (event) => {
+        event.preventDefault()
+        const submitButton = form.querySelector('button[type="submit"]') as HTMLButtonElement | null
+        void syncNotion(submitButton, deckInput?.value.trim() || '')
+    })
+
+    sourceButton?.addEventListener('click', () => {
+        void syncNotion(sourceButton, sourceDeckInput?.value.trim() || '')
     })
 }
 

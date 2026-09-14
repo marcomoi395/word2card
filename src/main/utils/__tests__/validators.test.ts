@@ -351,6 +351,7 @@ describe('import draft validation', () => {
         word: 'hello',
         source: 'file',
         sourceReference: null,
+        deckName: 'Vocabulary::Imported::2026-09-14',
         partOfSpeech: null,
         cloze: null,
         example: null,
