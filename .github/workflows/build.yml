@@ -202,12 +202,24 @@ jobs:
               env:
                   RELEASE_TAG: ${{ needs.release_quality.outputs.release_tag }}
               run: |
+                  echo "Release tag: ${RELEASE_TAG:-<empty>}"
                   VERSION="${RELEASE_TAG#v}"
-                  test -f "dist/word2card-${VERSION}.AppImage"
-                  test -f "dist/word2card_${VERSION}_amd64.deb"
-                  test -f "dist/word2card-${VERSION}-setup.exe"
-                  test -f dist/SHA256SUMS-linux.txt
-                  test -f dist/SHA256SUMS-windows.txt
+                  echo "Expected version: ${VERSION:-<empty>}"
+                  echo "Downloaded files:"
+                  find dist -maxdepth 2 -type f -printf '%p\n' | sort
+
+                  for artifact in \
+                    "dist/word2card-${VERSION}.AppImage" \
+                    "dist/word2card_${VERSION}_amd64.deb" \
+                    "dist/word2card-${VERSION}-setup.exe" \
+                    dist/SHA256SUMS-linux.txt \
+                    dist/SHA256SUMS-windows.txt; do
+                    if [[ ! -f "$artifact" ]]; then
+                      echo "::error title=Missing release artifact::$artifact"
+                      exit 1
+                    fi
+                  done
+
                   (cd dist && sha256sum -c SHA256SUMS-linux.txt && sha256sum -c SHA256SUMS-windows.txt)
             - name: Generate release body
               shell: bash

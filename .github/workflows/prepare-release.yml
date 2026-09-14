@@ -63,8 +63,10 @@ jobs:
                   RELEASE_BRANCH="release/v$RELEASE_VERSION"
 
                   if git ls-remote --exit-code --heads origin "$RELEASE_BRANCH" >/dev/null 2>&1; then
-                    echo "Release branch already exists: $RELEASE_BRANCH"
-                    exit 1
+                    echo "Release branch already exists; it will be reused: $RELEASE_BRANCH"
+                    echo "branch_exists=true" >> "$GITHUB_OUTPUT"
+                  else
+                    echo "branch_exists=false" >> "$GITHUB_OUTPUT"
                   fi
 
                   if git ls-remote --exit-code --tags origin "refs/tags/v$RELEASE_VERSION" >/dev/null 2>&1; then
@@ -76,6 +78,7 @@ jobs:
                   echo "branch=$RELEASE_BRANCH" >> "$GITHUB_OUTPUT"
 
             - name: Create release branch and bump version
+              if: steps.version.outputs.branch_exists != 'true'
               env:
                   RELEASE_VERSION: ${{ steps.version.outputs.version }}
                   RELEASE_BRANCH: ${{ steps.version.outputs.branch }}
@@ -97,6 +100,12 @@ jobs:
                   RELEASE_VERSION: ${{ steps.version.outputs.version }}
                   RELEASE_BRANCH: ${{ steps.version.outputs.branch }}
               run: |
+                  EXISTING_PR=$(gh pr list --base main --head "$RELEASE_BRANCH" --state open --json number --jq '.[0].number')
+                  if [ -n "$EXISTING_PR" ]; then
+                    echo "Release pull request already exists: #$EXISTING_PR"
+                    exit 0
+                  fi
+
                   gh pr create \
                     --base main \
                     --head "$RELEASE_BRANCH" \
