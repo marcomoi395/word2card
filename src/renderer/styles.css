@@ -439,8 +439,9 @@ body {
 .table-wrap {
     width: 100%;
     max-width: 100%;
-    overflow-x: auto;
-    flex: 1;
+    height: 360px;
+    overflow: auto;
+    flex: 0 0 360px;
     min-height: 0;
 }
 .data-grid {
