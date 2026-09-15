@@ -21,10 +21,12 @@ export const isAllowedExternalUrl = (rawUrl: string): boolean => {
 
 export function createWindow(): BrowserWindow {
     const mainWindow = new BrowserWindow({
-        width: 1180,
-        height: 760,
+        width: 1600,
+        height: 1200,
+        minWidth: 1600,
+        minHeight: 1200,
         show: false,
-        resizable: true,
+        resizable: false,
         movable: true,
         autoHideMenuBar: true,
         icon,

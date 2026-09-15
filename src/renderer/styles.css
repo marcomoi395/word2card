@@ -24,7 +24,7 @@
 body {
     min-width: 900px;
     min-height: 100vh;
-    overflow: auto;
+    overflow: hidden;
     background: #f4f5ec;
     background-image:
         radial-gradient(circle at 85% 12%, #e4f0c7 0, transparent 28%),
@@ -36,7 +36,7 @@ body {
 }
 .app-shell {
     min-height: 100vh;
-    max-width: 1440px;
+    max-width: 1600px;
     margin: 0 auto;
     padding: 0 34px 38px;
 }
@@ -1025,7 +1025,7 @@ body {
     flex: 1;
 }
 .collection-grid {
-    min-width: 1400px;
+    min-width: 0;
 }
 .collection-grid th:nth-child(2),
 .collection-grid td:nth-child(2) {
@@ -1468,7 +1468,7 @@ body {
     text-transform: uppercase;
 }
 .collection-grid {
-    min-width: 1200px;
+    min-width: 0;
 }
 .collection-grid th:nth-child(2),
 .collection-grid td:nth-child(2) {
