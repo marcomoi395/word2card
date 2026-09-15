@@ -18,7 +18,7 @@ describe('createFlashcards', () => {
         vi.clearAllMocks()
     })
 
-    it('creates flashcards with the Anki TTS note type', async () => {
+    it('creates flashcards with the Azure audio note type', async () => {
         vi.mocked(OpenAIService.generateFlashcardData).mockResolvedValue([
             {
                 word: 'test',
@@ -33,7 +33,7 @@ describe('createFlashcards', () => {
 
         expect(result).toHaveLength(1)
         expect(result[0].deckName).toBe('TestDeck')
-        expect(result[0].modelName).toBe('AnkiVNModel_Flashcard_TTS')
+        expect(result[0].modelName).toBe('AnkiVNModel_Flashcard')
         expect(result[0].fields.word).toBe('test')
         expect(result[0].fields.vietnamese).toBe('thử nghiệm')
         expect(result[0].fields.id).toBeTruthy()

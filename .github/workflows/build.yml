@@ -109,7 +109,7 @@ jobs:
                   wait "$pid" || true
             - name: Generate Linux checksums
               working-directory: dist
-              run: sha256sum *.AppImage *.deb > SHA256SUMS-linux.txt
+              run: sha256sum -- ./*.AppImage ./*.deb > SHA256SUMS-linux.txt
             - name: Upload Linux artifacts
               uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
               with:
@@ -162,7 +162,7 @@ jobs:
             - name: Generate Windows checksums
               shell: bash
               working-directory: dist
-              run: sha256sum *.exe *.blockmap > SHA256SUMS-windows.txt
+              run: sha256sum -- ./*.exe ./*.blockmap > SHA256SUMS-windows.txt
             - name: Upload Windows artifacts
               uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
               with:
@@ -245,16 +245,156 @@ jobs:
                   See \`SHA256SUMS-linux.txt\` and \`SHA256SUMS-windows.txt\`.
 
                   See the [full changelog](https://github.com/${REPOSITORY}/compare/${RELEASE_TAG}^...${RELEASE_TAG}).
-                  **Note:** This is a draft release. Review the assets and publish when ready.
                   EOF
-            - name: Create draft release and upload assets
+            - name: Publish release and upload assets
               uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               with:
                   tag_name: ${{ needs.release_quality.outputs.release_tag }}
                   target_commitish: ${{ github.event.pull_request.merge_commit_sha }}
-                  draft: true
+                  draft: false
                   prerelease: ${{ contains(needs.release_quality.outputs.release_tag, 'RC') || contains(needs.release_quality.outputs.release_tag, 'beta') || contains(needs.release_quality.outputs.release_tag, 'alpha') }}
                   body_path: /tmp/release-body.md
                   files: dist/*
+
+    publish_aur:
+        name: Publish AUR package
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        needs: [release_quality, create-release]
+        if: needs.release_quality.result == 'success' && needs.create-release.result == 'success'
+        permissions:
+            contents: read
+        env:
+            AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+            AUR_SSH_KNOWN_HOSTS: ${{ secrets.AUR_SSH_KNOWN_HOSTS }}
+        steps:
+            - name: Check AUR publishing configuration
+              id: aur_config
+              shell: bash
+              run: |
+                  if [[ -z "$AUR_SSH_PRIVATE_KEY" || -z "$AUR_SSH_KNOWN_HOSTS" ]]; then
+                    echo "available=false" >> "$GITHUB_OUTPUT"
+                    echo "::notice title=AUR publishing skipped::Add AUR_SSH_PRIVATE_KEY and AUR_SSH_KNOWN_HOSTS to enable automatic AUR publishing."
+                    exit 0
+                  fi
+
+                  echo "available=true" >> "$GITHUB_OUTPUT"
+
+            - name: Checkout release source
+              if: steps.aur_config.outputs.available == 'true'
+              uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
+              with:
+                  ref: ${{ github.event.pull_request.merge_commit_sha }}
+                  persist-credentials: false
+
+            - name: Download Linux release artifact
+              if: steps.aur_config.outputs.available == 'true'
+              uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+              with:
+                  name: linux-packages
+                  path: dist
+
+            - name: Render AUR package files
+              if: steps.aur_config.outputs.available == 'true'
+              id: package
+              shell: bash
+              env:
+                  RELEASE_TAG: ${{ needs.release_quality.outputs.release_tag }}
+              run: |
+                  set -euo pipefail
+
+                  VERSION="${RELEASE_TAG#v}"
+                  APPIMAGE="dist/word2card-${VERSION}.AppImage"
+                  PACKAGE_DIR="$RUNNER_TEMP/word2card-bin"
+
+                  test -f "$APPIMAGE"
+                  rm -rf "$PACKAGE_DIR"
+                  mkdir -p "$PACKAGE_DIR"
+
+                  APPIMAGE_SHA256=$(sha256sum "$APPIMAGE" | awk '{print $1}')
+                  DESKTOP_SHA256=$(sha256sum packaging/aur/word2card-bin/word2card.desktop | awk '{print $1}')
+                  ICON_SHA256=$(sha256sum resources/icon.png | awk '{print $1}')
+
+                  sed \
+                    -e "s/@VERSION@/$VERSION/g" \
+                    -e "s/@APPIMAGE_SHA256@/$APPIMAGE_SHA256/g" \
+                    -e "s/@DESKTOP_SHA256@/$DESKTOP_SHA256/g" \
+                    -e "s/@ICON_SHA256@/$ICON_SHA256/g" \
+                    packaging/aur/word2card-bin/PKGBUILD.in > "$PACKAGE_DIR/PKGBUILD"
+                  cp packaging/aur/word2card-bin/word2card.desktop "$PACKAGE_DIR/word2card.desktop"
+                  cp resources/icon.png "$PACKAGE_DIR/word2card.png"
+
+                  if rg '@[A-Z_]+@' "$PACKAGE_DIR/PKGBUILD"; then
+                    echo 'Unresolved AUR package template variable.'
+                    exit 1
+                  fi
+
+                  echo "directory=$PACKAGE_DIR" >> "$GITHUB_OUTPUT"
+
+            - name: Validate AUR package metadata
+              if: steps.aur_config.outputs.available == 'true'
+              shell: bash
+              env:
+                  PACKAGE_DIR: ${{ steps.package.outputs.directory }}
+              run: |
+                  set -euo pipefail
+
+                  docker run --rm \
+                    --volume "$PACKAGE_DIR:/package" \
+                    --workdir /package \
+                    archlinux:base-devel \
+                    /bin/bash -ec '
+                      useradd --create-home builder
+                      chown -R builder:builder /package
+                      su builder -s /bin/bash -c "makepkg --printsrcinfo > .SRCINFO"
+                    '
+
+                  test -s "$PACKAGE_DIR/.SRCINFO"
+
+            - name: Configure AUR SSH access
+              if: steps.aur_config.outputs.available == 'true'
+              id: ssh
+              shell: bash
+              run: |
+                  set -euo pipefail
+
+                  SSH_DIR="$RUNNER_TEMP/aur-ssh"
+                  install -d -m 700 "$SSH_DIR"
+                  printf '%s\n' "$AUR_SSH_PRIVATE_KEY" > "$SSH_DIR/id_ed25519"
+                  printf '%s\n' "$AUR_SSH_KNOWN_HOSTS" > "$SSH_DIR/known_hosts"
+                  chmod 600 "$SSH_DIR/id_ed25519"
+                  chmod 644 "$SSH_DIR/known_hosts"
+
+                  echo "directory=$SSH_DIR" >> "$GITHUB_OUTPUT"
+
+            - name: Synchronize AUR repository
+              if: steps.aur_config.outputs.available == 'true'
+              shell: bash
+              env:
+                  PACKAGE_DIR: ${{ steps.package.outputs.directory }}
+                  SSH_DIR: ${{ steps.ssh.outputs.directory }}
+                  RELEASE_TAG: ${{ needs.release_quality.outputs.release_tag }}
+              run: |
+                  set -euo pipefail
+
+                  AUR_REPOSITORY="$RUNNER_TEMP/word2card-bin-aur"
+                  GIT_SSH_COMMAND="ssh -i $SSH_DIR/id_ed25519 -o IdentitiesOnly=yes -o UserKnownHostsFile=$SSH_DIR/known_hosts -o StrictHostKeyChecking=yes"
+                  export GIT_SSH_COMMAND
+
+                  git clone ssh://aur@aur.archlinux.org/word2card-bin.git "$AUR_REPOSITORY"
+                  cp "$PACKAGE_DIR/PKGBUILD" "$PACKAGE_DIR/.SRCINFO" "$PACKAGE_DIR/word2card.desktop" "$PACKAGE_DIR/word2card.png" "$AUR_REPOSITORY/"
+
+                  cd "$AUR_REPOSITORY"
+                  git diff --check
+                  if git diff --quiet -- PKGBUILD .SRCINFO word2card.desktop word2card.png; then
+                    echo 'AUR package is already current.'
+                    exit 0
+                  fi
+
+                  git config user.name 'github-actions[bot]'
+                  git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+                  git add PKGBUILD .SRCINFO word2card.desktop word2card.png
+                  git commit -m "Update to ${RELEASE_TAG}"
+                  git push origin HEAD

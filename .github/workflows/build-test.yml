@@ -52,7 +52,7 @@ jobs:
                   wait "$pid" || true
             - name: Generate Linux checksums
               working-directory: dist
-              run: sha256sum *.AppImage *.deb > SHA256SUMS-linux.txt
+              run: sha256sum -- ./*.AppImage ./*.deb > SHA256SUMS-linux.txt
             - name: Upload Linux test artifacts
               uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
               with:
@@ -93,7 +93,7 @@ jobs:
             - name: Generate Windows checksums
               shell: bash
               working-directory: dist
-              run: sha256sum *.exe *.blockmap > SHA256SUMS-windows.txt
+              run: sha256sum -- ./*.exe ./*.blockmap > SHA256SUMS-windows.txt
             - name: Upload Windows test artifacts
               uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
               with:

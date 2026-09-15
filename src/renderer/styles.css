@@ -24,7 +24,7 @@
 body {
     min-width: 900px;
     min-height: 100vh;
-    overflow: auto;
+    overflow: hidden;
     background: #f4f5ec;
     background-image:
         radial-gradient(circle at 85% 12%, #e4f0c7 0, transparent 28%),
@@ -36,7 +36,7 @@ body {
 }
 .app-shell {
     min-height: 100vh;
-    max-width: 1440px;
+    max-width: 1600px;
     margin: 0 auto;
     padding: 0 34px 38px;
 }
@@ -439,8 +439,9 @@ body {
 .table-wrap {
     width: 100%;
     max-width: 100%;
-    overflow-x: auto;
-    flex: 1;
+    height: 360px;
+    overflow: auto;
+    flex: 0 0 360px;
     min-height: 0;
 }
 .data-grid {
@@ -522,9 +523,24 @@ body {
 .data-grid th:nth-child(8),
 .data-grid td:nth-child(8),
 .data-grid th:nth-child(9),
-.data-grid td:nth-child(9) {
+.data-grid td:nth-child(9),
+.data-grid th:nth-child(10),
+.data-grid td:nth-child(10) {
     width: 105px;
     max-width: 105px;
+}
+.audio-play-btn {
+    padding: 5px 7px;
+    border: 1px solid var(--ink);
+    background: #e4f1d6;
+    color: var(--ink);
+    font:
+        900 9px 'Courier New',
+        monospace;
+    cursor: pointer;
+}
+.audio-play-btn:hover {
+    background: #c4e2a5;
 }
 .word-cell {
     color: var(--ink) !important;
@@ -565,6 +581,20 @@ body {
 }
 .secondary-panel .submit-btn {
     margin-top: 25px;
+}
+.settings-panel {
+    max-width: 960px;
+}
+.settings-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 22px;
+}
+.settings-field .field-label {
+    margin-top: 18px;
+}
+.settings-panel .submit-btn {
+    min-width: 180px;
 }
 .settings-status {
     display: block;
@@ -630,6 +660,12 @@ body {
     }
     .preview-panel {
         min-height: 330px;
+    }
+}
+
+@media (max-width: 700px) {
+    .settings-grid {
+        grid-template-columns: 1fr;
     }
 }
 @media (max-width: 720px) {
@@ -1025,7 +1061,7 @@ body {
     flex: 1;
 }
 .collection-grid {
-    min-width: 1400px;
+    min-width: 0;
 }
 .collection-grid th:nth-child(2),
 .collection-grid td:nth-child(2) {
@@ -1468,7 +1504,7 @@ body {
     text-transform: uppercase;
 }
 .collection-grid {
-    min-width: 1200px;
+    min-width: 0;
 }
 .collection-grid th:nth-child(2),
 .collection-grid td:nth-child(2) {
@@ -1557,6 +1593,11 @@ body {
 }
 #section-import .data-grid th:nth-child(9),
 #section-import .data-grid td:nth-child(9) {
+    width: 86px;
+    max-width: 86px;
+}
+#section-import .data-grid th:nth-child(10),
+#section-import .data-grid td:nth-child(10) {
     width: 86px;
     max-width: 86px;
 }

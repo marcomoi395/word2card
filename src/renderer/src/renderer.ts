@@ -17,6 +17,8 @@ type TabName = 'import' | 'collection' | 'notion' | 'settings'
 
 let importDraftRecords: ImportDraftRecord[] = []
 let collectionRecords: VocabularyRecord[] = []
+let activeTab: TabName = 'import'
+let activeAudio: HTMLAudioElement | null = null
 let toastTimer: number | undefined
 
 function showToast(message: string): void {
@@ -69,7 +71,27 @@ function recordRow(
     const image = record.imageUrl
         ? `<a class="image-link" href="${escapeHtml(record.imageUrl)}" target="_blank" rel="noreferrer"><img src="${escapeHtml(record.imageUrl)}" alt="Preview for ${escapeHtml(record.word)}" /></a>`
         : '<span aria-label="No image">—</span>'
-    return `<tr data-id="${record.id}"><td class="select-col"><input class="row-select" type="checkbox" aria-label="Select ${escapeHtml(record.word || 'new word')}" /></td><td class="index-col">${String(index + 1).padStart(2, '0')}</td>${wordCell}${editableCells}<td class="asset-cell">${image}</td><td><span class="status-pill ${record.generationStatus === 'ready' ? 'ready' : 'pending'}">${statusLabel(record)}</span></td></tr>`
+    const audio = record.audio
+        ? `<button class="audio-play-btn" type="button" data-audio="${escapeHtml(record.audio)}" aria-label="Play pronunciation for ${escapeHtml(record.word)}">▶ Play</button>`
+        : '<span aria-label="No audio">—</span>'
+    return `<tr data-id="${record.id}"><td class="select-col"><input class="row-select" type="checkbox" aria-label="Select ${escapeHtml(record.word || 'new word')}" /></td><td class="index-col">${String(index + 1).padStart(2, '0')}</td>${wordCell}${editableCells}<td class="audio-cell">${audio}</td><td class="asset-cell">${image}</td><td><span class="status-pill ${record.generationStatus === 'ready' ? 'ready' : 'pending'}">${statusLabel(record)}</span></td></tr>`
+}
+
+function initAudioControls(): void {
+    document.addEventListener('click', (event) => {
+        const target = event.target
+        if (!(target instanceof Element)) return
+        const button = target.closest<HTMLButtonElement>('.audio-play-btn')
+        const source = button?.dataset.audio
+        if (!button || !source) return
+
+        activeAudio?.pause()
+        activeAudio = document.createElement('audio')
+        activeAudio.src = source
+        void activeAudio.play().catch(() => {
+            showToast('Unable to play audio.')
+        })
+    })
 }
 
 function updateSelectAllState(table: HTMLTableElement): void {
@@ -114,7 +136,7 @@ function initSelectionControls(): void {
 function renderRecords(): void {
     const previewBody = document.querySelector('#section-import .data-grid tbody')
     const collectionBody = document.querySelector('#section-collection .data-grid tbody')
-    const empty = '<tr><td colspan="9" role="status">No words in this import yet.</td></tr>'
+    const empty = '<tr><td colspan="10" role="status">No words in this import yet.</td></tr>'
     if (previewBody) {
         previewBody.innerHTML = importDraftRecords.length
             ? importDraftRecords.map((record, i) => recordRow(record, true, i)).join('')
@@ -134,8 +156,10 @@ function renderRecords(): void {
         counts[1].textContent = `${collectionRecords.length} words saved`
     }
     const stat = document.querySelector<HTMLElement>('.heading-stat strong')
-    if (stat) {
+    if (stat && activeTab === 'import') {
         stat.textContent = String(importDraftRecords.length)
+    } else if (stat && activeTab === 'collection') {
+        stat.textContent = String(collectionRecords.length)
     }
 }
 async function loadCollection(): Promise<void> {
@@ -172,6 +196,7 @@ function draftRecord(word = ''): ImportDraftRecord {
         meaning: null,
         imageUrl: null,
         imageProvider: null,
+        audio: null,
         generationStatus: 'pending',
         generationError: null
     }
@@ -309,6 +334,7 @@ function initVocabularyActions(): void {
 }
 
 function renderHealth(snapshot: ProviderHealthSnapshot): void {
+    renderAppStatus(snapshot)
     const status = document.querySelector<HTMLElement>('.step-two-status')
     const list = status?.querySelector('.connection-list')
     if (!list) {
@@ -336,6 +362,40 @@ function renderHealth(snapshot: ProviderHealthSnapshot): void {
         notionDot.classList.toggle('disconnected', notion.state !== 'connected')
         notionTitle.textContent = `Notion ${providerHealthLabel(notion)}`
         notionNote.textContent = notion.message || providerHealthLabel(notion)
+    }
+}
+
+function renderAppStatus(snapshot: ProviderHealthSnapshot): void {
+    const status = document.getElementById('app-status')
+    if (!status) return
+
+    const requiredProviders = [snapshot.providers.openai, snapshot.providers.anki]
+    if (requiredProviders.every((provider) => provider?.state === 'connected')) {
+        status.textContent = 'Ready'
+        return
+    }
+
+    if (requiredProviders.some((provider) => provider?.state === 'checking')) {
+        status.textContent = 'Checking...'
+        return
+    }
+
+    status.textContent = requiredProviders.some((provider) => provider?.state === 'not_configured')
+        ? 'Setup required'
+        : 'Unavailable'
+}
+
+async function loadAppVersion(): Promise<void> {
+    try {
+        const response = await window.api.getAppVersion()
+        const version = document.getElementById('app-version')
+        if (response.status === 'success' && response.data && version) {
+            version.textContent = `v${response.data}`
+        }
+    } catch (error) {
+        logger.error('app_version_load_failed', {
+            error: error instanceof Error ? error : new Error(String(error))
+        })
     }
 }
 
@@ -431,8 +491,9 @@ function showResponseAlert(actionLabel: string, response: AppResponse<unknown> |
             'failed' in data
         ) {
             const summary = data as { submitted: number; duplicates: number; failed: number }
+            const detail = response.message ? ` ${response.message}` : ''
             showToast(
-                `${actionLabel}: ${summary.submitted} added, ${summary.duplicates} duplicate(s), ${summary.failed} failed.`
+                `${actionLabel}: ${summary.submitted} added, ${summary.duplicates} duplicate(s), ${summary.failed} failed.${detail}`
             )
         }
         return
@@ -441,6 +502,7 @@ function showResponseAlert(actionLabel: string, response: AppResponse<unknown> |
 }
 
 function switchTab(tabName: TabName): void {
+    activeTab = tabName
     const importSection = document.getElementById('section-import')
     const collectionSection = document.getElementById('section-collection')
     const notionSection = document.getElementById('section-notion')
@@ -509,7 +571,7 @@ function switchTab(tabName: TabName): void {
             pageCopy.textContent = 'Browse and review the words collected from your sources.'
         }
         if (pageStat) {
-            pageStat.textContent = '4'
+            pageStat.textContent = String(collectionRecords.length)
         }
         if (pageStatLabel) {
             pageStatLabel.textContent = 'words saved'
@@ -526,7 +588,7 @@ function switchTab(tabName: TabName): void {
                 'Choose a source, set your destination, and review the vocabulary before creating your deck.'
         }
         if (pageStat) {
-            pageStat.textContent = '0'
+            pageStat.textContent = String(importDraftRecords.length)
         }
         if (pageStatLabel) {
             pageStatLabel.textContent = 'words ready'
@@ -778,6 +840,7 @@ function initSettingsForm(): void {
     const openaiInput = document.getElementById('openai-key-global') as HTMLInputElement | null
     const openaiBaseUrlInput = document.getElementById('openai-base-url') as HTMLInputElement | null
     const openaiModelInput = document.getElementById('openai-model') as HTMLInputElement | null
+    const azureInput = document.getElementById('azure-key-global') as HTMLInputElement | null
     const pexelsInput = document.getElementById('pexels-token-global') as HTMLInputElement | null
     const notionTokenInput = document.getElementById(
         'notion-token-global'
@@ -796,11 +859,15 @@ function initSettingsForm(): void {
 
             const status = savedData.data.configured
             const openaiStatus = document.getElementById('openai-key-status')
+            const azureStatus = document.getElementById('azure-key-status')
             const pexelsStatus = document.getElementById('pexels-token-status')
             const notionTokenStatus = document.getElementById('notion-token-status')
             const notionDatabaseIdStatus = document.getElementById('notion-database-id-status')
             if (openaiStatus) {
                 openaiStatus.textContent = status.openaiApiKey ? 'Configured' : 'Not configured'
+            }
+            if (azureStatus) {
+                azureStatus.textContent = status.azureApiKey ? 'Configured' : 'Not configured'
             }
             if (openaiBaseUrlInput && savedData.data.openaiBaseUrl) {
                 openaiBaseUrlInput.value = savedData.data.openaiBaseUrl
@@ -837,6 +904,7 @@ function initSettingsForm(): void {
         const settingsData: SaveSettingsPayload = {
             /* v8 ignore start */
             openaiApiKey: openaiInput?.value.trim() || '',
+            azureApiKey: azureInput?.value.trim() || '',
             pexelsToken: pexelsInput?.value.trim() || '',
             notionToken: notionTokenInput?.value.trim() || '',
             notionDatabaseId: notionDatabaseIdInput?.value.trim() || '',
@@ -853,6 +921,7 @@ function initSettingsForm(): void {
             if (result.status !== 'success') {
                 showToast(`Failed to save settings: ${result.message || 'Unknown error.'}`)
             } else {
+                await loadSavedSettings()
                 await loadHealth()
             }
         } catch (error) {
@@ -880,6 +949,7 @@ function init(): void {
         initNotionForm()
         initSettingsForm()
         initVocabularyActions()
+        initAudioControls()
         initAddDeleteActions()
         initSelectionControls()
         document.getElementById('dialog-cancel')?.addEventListener('click', () => {
@@ -889,6 +959,7 @@ function init(): void {
             document.getElementById('app-dialog')?.setAttribute('hidden', '')
         })
         void loadHealth()
+        void loadAppVersion()
         void refreshAnkiHealth()
         window.setInterval(() => void refreshAnkiHealth(), 10_000)
     })

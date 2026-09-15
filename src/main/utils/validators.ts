@@ -22,10 +22,18 @@ export const parseSaveSettingsPayload = (value: unknown): SaveSettingsPayload | 
     if (!isRecord(value)) {
         return null
     }
-    const { openaiApiKey, pexelsToken, notionToken, notionDatabaseId, openaiBaseUrl, openaiModel } =
-        value
+    const {
+        openaiApiKey,
+        azureApiKey,
+        pexelsToken,
+        notionToken,
+        notionDatabaseId,
+        openaiBaseUrl,
+        openaiModel
+    } = value
     if (
         typeof openaiApiKey !== 'string' ||
+        (azureApiKey !== undefined && typeof azureApiKey !== 'string') ||
         typeof pexelsToken !== 'string' ||
         (notionToken !== undefined && typeof notionToken !== 'string') ||
         (notionDatabaseId !== undefined && typeof notionDatabaseId !== 'string')
@@ -40,6 +48,7 @@ export const parseSaveSettingsPayload = (value: unknown): SaveSettingsPayload | 
     }
     return {
         openaiApiKey,
+        ...(azureApiKey === undefined ? {} : { azureApiKey }),
         pexelsToken,
         ...(notionToken === undefined ? {} : { notionToken }),
         ...(notionDatabaseId === undefined ? {} : { notionDatabaseId }),
@@ -109,7 +118,8 @@ const EDITABLE_FIELDS = [
     'ipa',
     'meaning',
     'imageUrl',
-    'imageProvider'
+    'imageProvider',
+    'audio'
 ] as const
 const isStringArray = (value: unknown): value is string[] =>
     Array.isArray(value) &&
@@ -152,6 +162,7 @@ export const parseImportDraftRecord = (value: unknown): ImportDraftRecord | null
         !isNullableString(value.meaning) ||
         !isNullableString(value.imageUrl) ||
         !isNullableString(value.imageProvider) ||
+        (value.audio !== undefined && !isNullableString(value.audio)) ||
         !['pending', 'generating', 'ready', 'failed'].includes(value.generationStatus as string) ||
         !isNullableString(value.generationError)
     ) {

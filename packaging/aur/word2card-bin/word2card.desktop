@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Word2Card
+Comment=Create Anki flashcards from word lists or Notion
+Exec=/opt/word2card/word2card
+Icon=word2card
+Categories=Education;
+StartupWMClass=word2card
+Terminal=false

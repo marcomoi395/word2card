@@ -6,6 +6,23 @@ import { success, failure } from '../utils/response'
 import modelFlashcardData from '../helper/model-flashcard.json'
 const logger = createLogger('main.deck')
 
+const ankiModelData = {
+    ...modelFlashcardData,
+    modelName: 'AnkiVNModel_Flashcard',
+    inOrderFields: [...modelFlashcardData.inOrderFields, 'audio_word'],
+    cardTemplates: modelFlashcardData.cardTemplates.map((template) => ({
+        ...template,
+        Front: template.Front.replaceAll(
+            '{{tts en_US:word}}',
+            '{{#audio_word}}{{audio_word}}{{/audio_word}}'
+        ),
+        Back: template.Back.replaceAll(
+            '{{tts en_US:word}}',
+            '{{#audio_word}}{{audio_word}}{{/audio_word}}'
+        )
+    }))
+}
+
 const resolveDeckName = (deckName: string): string => {
     return deckName || 'Default'
 }
@@ -68,7 +85,7 @@ export class DeckService {
                 return failure(`Anki error: ${modelNamesResponse.error}`)
             }
 
-            const modelExists = modelNamesResponse.result?.includes(modelFlashcardData.modelName)
+            const modelExists = modelNamesResponse.result?.includes(ankiModelData.modelName)
             if (modelExists) {
                 return success()
             }
@@ -77,11 +94,11 @@ export class DeckService {
                 action: 'createModel',
                 version: 6,
                 params: {
-                    modelName: modelFlashcardData.modelName,
-                    inOrderFields: modelFlashcardData.inOrderFields,
-                    css: modelFlashcardData.css,
-                    isCloze: modelFlashcardData.isCloze,
-                    cardTemplates: modelFlashcardData.cardTemplates
+                    modelName: ankiModelData.modelName,
+                    inOrderFields: ankiModelData.inOrderFields,
+                    css: ankiModelData.css,
+                    isCloze: ankiModelData.isCloze,
+                    cardTemplates: ankiModelData.cardTemplates
                 }
             })
 
@@ -92,7 +109,7 @@ export class DeckService {
                 return failure(`Failed to create Anki model: ${createModelResponse.error}`)
             }
 
-            return success(undefined, `Model "${modelFlashcardData.modelName}" created`)
+            return success(undefined, `Model "${ankiModelData.modelName}" created`)
         } catch (error) {
             /* v8 ignore start */
             logger.error('model_ensure_failed', { error })

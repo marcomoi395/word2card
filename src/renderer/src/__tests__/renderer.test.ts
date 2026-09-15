@@ -18,6 +18,7 @@ describe('Renderer UI', () => {
             minimize: vi.fn(),
             close: vi.fn(),
             platform: 'linux' as NodeJS.Platform,
+            getAppVersion: vi.fn().mockResolvedValue({ status: 'success', data: '2.5.0' }),
             getFilePath: vi.fn((file: File) => `/mock/${file.name}`),
             openFileDialog: vi.fn(),
             sendImport: vi.fn(),
@@ -25,6 +26,7 @@ describe('Renderer UI', () => {
             createVocabulary: vi.fn(),
             updateVocabulary: vi.fn(),
             deleteVocabulary: vi.fn(),
+            submitToAnki: vi.fn(),
             getProviderHealth: vi.fn().mockResolvedValue({
                 status: 'success',
                 data: {
@@ -79,14 +81,32 @@ describe('Renderer UI', () => {
                 expect(table?.querySelector('th:nth-child(8)')?.textContent?.trim()).not.toBe(
                     'Meaning'
                 )
-                expect(table?.querySelectorAll('thead th')).toHaveLength(9)
+                expect(table?.querySelectorAll('thead th')).toHaveLength(10)
                 expect(
                     table?.querySelector('tbody td[role="status"]')?.getAttribute('colspan')
-                ).toBe('9')
+                ).toBe('10')
             }
         })
         it('calls getSettingsStatus on load', () => {
             expect(window.api.getSettingsStatus).toHaveBeenCalled()
+        })
+        it('renders the runtime version and readiness status', async () => {
+            await Promise.resolve()
+            await Promise.resolve()
+
+            expect(window.api.getAppVersion).toHaveBeenCalled()
+            expect(document.getElementById('app-version')?.textContent).toBe('v2.5.0')
+            expect(document.getElementById('app-status')?.textContent).toBe('Ready')
+        })
+        it('renders saved and ready counts from loaded records', async () => {
+            await Promise.resolve()
+            await Promise.resolve()
+
+            expect(document.querySelectorAll('.table-count')[0]?.textContent).toBe('0 words ready')
+            expect(document.querySelectorAll('.table-count')[1]?.textContent).toBe('0 words saved')
+
+            document.getElementById('tab-collection-btn')?.dispatchEvent(new MouseEvent('click'))
+            expect(document.querySelector('.heading-stat strong')?.textContent).toBe('0')
         })
 
         it('does not populate secret inputs from settings status', async () => {
@@ -199,6 +219,7 @@ describe('Renderer UI', () => {
             data: {
                 configured: {
                     openaiApiKey: true,
+                    azureApiKey: false,
                     openaiBaseUrl: true,
                     openaiModel: true,
                     pexelsToken: false,
@@ -259,6 +280,7 @@ describe('Renderer UI', () => {
             await promise
 
             const openaiInput = document.getElementById('openai-key-global') as HTMLInputElement
+            const azureInput = document.getElementById('azure-key-global') as HTMLInputElement
             const pexelsInput = document.getElementById('pexels-token-global') as HTMLInputElement
             const notionTokenInput = document.getElementById(
                 'notion-token-global'
@@ -269,6 +291,7 @@ describe('Renderer UI', () => {
             const saveButton = document.getElementById('btn-save-settings') as HTMLButtonElement
 
             openaiInput.value = 'new-openai-key'
+            azureInput.value = 'new-azure-key'
             pexelsInput.value = 'new-pexels-token'
             notionTokenInput.value = 'new-notion-token'
             notionDatabaseIdInput.value = 'new-notion-database-id'
@@ -286,6 +309,7 @@ describe('Renderer UI', () => {
 
             expect(window.api.saveSettings).toHaveBeenCalledWith({
                 openaiApiKey: 'new-openai-key',
+                azureApiKey: 'new-azure-key',
                 pexelsToken: 'new-pexels-token',
                 notionToken: 'new-notion-token',
                 notionDatabaseId: 'new-notion-database-id',
@@ -361,6 +385,21 @@ describe('Renderer UI', () => {
             )
             consoleSpy.mockRestore()
         })
+    })
+
+    it('shows the Anki submission failure reason', async () => {
+        vi.mocked(window.api.submitToAnki).mockResolvedValue({
+            status: 'success',
+            message: 'Azure Speech key is not configured',
+            data: { processed: 1, submitted: 0, duplicates: 0, failed: 1 }
+        })
+
+        document.getElementById('btn-submit-anki')?.dispatchEvent(new MouseEvent('click'))
+        await new Promise((resolve) => setTimeout(resolve, 0))
+
+        expect(document.getElementById('app-toast')?.textContent).toContain(
+            'Azure Speech key is not configured'
+        )
     })
 
     describe('File Import Flow', () => {

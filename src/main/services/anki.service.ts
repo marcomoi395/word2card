@@ -5,6 +5,11 @@ import { normalizeIpa } from '../handle'
 import type { AnkiSubmissionSummary, AppResponse } from '../../shared/ipc'
 import { DeckService } from './deck.service'
 import { success } from '../utils/response'
+import { NotionService } from '../notion'
+import { createLogger } from '../../shared/logger'
+import { sanitizeFilename } from '../helper/sanitize-filename'
+
+const logger = createLogger('main.anki')
 const REQUIRED_FIELDS: (keyof VocabularyRecord)[] = ['word', 'partOfSpeech', 'vietnamese']
 const missingFields = (record: VocabularyRecord): string[] =>
     REQUIRED_FIELDS.filter((field) => {
@@ -13,7 +18,7 @@ const missingFields = (record: VocabularyRecord): string[] =>
     }).map(String)
 const toNote = (record: VocabularyRecord): QuizNote => ({
     deckName: record.deckName,
-    modelName: 'AnkiVNModel_Flashcard_TTS',
+    modelName: 'AnkiVNModel_Flashcard',
     fields: {
         id: record.id,
         word: record.word,
@@ -23,10 +28,43 @@ const toNote = (record: VocabularyRecord): QuizNote => ({
         ipa: normalizeIpa(record.ipa ?? undefined),
         image: record.imageUrl ?? undefined
     },
-    options: { allowDuplicate: false }
+    options: { allowDuplicate: false },
+    ...(record.audio
+        ? {
+              audio: [
+                  {
+                      path: record.audio,
+                      filename: `${sanitizeFilename(record.word)}.mp3`,
+                      fields: ['audio_word']
+                  }
+              ]
+          }
+        : {})
 })
 
 export class AnkiService {
+    private static async syncNotionRecord(record: VocabularyRecord): Promise<void> {
+        if (record.source !== 'notion' || !record.sourceReference) {
+            return
+        }
+
+        try {
+            await NotionService.update(record.sourceReference, {
+                word: record.word,
+                pos: record.partOfSpeech ?? '',
+                vietnamese: record.vietnamese ?? '',
+                ipa: record.ipa ?? undefined,
+                example: record.example ?? undefined
+            })
+        } catch (error) {
+            logger.error('notion_sync_after_anki_failed', {
+                recordId: record.id,
+                pageId: record.sourceReference,
+                error: error instanceof Error ? error : new Error(String(error))
+            })
+        }
+    }
+
     public static async submitDraftCards(
         repositories: DatabaseRepositories,
         records: ImportDraftRecord[]
@@ -103,6 +141,10 @@ export class AnkiService {
         }
         const result = await DeckService.addNotesToAnki(valid.map(toNote))
         if (result.status === 'error') {
+            logger.error('anki_notes_submission_failed', {
+                recordIds: valid.map((record) => record.id),
+                error: new Error(result.message)
+            })
             for (const record of valid) {
                 repositories.vocabulary.update(record.id, {
                     ankiStatus: 'failed',
@@ -113,18 +155,19 @@ export class AnkiService {
             return success(summary, result.message)
         }
         const noteResults = result.data ?? valid.map(() => 1)
-        valid.forEach((record, index) => {
+        for (const [index, record] of valid.entries()) {
             if (noteResults[index] === null) {
                 repositories.vocabulary.update(record.id, {
                     ankiStatus: 'failed',
                     ankiError: 'Duplicate card in Anki'
                 })
                 summary.duplicates++
-                return
+                continue
             }
             repositories.vocabulary.update(record.id, { ankiStatus: 'submitted', ankiError: null })
+            await this.syncNotionRecord(record)
             summary.submitted++
-        })
+        }
         return success(summary)
     }
 }

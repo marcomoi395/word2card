@@ -4,11 +4,13 @@ import { registerWindowHandlers, resetWindowHandlerRegistration } from '../windo
 import { IPC_CHANNELS } from '../../../../shared/ipc'
 
 vi.mock('electron', () => ({
+    app: { getVersion: vi.fn(() => '2.5.0') },
     BrowserWindow: {
         fromWebContents: vi.fn()
     },
     ipcMain: {
-        on: vi.fn()
+        on: vi.fn(),
+        handle: vi.fn()
     }
 }))
 
@@ -30,6 +32,7 @@ describe('registerWindowHandlers', () => {
         registerWindowHandlers()
 
         expect(ipcMain.on).toHaveBeenCalledTimes(2)
+        expect(ipcMain.handle).toHaveBeenCalledTimes(1)
     })
 
     it('targets the sender window at event time', () => {

@@ -95,6 +95,7 @@ describe('ImportService', () => {
 
         expect(result.status === 'success' ? result.data?.records?.[0] : null).toMatchObject({
             source: 'notion',
+            sourceReference: 'page-1',
             deckName: 'IELTS'
         })
     })

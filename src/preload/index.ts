@@ -24,6 +24,8 @@ const logger = createLogger('preload')
 const api: RendererApi = {
     minimize: () => ipcRenderer.send(IPC_CHANNELS.windowMinimize),
     close: () => ipcRenderer.send(IPC_CHANNELS.windowClose),
+    getAppVersion: (): Promise<AppResponse<string>> =>
+        ipcRenderer.invoke(IPC_CHANNELS.getAppVersion),
     platform: process.platform,
     getFilePath: (file: File) => webUtils.getPathForFile(file),
     openFileDialog: () => ipcRenderer.invoke(IPC_CHANNELS.openFileDialog),

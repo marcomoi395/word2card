@@ -110,4 +110,4 @@ jobs:
                     --base main \
                     --head "$RELEASE_BRANCH" \
                     --title "chore: release v$RELEASE_VERSION" \
-                    --body "This PR prepares release v$RELEASE_VERSION. Merge it to build the official installers, create the tag, and open a draft GitHub release."
+                    --body "This PR prepares release v$RELEASE_VERSION. Merge it to build and publish the official installers, create the tag, and update the AUR package when AUR publishing secrets are configured."

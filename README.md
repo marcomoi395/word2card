@@ -8,7 +8,7 @@ Word2Card is an Electron desktop app that turns word lists or Notion vocabulary 
 - Generate part of speech, Vietnamese meaning, IPA, examples, and image queries with OpenAI.
 - Optionally attach images from Pexels.
 - Create and submit cards directly to Anki.
-- Use Anki's built-in text-to-speech (TTS) for pronunciation. Word2Card does not call a speech API or create MP3 files.
+- Generate Azure Speech MP3 pronunciations and attach them to Anki cards.
 - Mark synced Notion pages after cards are submitted.
 
 ## Requirements
@@ -17,22 +17,14 @@ Word2Card is an Electron desktop app that turns word lists or Notion vocabulary 
 2. **AnkiConnect** must be installed and enabled in Anki. Use shared add-on code `2055492159`, then restart Anki.
 3. An **OpenAI API key** is required for card content generation.
 4. A **Pexels API key** is optional and only needed for images.
-5. Notion credentials are optional and only needed for Notion Sync.
+5. An **Azure Speech key** is optional for pronunciation audio. When configured, the Speech resource must use the `southeastasia` region.
+6. Notion credentials are optional and only needed for Notion Sync.
 
 ## Pronunciation and platform support
 
-New cards use the Anki template tag `{{tts en_US:word}}`. Audio is synthesized when the card is reviewed, using voices available to Anki on that device. No audio provider key, generated media file, or extra Word2Card service is required.
+After image lookup, Word2Card optionally creates an MP3 with Azure Speech (`en-US-JennyNeural`) and attaches it to the Anki note. The resulting media syncs with the card, so playback does not depend on the operating system's TTS voice or an Anki TTS add-on. Without an Azure Speech key, cards are submitted without audio.
 
-| Platform | TTS support | What the user needs to do |
-| --- | --- | --- |
-| Windows | Built in | Install an English system voice if none is available. |
-| macOS / iOS | Built in | Install or enable an English system voice if needed. |
-| Android (AnkiDroid) | Supported by AnkiDroid | Make sure an English Android TTS engine/voice is installed. |
-| Linux | No voice is bundled with Anki | Install a compatible Anki TTS add-on/voice provider, then restart Anki. |
-
-The TTS tag requires Anki 2.1.20+, AnkiMobile 2.0.56+, or AnkiDroid 2.17+. Voice availability and pronunciation can differ between operating systems. Anki's official documentation has the [TTS template reference](https://docs.ankiweb.net/templates/fields.html#text-to-speech-for-individual-fields).
-
-Word2Card creates the note type `AnkiVNModel_Flashcard_TTS`. Existing note types and cards are not overwritten, so the first sync after upgrading may create this additional note type.
+Word2Card creates the note type `AnkiVNModel_Flashcard`. Existing note types and cards are not overwritten, so the first sync after upgrading may create this note type.
 
 ## Setup
 
@@ -79,9 +71,19 @@ bun run build:mac
 bun run build:linux
 ```
 
+### Arch Linux (x86_64)
+
+Starting with the next configured release, versions are published to the AUR as `word2card-bin`:
+
+```bash
+yay -S word2card-bin
+```
+
+The package downloads the versioned AppImage from the GitHub Release and verifies its SHA-256 checksum. Each release updates the AUR package automatically. Maintainers can find the one-time AUR setup in [`.github/AUR.md`](.github/AUR.md).
+
 ## Privacy and costs
 
-Word2Card sends imported words to the configured OpenAI-compatible endpoint for content generation. Pexels and Notion are contacted only when those features are used. Pronunciation is handled locally by Anki and the operating system (or an Anki TTS add-on on Linux); there is no Azure Speech integration and no separate audio billing.
+Word2Card sends imported words to the configured OpenAI-compatible endpoint for content generation and Azure Speech for MP3 pronunciation generation. Pexels and Notion are contacted only when those features are used. Azure Speech usage may incur provider charges.
 
 ## License
 

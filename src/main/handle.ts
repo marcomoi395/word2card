@@ -35,6 +35,11 @@ export interface QuizNote {
     options: {
         allowDuplicate: boolean
     }
+    audio?: {
+        path: string
+        filename: string
+        fields: string[]
+    }[]
 }
 
 export const normalizeIpa = (ipa: string | undefined): string | undefined => {
@@ -82,7 +87,7 @@ export const createFlashcards = async (
 
             return {
                 deckName: target?.deckName ?? deckName,
-                modelName: 'AnkiVNModel_Flashcard_TTS',
+                modelName: 'AnkiVNModel_Flashcard',
                 fields: {
                     ...flashcard,
                     id: uuidv4(),
