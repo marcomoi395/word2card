@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { AnkiService } from '../anki.service'
 import { DeckService } from '../deck.service'
+import { NotionService } from '../../notion'
 import type { DatabaseRepositories, VocabularyRecord } from '../../database'
 
 vi.mock('../deck.service', () => ({ DeckService: { addNotesToAnki: vi.fn() } }))
+vi.mock('../../notion', () => ({ NotionService: { update: vi.fn() } }))
 const record = (patch: Partial<VocabularyRecord> = {}): VocabularyRecord => ({
     id: 'id-1',
     word: 'hello',
@@ -71,6 +73,30 @@ describe('AnkiService', () => {
         expect(DeckService.addNotesToAnki).toHaveBeenCalledWith([
             expect.objectContaining({ deckName: 'Vocabulary::Imported::2026-09-14' })
         ])
+    })
+    it('updates the source Notion page after Anki confirms success', async () => {
+        vi.mocked(DeckService.addNotesToAnki).mockResolvedValue({ status: 'success', data: [123] })
+        const repositories = db([record({ source: 'notion', sourceReference: 'page-1' })])
+
+        await AnkiService.submitPersistedCards(repositories)
+
+        expect(NotionService.update).toHaveBeenCalledWith(
+            'page-1',
+            expect.objectContaining({
+                word: 'hello',
+                pos: 'noun',
+                vietnamese: 'xin chào',
+                example: 'hello world'
+            })
+        )
+    })
+    it('does not update Notion when Anki reports a duplicate', async () => {
+        vi.mocked(DeckService.addNotesToAnki).mockResolvedValue({ status: 'success', data: [null] })
+        const repositories = db([record({ source: 'notion', sourceReference: 'page-1' })])
+
+        await AnkiService.submitPersistedCards(repositories)
+
+        expect(NotionService.update).not.toHaveBeenCalled()
     })
     it('does not mark cards submitted when Anki fails', async () => {
         vi.mocked(DeckService.addNotesToAnki).mockResolvedValue({

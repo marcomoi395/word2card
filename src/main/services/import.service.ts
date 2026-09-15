@@ -10,13 +10,18 @@ import type { DatabaseRepositories } from '../database'
 
 const logger = createLogger('main.import')
 
+interface ImportedWord {
+    word: string
+    sourceReference: string | null
+}
+
 const createDraftRecords = (
-    words: string[],
+    importedWords: ImportedWord[],
     source: 'file' | 'notion',
     deckName: string
 ): ImportDraftRecord[] => {
     const seen = new Set<string>()
-    return words.flatMap((rawWord, index) => {
+    return importedWords.flatMap(({ word: rawWord, sourceReference }, index) => {
         const word = rawWord.trim()
         const normalized = word.toLocaleLowerCase()
         if (!word || seen.has(normalized)) {
@@ -28,7 +33,7 @@ const createDraftRecords = (
                 id: `draft-${Date.now()}-${index}-${normalized}`,
                 word,
                 source,
-                sourceReference: null,
+                sourceReference,
                 deckName,
                 partOfSpeech: null,
                 cloze: null,
@@ -67,7 +72,7 @@ export class ImportService {
             }
             const nonEmptyWords = raw.filter((word) => word.trim()).length
             const drafts = createDraftRecords(
-                raw,
+                raw.map((word) => ({ word, sourceReference: null })),
                 'file',
                 resolveImportedDeckName(request.payload.deck)
             )
@@ -102,12 +107,15 @@ export class ImportService {
             if (!sources?.length) {
                 return failure('No pages found in the Notion database.')
             }
-            const words = sources.flatMap((source) =>
-                getWordEntriesFromResponse(source.pages).map((entry) => entry.word)
+            const importedWords = sources.flatMap((source) =>
+                getWordEntriesFromResponse(source.pages).map((entry) => ({
+                    word: entry.word,
+                    sourceReference: entry.pageId
+                }))
             )
-            const sourceWords = words.filter((word) => word.trim()).length
+            const sourceWords = importedWords.filter((entry) => entry.word.trim()).length
             const drafts = createDraftRecords(
-                words,
+                importedWords,
                 'notion',
                 resolveImportedDeckName(request.payload.deck)
             )
