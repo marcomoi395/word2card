@@ -7,6 +7,7 @@ import { DeckService } from './deck.service'
 import { success } from '../utils/response'
 import { NotionService } from '../notion'
 import { createLogger } from '../../shared/logger'
+import { sanitizeFilename } from '../helper/sanitize-filename'
 
 const logger = createLogger('main.anki')
 const REQUIRED_FIELDS: (keyof VocabularyRecord)[] = ['word', 'partOfSpeech', 'vietnamese']
@@ -17,7 +18,7 @@ const missingFields = (record: VocabularyRecord): string[] =>
     }).map(String)
 const toNote = (record: VocabularyRecord): QuizNote => ({
     deckName: record.deckName,
-    modelName: 'AnkiVNModel_Flashcard_TTS',
+    modelName: 'AnkiVNModel_Flashcard',
     fields: {
         id: record.id,
         word: record.word,
@@ -27,7 +28,18 @@ const toNote = (record: VocabularyRecord): QuizNote => ({
         ipa: normalizeIpa(record.ipa ?? undefined),
         image: record.imageUrl ?? undefined
     },
-    options: { allowDuplicate: false }
+    options: { allowDuplicate: false },
+    ...(record.audio
+        ? {
+              audio: [
+                  {
+                      path: record.audio,
+                      filename: `${sanitizeFilename(record.word)}.mp3`,
+                      fields: ['audio_word']
+                  }
+              ]
+          }
+        : {})
 })
 
 export class AnkiService {
@@ -129,6 +141,10 @@ export class AnkiService {
         }
         const result = await DeckService.addNotesToAnki(valid.map(toNote))
         if (result.status === 'error') {
+            logger.error('anki_notes_submission_failed', {
+                recordIds: valid.map((record) => record.id),
+                error: new Error(result.message)
+            })
             for (const record of valid) {
                 repositories.vocabulary.update(record.id, {
                     ankiStatus: 'failed',

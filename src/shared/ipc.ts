@@ -1,6 +1,7 @@
 export const IPC_CHANNELS = {
     windowMinimize: 'window-minimize',
     windowClose: 'window-close',
+    getAppVersion: 'get-app-version',
     openFileDialog: 'open-file-dialog',
     saveSettings: 'save-settings',
     getSettingsStatus: 'get-settings-status',
@@ -19,6 +20,7 @@ export type SecretKey =
     | 'openaiApiKey'
     | 'openaiBaseUrl'
     | 'openaiModel'
+    | 'azureApiKey'
     | 'pexelsToken'
     | 'notionToken'
     | 'notionDatabaseId'
@@ -42,6 +44,7 @@ export interface VocabularyRecord {
     meaning: string | null
     imageUrl: string | null
     imageProvider: string | null
+    audio?: string | null
     generationStatus: GenerationStatus
     generationError: string | null
     ankiStatus: AnkiStatus
@@ -60,6 +63,7 @@ export type VocabularyEditableField =
     | 'meaning'
     | 'imageUrl'
     | 'imageProvider'
+    | 'audio'
 export type VocabularyEdit = Partial<Pick<VocabularyRecord, VocabularyEditableField>>
 
 export interface CreateVocabularyPayload {
@@ -125,6 +129,7 @@ export interface ImportDraftRecord {
     meaning: string | null
     imageUrl: string | null
     imageProvider: string | null
+    audio?: string | null
     generationStatus: GenerationStatus
     generationError: string | null
 }
@@ -155,6 +160,7 @@ export interface SubmitToAnkiPayload {
 
 export interface SaveSettingsPayload {
     openaiApiKey: string
+    azureApiKey?: string
     pexelsToken: string
     notionToken?: string
     notionDatabaseId?: string
@@ -168,7 +174,7 @@ export interface MaskedSecretStatus {
 }
 
 export interface SettingsStatus {
-    configured: Record<SecretKey, boolean>
+    configured: Partial<Record<SecretKey, boolean>>
     secrets?: Record<SecretKey, MaskedSecretStatus>
     openaiBaseUrl?: string
     openaiModel?: string
@@ -225,6 +231,7 @@ export interface RendererApi {
     minimize: () => void
     close: () => void
     platform: NodeJS.Platform
+    getAppVersion: () => Promise<AppResponse<string>>
     getFilePath: (file: File) => string
     openFileDialog: () => Promise<AppResponse<OpenFileDialogData>>
     sendImport: (importData: ImportRequest) => Promise<AppResponse<ImportSummary>>

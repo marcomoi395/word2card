@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta
             http-equiv="Content-Security-Policy"
-            content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://images.pexels.com; connect-src 'self'; font-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'none'"
+            content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://images.pexels.com; media-src 'self'; connect-src 'self'; font-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'none'"
         />
         <title>Word2Card</title>
         <link rel="stylesheet" href="styles.css" />
@@ -87,7 +87,10 @@
                         </button>
                     </nav>
                     <div class="sidebar-footer">
-                        <div class="version-chip">v2.4.1 <span>*</span> Ready</div>
+                        <div class="version-chip">
+                            <span id="app-version">v—</span>
+                            <span id="app-status">Checking...</span>
+                        </div>
                     </div>
                 </aside>
                 <main class="content-area">
@@ -197,7 +200,7 @@
                                         <p class="eyebrow">STEP 02</p>
                                         <h2>Enrich and review</h2>
                                     </div>
-                                    <span class="table-count">4 words saved</span>
+                                    <span class="table-count">0 words saved</span>
                                 </div>
                                 <div class="step-two-toolbar">
                                     <div>
@@ -261,8 +264,8 @@
                                                 <th>POS</th>
                                                 <th>Cloze</th>
                                                 <th>Vietnamese</th>
-
                                                 <th>IPA</th>
+                                                <th>Audio</th>
                                                 <th>Image</th>
                                                 <th>Status</th>
                                             </tr>
@@ -291,6 +294,7 @@
                                                     /ˌserənˈdipitē/
                                                 </td>
 
+                                                <td class="audio-cell">—</td>
                                                 <td class="asset-cell">
                                                     <a
                                                         class="image-link"
@@ -331,6 +335,7 @@
                                                     /rɪˈzɪliənt/
                                                 </td>
 
+                                                <td class="audio-cell">—</td>
                                                 <td class="asset-cell">
                                                     <a
                                                         class="image-link"
@@ -371,6 +376,7 @@
                                                     /məˈtɪkjələs/
                                                 </td>
 
+                                                <td class="audio-cell">—</td>
                                                 <td class="asset-cell">
                                                     <a
                                                         class="image-link"
@@ -411,6 +417,7 @@
                                                     /ˈflʌrɪʃ/
                                                 </td>
 
+                                                <td class="audio-cell">—</td>
                                                 <td class="asset-cell">
                                                     <a
                                                         class="image-link"
@@ -455,7 +462,7 @@
                                         generation.
                                     </p>
                                 </div>
-                                <span class="table-count">4 words saved</span>
+                                <span class="table-count">0 words saved</span>
                             </div>
                             <div class="collection-actions">
                                 <strong>Manage collection</strong>
@@ -493,6 +500,7 @@
                                             <th>Cloze</th>
                                             <th>Vietnamese</th>
                                             <th>IPA</th>
+                                            <th>Audio</th>
                                             <th>Image</th>
                                             <th>Status</th>
                                         </tr>
@@ -512,6 +520,7 @@
                                             <td>I found it by {{word}}.</td>
                                             <td>Sự tình cờ may mắn</td>
                                             <td>/ˌserənˈdipitē/</td>
+                                            <td class="audio-cell">—</td>
                                             <td class="asset-cell">
                                                 <a
                                                     class="image-link"
@@ -541,6 +550,7 @@
                                             <td>Stay {{word}} under pressure.</td>
                                             <td>Kiên cường</td>
                                             <td>/rɪˈzɪliənt/</td>
+                                            <td class="audio-cell">—</td>
                                             <td class="asset-cell">
                                                 <a
                                                     class="image-link"
@@ -570,6 +580,7 @@
                                             <td>A {{word}} plan.</td>
                                             <td>Tỉ mỉ</td>
                                             <td>/məˈtɪkjələs/</td>
+                                            <td class="audio-cell">—</td>
                                             <td class="asset-cell">
                                                 <a
                                                     class="image-link"
@@ -599,6 +610,7 @@
                                             <td>Plants {{word}} in sunlight.</td>
                                             <td>Phát triển mạnh</td>
                                             <td>/ˈflʌrɪʃ/</td>
+                                            <td class="audio-cell">—</td>
                                             <td class="asset-cell">
                                                 <a
                                                     class="image-link"
@@ -648,7 +660,7 @@
                         </form>
                     </section>
                     <section id="section-settings" class="secondary-section">
-                        <form id="form-settings" class="panel secondary-panel">
+                        <form id="form-settings" class="panel secondary-panel settings-panel">
                             <div class="panel-heading">
                                 <div>
                                     <p class="eyebrow">SETTINGS</p>
@@ -656,64 +668,95 @@
                                 </div>
                             </div>
                             <div class="settings-note">
-                                <strong>Pronunciation uses Anki TTS</strong>
+                                <strong>Pronunciation uses Azure Speech</strong>
                                 <p>
-                                    New cards speak the word with the voice installed on the review
-                                    device. No speech API key or audio file is generated. Linux
-                                    users need a compatible Anki TTS add-on or voice provider.
+                                    When configured, Azure Speech generates and attaches an MP3
+                                    pronunciation before each card is sent to Anki. The Azure key is
+                                    optional; cards still submit without audio when it is not set.
                                 </p>
                             </div>
-                            <label class="field-label" for="openai-base-url">OpenAI Base URL</label
-                            ><input
-                                class="text-field"
-                                type="url"
-                                id="openai-base-url"
-                                name="openaiBaseUrl"
-                                placeholder="https://api.openai.com/v1"
-                            />
-                            <label class="field-label" for="openai-key-global">OpenAI API key</label
-                            ><input
-                                class="text-field"
-                                type="password"
-                                id="openai-key-global"
-                                name="openaiKeyGlobal"
-                                placeholder="sk-..."
-                            /><span id="openai-key-status" class="settings-status"></span>
-                            <label class="field-label" for="openai-model">OpenAI Model</label
-                            ><input
-                                class="text-field"
-                                type="text"
-                                id="openai-model"
-                                name="openaiModel"
-                                placeholder="gpt-4o-mini"
-                            />
-                            <label class="field-label" for="pexels-token-global"
-                                >Pexels API key</label
-                            ><input
-                                class="text-field"
-                                type="password"
-                                id="pexels-token-global"
-                                name="pexelsTokenGlobal"
-                                placeholder="Pexels API Key"
-                            /><span id="pexels-token-status" class="settings-status"></span
-                            ><label class="field-label" for="notion-token-global"
-                                >Notion integration token</label
-                            ><input
-                                class="text-field"
-                                type="password"
-                                id="notion-token-global"
-                                name="notionTokenGlobal"
-                                placeholder="ntn_xxxxx"
-                            /><span id="notion-token-status" class="settings-status"></span>
-                            <label class="field-label" for="notion-database-id-global"
-                                >Notion database ID</label
-                            ><input
-                                class="text-field"
-                                id="notion-database-id-global"
-                                name="notionDatabaseIdGlobal"
-                                placeholder="xxxxxxxx..."
-                            /><span id="notion-database-id-status" class="settings-status"></span
-                            ><button class="submit-btn" type="button" id="btn-save-settings">
+                            <div class="settings-grid">
+                                <div class="settings-field">
+                                    <label class="field-label" for="openai-base-url"
+                                        >OpenAI Base URL</label
+                                    ><input
+                                        class="text-field"
+                                        type="url"
+                                        id="openai-base-url"
+                                        name="openaiBaseUrl"
+                                        placeholder="https://api.openai.com/v1"
+                                    />
+                                </div>
+                                <div class="settings-field">
+                                    <label class="field-label" for="openai-key-global"
+                                        >OpenAI API key</label
+                                    ><input
+                                        class="text-field"
+                                        type="password"
+                                        id="openai-key-global"
+                                        name="openaiKeyGlobal"
+                                        placeholder="sk-..."
+                                    /><span id="openai-key-status" class="settings-status"></span>
+                                </div>
+                                <div class="settings-field">
+                                    <label class="field-label" for="openai-model"
+                                        >OpenAI Model</label
+                                    ><input
+                                        class="text-field"
+                                        type="text"
+                                        id="openai-model"
+                                        name="openaiModel"
+                                        placeholder="gpt-4o-mini"
+                                    />
+                                </div>
+                                <div class="settings-field">
+                                    <label class="field-label" for="azure-key-global"
+                                        >Azure Speech key</label
+                                    ><input
+                                        class="text-field"
+                                        type="password"
+                                        id="azure-key-global"
+                                        name="azureKeyGlobal"
+                                        placeholder="Azure Speech key"
+                                    /><span id="azure-key-status" class="settings-status"></span>
+                                </div>
+                                <div class="settings-field">
+                                    <label class="field-label" for="pexels-token-global"
+                                        >Pexels API key</label
+                                    ><input
+                                        class="text-field"
+                                        type="password"
+                                        id="pexels-token-global"
+                                        name="pexelsTokenGlobal"
+                                        placeholder="Pexels API Key"
+                                    /><span id="pexels-token-status" class="settings-status"></span>
+                                </div>
+                                <div class="settings-field">
+                                    <label class="field-label" for="notion-token-global"
+                                        >Notion integration token</label
+                                    ><input
+                                        class="text-field"
+                                        type="password"
+                                        id="notion-token-global"
+                                        name="notionTokenGlobal"
+                                        placeholder="ntn_xxxxx"
+                                    /><span id="notion-token-status" class="settings-status"></span>
+                                </div>
+                                <div class="settings-field">
+                                    <label class="field-label" for="notion-database-id-global"
+                                        >Notion database ID</label
+                                    ><input
+                                        class="text-field"
+                                        id="notion-database-id-global"
+                                        name="notionDatabaseIdGlobal"
+                                        placeholder="xxxxxxxx..."
+                                    /><span
+                                        id="notion-database-id-status"
+                                        class="settings-status"
+                                    ></span>
+                                </div>
+                            </div>
+                            <button class="submit-btn" type="button" id="btn-save-settings">
                                 Save keys <span>&gt;</span>
                             </button>
                         </form>

@@ -13,7 +13,7 @@ describe('DeckService', () => {
         vi.mocked(ankiConnect.checkAnkiConnect).mockResolvedValue(true)
         vi.mocked(ankiConnect.sendRequest).mockImplementation(async (request) => {
             if (request.action === 'modelNames') {
-                return { result: ['AnkiVNModel_Flashcard_TTS'], error: null }
+                return { result: ['AnkiVNModel_Flashcard'], error: null }
             }
             if (request.action === 'addNotes') {
                 return { result: [123], error: null }
@@ -131,7 +131,7 @@ describe('DeckService', () => {
         it('creates the destination deck before adding notes', async () => {
             vi.mocked(ankiConnect.sendRequest)
                 .mockResolvedValueOnce({
-                    result: ['AnkiVNModel_Flashcard_TTS'],
+                    result: ['AnkiVNModel_Flashcard'],
                     error: null
                 })
                 .mockResolvedValueOnce({
@@ -142,7 +142,7 @@ describe('DeckService', () => {
             await DeckService.addNotesToAnki([
                 {
                     deckName: 'Vocabulary::Imported::2026-09-14',
-                    modelName: 'AnkiVNModel_Flashcard_TTS',
+                    modelName: 'AnkiVNModel_Flashcard',
                     fields: { word: 'test' } as any,
                     options: { allowDuplicate: false }
                 }
@@ -192,11 +192,16 @@ describe('DeckService', () => {
             expect(ankiConnect.sendRequest).toHaveBeenCalledWith(
                 expect.objectContaining({
                     params: expect.objectContaining({
-                        modelName: 'AnkiVNModel_Flashcard_TTS',
+                        modelName: 'AnkiVNModel_Flashcard',
+                        inOrderFields: expect.arrayContaining(['audio_word']),
                         cardTemplates: expect.arrayContaining([
                             expect.objectContaining({
-                                Front: expect.stringContaining('{{tts en_US:word}}'),
-                                Back: expect.stringContaining('{{tts en_US:word}}')
+                                Front: expect.stringContaining(
+                                    '{{#audio_word}}{{audio_word}}{{/audio_word}}'
+                                ),
+                                Back: expect.stringContaining(
+                                    '{{#audio_word}}{{audio_word}}{{/audio_word}}'
+                                )
                             })
                         ])
                     })
@@ -210,7 +215,7 @@ describe('DeckService', () => {
         it('skips model creation if model already exists', async () => {
             vi.mocked(ankiConnect.sendRequest)
                 .mockResolvedValueOnce({
-                    result: ['Basic', 'AnkiVNModel_Flashcard_TTS', 'Cloze'],
+                    result: ['Basic', 'AnkiVNModel_Flashcard', 'Cloze'],
                     error: null
                 })
                 .mockResolvedValueOnce({
@@ -294,7 +299,7 @@ describe('DeckService', () => {
         it('returns failure when addNotes fails', async () => {
             vi.mocked(ankiConnect.sendRequest)
                 .mockResolvedValueOnce({
-                    result: ['AnkiVNModel_Flashcard_TTS'],
+                    result: ['AnkiVNModel_Flashcard'],
                     error: null
                 })
                 .mockResolvedValueOnce({ result: 123, error: null })
@@ -322,7 +327,7 @@ describe('DeckService', () => {
         it('handles thrown errors during note addition', async () => {
             vi.mocked(ankiConnect.sendRequest)
                 .mockResolvedValueOnce({
-                    result: ['AnkiVNModel_Flashcard_TTS'],
+                    result: ['AnkiVNModel_Flashcard'],
                     error: null
                 })
                 .mockResolvedValueOnce({ result: 123, error: null })
@@ -347,7 +352,7 @@ describe('DeckService', () => {
         it('handles non-Error objects thrown during note addition', async () => {
             vi.mocked(ankiConnect.sendRequest)
                 .mockResolvedValueOnce({
-                    result: ['AnkiVNModel_Flashcard_TTS'],
+                    result: ['AnkiVNModel_Flashcard'],
                     error: null
                 })
                 .mockResolvedValueOnce({ result: 123, error: null })

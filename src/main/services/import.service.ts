@@ -43,6 +43,7 @@ const createDraftRecords = (
                 meaning: null,
                 imageUrl: null,
                 imageProvider: null,
+                audio: null,
                 generationStatus: 'pending' as const,
                 generationError: null
             }

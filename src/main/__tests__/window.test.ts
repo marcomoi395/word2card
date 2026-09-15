@@ -79,9 +79,9 @@ describe('window.ts', () => {
         expect(win.config).toEqual(
             expect.objectContaining({
                 width: 1600,
-                height: 1200,
+                height: 1000,
                 minWidth: 1600,
-                minHeight: 1200,
+                minHeight: 1000,
                 show: false,
                 resizable: false,
                 movable: true,

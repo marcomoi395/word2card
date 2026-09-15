@@ -9,6 +9,7 @@ describe('state package', () => {
         expect(state.getRendererSnapshot()).toEqual({
             configured: {
                 openaiApiKey: false,
+                azureApiKey: false,
                 pexelsToken: false,
                 notionToken: false,
                 notionDatabaseId: false

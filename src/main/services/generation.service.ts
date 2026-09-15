@@ -5,6 +5,8 @@ import { OpenAIService, type FlashcardResponse } from '../open-ai'
 import { clozeWord } from '../handle'
 import { getRuntimeSetting } from '../state/runtime'
 import { searchImagePexels } from '../pexels'
+import { AUDIO_DIR } from '../config/constants'
+import { SpeechService } from '../speech'
 
 const logger = createLogger('main.generation')
 
@@ -22,6 +24,21 @@ const findImage = async (item: FlashcardResponse): Promise<string | null> => {
     } catch (error) {
         logger.error('generation_image_search_failed', {
             word: item.word,
+            error: error instanceof Error ? error : new Error(String(error))
+        })
+        return null
+    }
+}
+
+const createAudio = async (word: string): Promise<string | null> => {
+    if (!getRuntimeSetting('azureApiKey')) {
+        return null
+    }
+    try {
+        return await SpeechService.createSpeechFile(word, AUDIO_DIR)
+    } catch (error) {
+        logger.warn('generation_audio_creation_failed', {
+            word,
             error: error instanceof Error ? error : new Error(String(error))
         })
         return null
@@ -74,6 +91,7 @@ export class GenerationService {
                         }
                     }
                     const imageUrl = await findImage(item)
+                    const audio = await createAudio(record.word)
                     return {
                         ...record,
                         partOfSpeech: item.pos ?? null,
@@ -82,6 +100,7 @@ export class GenerationService {
                         example: item.example ?? null,
                         imageUrl,
                         imageProvider: imageUrl ? 'pexels' : null,
+                        audio,
                         cloze: record.cloze ?? clozeWord(record.word),
                         generationStatus: 'ready' as const,
                         generationError: null
@@ -209,6 +228,7 @@ export class GenerationService {
             seen.add(record.normalizedWord)
             try {
                 const imageUrl = await findImage(item)
+                const audio = await createAudio(record.word)
                 database.transaction(() => {
                     database.vocabulary.update(record.id, {
                         partOfSpeech: item.pos,
@@ -217,6 +237,7 @@ export class GenerationService {
                         example: item.example ?? null,
                         imageUrl,
                         imageProvider: imageUrl ? 'pexels' : null,
+                        audio,
                         cloze: record.cloze ?? clozeWord(record.word),
                         generationStatus: 'ready',
                         generationError: null

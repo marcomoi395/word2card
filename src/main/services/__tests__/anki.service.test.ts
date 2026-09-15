@@ -71,7 +71,31 @@ describe('AnkiService', () => {
             ankiError: null
         })
         expect(DeckService.addNotesToAnki).toHaveBeenCalledWith([
-            expect.objectContaining({ deckName: 'Vocabulary::Imported::2026-09-14' })
+            expect.objectContaining({
+                deckName: 'Vocabulary::Imported::2026-09-14',
+                modelName: 'AnkiVNModel_Flashcard'
+            })
+        ])
+        expect(vi.mocked(DeckService.addNotesToAnki).mock.calls[0][0][0]).not.toHaveProperty(
+            'audio'
+        )
+    })
+    it('attaches generated audio when it is available', async () => {
+        vi.mocked(DeckService.addNotesToAnki).mockResolvedValue({ status: 'success' })
+        const repositories = db([record({ audio: '/audio/hello.mp3' })])
+
+        await AnkiService.submitPersistedCards(repositories)
+
+        expect(DeckService.addNotesToAnki).toHaveBeenCalledWith([
+            expect.objectContaining({
+                audio: [
+                    expect.objectContaining({
+                        path: '/audio/hello.mp3',
+                        filename: 'hello.mp3',
+                        fields: ['audio_word']
+                    })
+                ]
+            })
         ])
     })
     it('updates the source Notion page after Anki confirms success', async () => {

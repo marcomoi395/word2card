@@ -1,5 +1,6 @@
-import { BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain } from 'electron'
 import { IPC_CHANNELS } from '../../../shared/ipc'
+import { success } from '../../utils/response'
 
 let registered = false
 
@@ -28,4 +29,6 @@ export function registerWindowHandlers(): void {
     ipcMain.on(IPC_CHANNELS.windowClose, (event) => {
         getSenderWindow(event)?.close()
     })
+
+    ipcMain.handle(IPC_CHANNELS.getAppVersion, () => success(app.getVersion()))
 }

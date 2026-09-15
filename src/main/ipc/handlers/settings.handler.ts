@@ -21,6 +21,9 @@ export function registerSettingsHandlers(): void {
 
             const patch = {
                 openaiApiKey: parsed.openaiApiKey.trim(),
+                ...(parsed.azureApiKey === undefined
+                    ? {}
+                    : { azureApiKey: parsed.azureApiKey.trim() }),
                 pexelsToken: parsed.pexelsToken.trim(),
                 ...(parsed.notionToken === undefined
                     ? {}

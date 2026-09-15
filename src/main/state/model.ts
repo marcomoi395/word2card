@@ -6,7 +6,7 @@ export interface RuntimeSettings extends Partial<Record<SecretKey, string>> {
 }
 
 export interface StateSnapshot {
-    configured: Record<SecretKey, boolean>
+    configured: Partial<Record<SecretKey, boolean>>
     openaiBaseUrl?: string
     openaiModel?: string
 }
