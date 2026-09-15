@@ -32,6 +32,7 @@ mac:
 dmg:
     artifactName: ${name}-${version}.${ext}
 linux:
+    syncDesktopName: true
     target:
         - AppImage
         - deb

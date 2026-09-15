@@ -79,6 +79,16 @@ bun run build:mac
 bun run build:linux
 ```
 
+### Arch Linux (x86_64)
+
+Starting with the next configured release, versions are published to the AUR as `word2card-bin`:
+
+```bash
+yay -S word2card-bin
+```
+
+The package downloads the versioned AppImage from the GitHub Release and verifies its SHA-256 checksum. Each release updates the AUR package automatically. Maintainers can find the one-time AUR setup in [`.github/AUR.md`](.github/AUR.md).
+
 ## Privacy and costs
 
 Word2Card sends imported words to the configured OpenAI-compatible endpoint for content generation. Pexels and Notion are contacted only when those features are used. Pronunciation is handled locally by Anki and the operating system (or an Anki TTS add-on on Linux); there is no Azure Speech integration and no separate audio billing.

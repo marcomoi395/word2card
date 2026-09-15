@@ -1,0 +1,27 @@
+# Maintainer: youngmarco
+pkgname=word2card-bin
+pkgver=@VERSION@
+pkgrel=1
+pkgdesc='Create Anki flashcards from word lists or Notion'
+arch=('x86_64')
+url='https://github.com/marcomoi395/word2card'
+license=('MIT')
+depends=('fuse2')
+provides=('word2card')
+conflicts=('word2card')
+source=(
+    "word2card-${pkgver}.AppImage::${url}/releases/download/v${pkgver}/word2card-${pkgver}.AppImage"
+    'word2card.desktop'
+    'word2card.png'
+)
+sha256sums=(
+    '@APPIMAGE_SHA256@'
+    '@DESKTOP_SHA256@'
+    '@ICON_SHA256@'
+)
+
+package() {
+    install -Dm755 "$srcdir/word2card-${pkgver}.AppImage" "$pkgdir/opt/word2card/word2card"
+    install -Dm644 "$srcdir/word2card.desktop" "$pkgdir/usr/share/applications/word2card.desktop"
+    install -Dm644 "$srcdir/word2card.png" "$pkgdir/usr/share/icons/hicolor/1024x1024/apps/word2card.png"
+}
