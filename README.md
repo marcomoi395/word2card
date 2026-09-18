@@ -1,6 +1,37 @@
-# Word2Card
+<p align="center">
+  <img src="./resources/icon.png" alt="Word2Card logo" width="144">
+</p>
 
-Word2Card is an Electron desktop app that turns word lists or Notion vocabulary pages into Anki flashcards. It generates dictionary content with OpenAI, optionally finds an image with Pexels, and submits the result to Anki through AnkiConnect.
+<h1 align="center">Word2Card</h1>
+
+<p align="center">
+  Turn English vocabulary into ready-to-review Anki flashcards.<br>
+  Import from files or Notion, enrich with AI, and sync directly to Anki.
+</p>
+
+<hr>
+
+<p align="center">
+  <a href="#features">Features</a> ·
+  <a href="#setup">Setup</a> ·
+  <a href="#usage">Usage</a> ·
+  <a href="https://github.com/marcomoi395/word2card/releases">Download</a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/marcomoi395/word2card/releases">
+    <img src="https://img.shields.io/github/v/release/marcomoi395/word2card?label=release" alt="Latest release">
+  </a>
+  <a href="./LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License">
+  </a>
+</p>
+
+## Application preview
+
+| Import workspace | Notion Sync | Settings |
+| :---: | :---: | :---: |
+| <img src="./resources/app-import.png" width="320"> | <img src="./resources/app-notion-sync.png" width="320"> | <img src="./resources/app-settings.png" width="320"> |
 
 ## Features
 
@@ -47,6 +78,14 @@ Word2Card creates the note type `AnkiVNModel_Flashcard`. Existing note types and
 2. Create a Notion integration at [Notion My Integrations](https://www.notion.so/my-integrations).
 3. Share the database with that integration and copy the database ID from its URL.
 4. Enter the token, database ID, and target deck in **Notion Sync**.
+
+## Result
+
+The generated flashcards are added to Anki with review and typing cards:
+
+| Review (Front) | Review (Back) | Typing (Front) | Typing (Back) |
+| :---: | :---: | :---: | :---: |
+| <img src="./resources/review.png" width="200"> | <img src="./resources/review-2.png" width="200"> | <img src="./resources/typing.png" width="200"> | <img src="./resources/typing-2.png" width="200"> |
 
 ## Development
 
